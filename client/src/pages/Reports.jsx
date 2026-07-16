@@ -49,9 +49,7 @@ const Reports = () => {
   const [ledgerEndDate, setLedgerEndDate] = useState('');
   const [ledgerFyPreset, setLedgerFyPreset] = useState('custom');
 
-  // 7. Day End Report State
-  const [dayEndDate, setDayEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dayEndData, setDayEndData] = useState(null);
+
 
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -180,27 +178,13 @@ const Reports = () => {
     }
   };
 
-  // Fetch Report 7 (Day End)
-  const fetchDayEndReport = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`http://localhost:5000/api/dashboard?date=${dayEndDate}`);
-      setDayEndData(res.data);
-    } catch (err) {
-      triggerToast('Error loading Day End report', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Hook report fetching to tab toggle
   useEffect(() => {
     if (activeTab === 'reminder') fetchReminderReport();
     if (activeTab === 'stock') fetchStockReport();
     if (activeTab === 'pl') fetchPLReport();
     if (activeTab === 'outstanding') fetchOutstandingReport();
-    if (activeTab === 'day_end') fetchDayEndReport();
-  }, [activeTab, dayEndDate]);
+  }, [activeTab]);
 
   // Bulk Send Reminders (SMS Setup Log Trigger)
   const handleBulkReminders = async () => {
@@ -308,14 +292,7 @@ const Reports = () => {
         >
           Accounting Group Report
         </button>
-        <button
-          onClick={() => setActiveTab('day_end')}
-          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-            activeTab === 'day_end' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Day End Report
-        </button>
+
       </div>
 
       {/* Core Report Content wrapper */}
@@ -808,75 +785,7 @@ const Reports = () => {
           </div>
         )}
 
-        {/* REPORT 7: DAY END REPORT */}
-        {activeTab === 'day_end' && (
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-850 pb-4 no-print">
-              <div>
-                <h3 className="text-lg font-bold text-slate-200">Day End Report</h3>
-                <p className="text-xs text-slate-400">Pledge lending transactions summary and cash book opening/closing positions for a specific date.</p>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-slate-400 font-semibold">Select Date:</span>
-                <input
-                  type="date"
-                  value={dayEndDate}
-                  onChange={(e) => setDayEndDate(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-250 focus:outline-none font-mono"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="py-12 text-center text-slate-500 italic">Compiling day end metrics...</div>
-            ) : dayEndData ? (
-              <div className="space-y-6 pt-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs text-slate-300">
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-850 bg-slate-900/10">
-                    <span className="text-slate-450 uppercase font-semibold block mb-1">Opening Balance</span>
-                    <span className="text-xl font-bold font-mono text-slate-200">₹{formatIndianCurrency(dayEndData.openingBalance || 0)}</span>
-                  </div>
-                  
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-850 bg-slate-900/10">
-                    <span className="text-slate-450 uppercase font-semibold block mb-1">Total Pay (Loans Paid)</span>
-                    <span className="text-xl font-bold font-mono text-rose-400">-₹{formatIndianCurrency(dayEndData.totalPay || 0)}</span>
-                  </div>
-
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-850 bg-slate-900/10">
-                    <span className="text-slate-450 uppercase font-semibold block mb-1">Total Interest Received</span>
-                    <span className="text-xl font-bold font-mono text-emerald-400">+₹{formatIndianCurrency(dayEndData.totalInterest || 0)}</span>
-                  </div>
-
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-850 bg-slate-900/10">
-                    <span className="text-slate-450 uppercase font-semibold block mb-1">Total Received Amount</span>
-                    <span className="text-xl font-bold font-mono text-emerald-400">+₹{formatIndianCurrency(dayEndData.totalReceive || 0)}</span>
-                  </div>
-                </div>
-
-                <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/20 text-sm space-y-4">
-                  <h4 className="text-base font-bold text-slate-200">Daily Vault Ledger Summary</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 font-mono text-xs">
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850">
-                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Total Cash in Hand</span>
-                      <span className="text-lg font-bold text-slate-200">₹{formatIndianCurrency(dayEndData.cashInHand || 0)}</span>
-                    </div>
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850">
-                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Total Bank Balance</span>
-                      <span className="text-lg font-bold text-slate-200">₹{formatIndianCurrency(dayEndData.bankBalance || 0)}</span>
-                    </div>
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850">
-                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Closing Vault Balance</span>
-                      <span className="text-lg font-bold text-emerald-400">₹{formatIndianCurrency(dayEndData.closingBalance || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-slate-500 italic">No day end transactions logged for this date.</div>
-            )}
-          </div>
-        )}
       </div>
 
       {toast && (

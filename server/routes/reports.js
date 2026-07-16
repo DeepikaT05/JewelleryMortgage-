@@ -417,4 +417,124 @@ router.get('/accounting-group-ledger', authMiddleware, async (req, res) => {
   }
 });
 
+// ==========================================
+// REPORT 6: Day Report (Daily Audit / Closing Report)
+// ==========================================
+router.get('/day-report', authMiddleware, async (req, res) => {
+  const { date } = req.query;
+  const companyId = req.user.companyId;
+
+  if (!date) {
+    return res.status(400).json({ message: 'date query param is required (YYYY-MM-DD)' });
+  }
+
+  try {
+    const targetDate = new Date(date);
+    const dayStart = new Date(targetDate);
+    dayStart.setUTCHours(0, 0, 0, 0);
+    const dayEnd = new Date(targetDate);
+    dayEnd.setUTCHours(23, 59, 59, 999);
+
+    // ---------- Opening Balance ----------
+    // Sum of all principal amounts from deals BEFORE this day (funds lent out = debit)
+    // Minus all principal repayments from transactions BEFORE this day
+    // The opening balance represents the total outstanding principal at start of day
+
+    const dealsBeforeDay = await Deal.find({
+      companyId,
+      dealDate: { $lt: dayStart }
+    });
+    const txsBeforeDay = await Transaction.find({
+      companyId,
+      tranDate: { $lt: dayStart }
+    });
+
+    const totalDealsBefore = dealsBeforeDay.reduce((s, d) => s + (d.dealAmount || 0), 0);
+    const totalPrincipalPaidBefore = txsBeforeDay.reduce((s, t) => s + (t.principle.amountPaid || 0), 0);
+    const openingBalance = parseFloat((totalDealsBefore - totalPrincipalPaidBefore).toFixed(2));
+
+    // ---------- Day Deals (new loans given) ----------
+    const dayDeals = await Deal.find({
+      companyId,
+      dealDate: { $gte: dayStart, $lte: dayEnd }
+    }).populate('customerId');
+
+    // ---------- Day Transactions (repayments) ----------
+    const dayTransactions = await Transaction.find({
+      companyId,
+      tranDate: { $gte: dayStart, $lte: dayEnd }
+    }).populate('customerId').sort({ transactionNo: 1 });
+
+    // ---------- Build report rows ----------
+    const rows = [];
+    let serial = 1;
+    let runningBalance = openingBalance;
+
+    // Add new deals as rows (money lent = increases balance)
+    dayDeals.forEach(d => {
+      const principal = d.dealAmount || 0;
+      runningBalance += principal;
+      rows.push({
+        serial: serial++,
+        type: 'Deal',
+        customerName: d.customerId ? d.customerId.name : 'Unknown',
+        refNo1: d.refNo || d.dealNo || '',
+        refNo2: d.dealNo || '',
+        principalAmt: principal,
+        interestAmt: 0,
+        payAmt: 0,
+        balance: parseFloat(runningBalance.toFixed(2))
+      });
+    });
+
+    // Add transaction rows (repayments = decreases balance)
+    dayTransactions.forEach(t => {
+      const principal = t.principle.amountPaid || 0;
+      const interest = t.compound.amountPaid || 0;
+      const pay = t.totalPaid || 0;
+      runningBalance -= principal;
+      rows.push({
+        serial: serial++,
+        type: 'Receipt',
+        customerName: t.customerId ? t.customerId.name : 'Unknown',
+        refNo1: t.transactionNo || '',
+        refNo2: t.transactionNo || '',
+        principalAmt: principal,
+        interestAmt: interest,
+        payAmt: pay,
+        balance: parseFloat(runningBalance.toFixed(2))
+      });
+    });
+
+    // Sort rows by serial (deals first by date, then txs)
+    rows.sort((a, b) => a.serial - b.serial);
+
+    // ---------- Totals ----------
+    const totals = rows.reduce((acc, r) => ({
+      principalAmt: acc.principalAmt + r.principalAmt,
+      interestAmt: acc.interestAmt + r.interestAmt,
+      payAmt: acc.payAmt + r.payAmt
+    }), { principalAmt: 0, interestAmt: 0, payAmt: 0 });
+
+    totals.principalAmt = parseFloat(totals.principalAmt.toFixed(2));
+    totals.interestAmt = parseFloat(totals.interestAmt.toFixed(2));
+    totals.payAmt = parseFloat(totals.payAmt.toFixed(2));
+
+    const closingBalance = parseFloat(runningBalance.toFixed(2));
+
+    res.json({
+      date,
+      openingBalance,
+      rows,
+      totals,
+      closingBalance
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error generating day report' });
+  }
+});
+
 module.exports = router;
+

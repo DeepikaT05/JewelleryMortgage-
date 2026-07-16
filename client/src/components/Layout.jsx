@@ -19,7 +19,8 @@ import {
   Plus,
   Trash2,
   Printer,
-  BookOpen
+  BookOpen,
+  CalendarDays
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -304,6 +305,7 @@ const Layout = ({ children }) => {
     { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
     { name: 'Accounting Group', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
+    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin', 'super admin'] }
   ];
 

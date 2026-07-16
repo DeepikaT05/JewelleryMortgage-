@@ -13,6 +13,7 @@ import Transaction from './pages/Transaction';
 import Reports from './pages/Reports';
 import GirviSetup from './pages/GirviSetup';
 import AccountingGroup from './pages/AccountingGroup';
+import DayReport from './pages/DayReport';
 
 // Authentication Protection Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +78,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <AccountingGroup />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/day-report"
+          element={
+            <ProtectedRoute>
+              <DayReport />
             </ProtectedRoute>
           }
         />
