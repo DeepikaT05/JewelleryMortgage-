@@ -303,6 +303,7 @@ const Layout = ({ children }) => {
     { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
     { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
+    { name: 'Accounting Group', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin', 'super admin'] }
   ];
 

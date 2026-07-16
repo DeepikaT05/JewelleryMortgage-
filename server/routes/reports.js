@@ -319,4 +319,102 @@ router.get('/outstanding', authMiddleware, async (req, res) => {
   }
 });
 
+// CUSTOM REPORT: Accounting Group Ledger (Single or All Customers + Financial Year Date Range)
+router.get('/accounting-group-ledger', authMiddleware, async (req, res) => {
+  const companyId = req.user.companyId;
+  const { customerId, startDate, endDate } = req.query;
+
+  try {
+    let customerFilter = {};
+    if (customerId && customerId !== 'all') {
+      customerFilter._id = customerId;
+    }
+
+    const customersList = await Customer.find({ ...customerFilter, companyId });
+    const customerIds = customersList.map(c => c._id);
+
+    // Fetch all deals and transactions for these customers
+    const deals = await Deal.find({ customerId: { $in: customerIds }, companyId }).sort({ dealDate: 1 }).populate('customerId');
+    const transactions = await Transaction.find({ customerId: { $in: customerIds }, companyId }).sort({ tranDate: 1 }).populate('customerId');
+
+    // Let's build a chronological ledger of all events
+    const rawLedger = [];
+    
+    deals.forEach(d => {
+      rawLedger.push({
+        type: 'Deal',
+        date: d.dealDate,
+        no: d.dealNo,
+        amount: d.dealAmount,
+        particulars: `Pledged collateral (Deal #${d.dealNo})`,
+        customerId: d.customerId?._id || d.customerId,
+        customerName: d.customerId?.name || 'Unknown',
+        customerCode: d.customerId?.customerCode || '',
+        principalImpact: d.dealAmount,
+        interestImpact: 0,
+        discount: 0,
+        totalPaid: 0
+      });
+    });
+
+    transactions.forEach(t => {
+      rawLedger.push({
+        type: 'Receipt',
+        date: t.tranDate,
+        no: t.transactionNo,
+        amount: t.totalPaid,
+        particulars: `Receipt #${t.transactionNo} - Mode: ${t.payMode}. Principal Paid: ${t.principle.amountPaid}, Interest Paid: ${t.compound.amountPaid}`,
+        customerId: t.customerId?._id || t.customerId,
+        customerName: t.customerId?.name || 'Unknown',
+        customerCode: t.customerId?.customerCode || '',
+        principalImpact: -t.principle.amountPaid,
+        interestImpact: -t.compound.amountPaid,
+        discount: t.discount,
+        totalPaid: t.totalPaid
+      });
+    });
+
+    // Sort chronologically
+    rawLedger.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate opening balances before startDate, and range items
+    let openingPrincipal = 0;
+    const ledgerItems = [];
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    if (end) end.setUTCHours(23, 59, 59, 999);
+
+    rawLedger.forEach(item => {
+      const itemDate = new Date(item.date);
+      if (start && itemDate < start) {
+        openingPrincipal += item.principalImpact;
+      } else if ((!start || itemDate >= start) && (!end || itemDate <= end)) {
+        ledgerItems.push(item);
+      }
+    });
+
+    // Calculate running balances for the selected range
+    let runningPrincipal = openingPrincipal;
+    const ledgerWithBalances = ledgerItems.map(item => {
+      runningPrincipal += item.principalImpact;
+      return {
+        ...item,
+        runningPrincipalOwed: parseFloat(runningPrincipal.toFixed(2))
+      };
+    });
+
+    res.json({
+      customers: customersList,
+      openingPrincipal: parseFloat(openingPrincipal.toFixed(2)),
+      closingPrincipal: parseFloat(runningPrincipal.toFixed(2)),
+      ledger: ledgerWithBalances
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error compiling accounting group ledger' });
+  }
+});
+
 module.exports = router;
