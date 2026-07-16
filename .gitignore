@@ -1,0 +1,17 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environments
+.env
+client/.env
+server/.env
+
+# Build outputs
+client/dist/
+
+# System / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
