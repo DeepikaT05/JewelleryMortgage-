@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import GirviSetup from './pages/GirviSetup';
 import AccountingGroup from './pages/AccountingGroup';
 import DayReport from './pages/DayReport';
+import SuperAdmin from './pages/SuperAdmin';
 
 // Authentication Protection Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -30,6 +31,9 @@ const App = () => {
       <Routes>
         {/* Public Login */}
         <Route path="/login" element={<Login />} />
+
+        {/* Super Admin standalone panel */}
+        <Route path="/superadmin" element={<SuperAdmin />} />
 
         {/* Protected Dashboard/Admin modules */}
         <Route

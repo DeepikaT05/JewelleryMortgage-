@@ -54,7 +54,26 @@ const seedDatabase = async () => {
       console.log('Seeded default company successfully.');
     }
 
-    // 2. Seed Admin User
+    // 2. Seed Super Admin User
+    let superAdmin = await User.findOne({ username: 'superadmin' });
+    if (!superAdmin) {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash('superadmin123', salt);
+
+      superAdmin = new User({
+        userId: 1000,
+        name: 'Super Administrator',
+        username: 'superadmin',
+        passwordHash,
+        role: 'super admin',
+        companyId: null,
+        isActive: true
+      });
+      await superAdmin.save();
+      console.log('Seeded default super admin user (superadmin/superadmin123).');
+    }
+
+    // 3. Seed Admin User
     let admin = await User.findOne({ username: 'admin' });
     if (!admin) {
       const salt = await bcrypt.genSalt(10);
@@ -141,6 +160,7 @@ const reportsRoutes = require('./routes/reports');
 const supplierRoutes = require('./routes/suppliers');
 const dashboardRoutes = require('./routes/dashboard');
 const ledgerRoutes = require('./routes/ledgers');
+const superadminRoutes = require('./routes/superadmin');
 
 // Mount API Routers
 app.use('/api/auth', authRoutes);
@@ -156,6 +176,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ledgers', ledgerRoutes);
+app.use('/api/superadmin', superadminRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
