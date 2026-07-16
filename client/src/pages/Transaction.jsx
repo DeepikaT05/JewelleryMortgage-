@@ -10,6 +10,8 @@ const Transaction = () => {
   const [toast, setToast] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [custSearchFocused, setCustSearchFocused] = useState(false);
+  const [custSearchText, setCustSearchText] = useState('');
 
   // Masters cache
   const [customers, setCustomers] = useState([]);
@@ -80,6 +82,19 @@ const Transaction = () => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (form.customerId) {
+      const selected = customers.find(c => c._id === form.customerId);
+      if (selected) {
+        setCustSearchText(`${selected.name} (${selected.customerCode})`);
+      } else {
+        setCustSearchText('');
+      }
+    } else {
+      setCustSearchText('');
+    }
+  }, [form.customerId, customers]);
 
   // --- GENERAL LOADER SYSTEM ---
   const loadMasters = async () => {
@@ -435,6 +450,78 @@ const Transaction = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Customer */}
+            <div className="grid grid-cols-3 items-center relative">
+              <label className="text-slate-400 font-semibold">Customer * :</label>
+              <div className="col-span-2 relative">
+                <input
+                  type="text"
+                  disabled={!isEditMode}
+                  placeholder="Type name, mobile, or code to search..."
+                  value={custSearchText}
+                  onChange={(e) => {
+                    setCustSearchText(e.target.value);
+                    setCustSearchFocused(true);
+                    if (e.target.value === '') {
+                      setForm(prev => ({ ...prev, customerId: '', dealId: '' }));
+                    }
+                  }}
+                  onFocus={() => {
+                    setCustSearchFocused(true);
+                    setCustSearchText('');
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setCustSearchFocused(false), 250);
+                  }}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-primary-500"
+                />
+
+                {isEditMode && custSearchFocused && (
+                  <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-50 divide-y divide-slate-850">
+                    {customers.filter(c => {
+                      const search = custSearchText.toLowerCase();
+                      return (
+                        (c.name && c.name.toLowerCase().includes(search)) ||
+                        (c.customerCode && c.customerCode.toString().includes(search)) ||
+                        (c.mobile && c.mobile.includes(search)) ||
+                        (c.idProofNumber && c.idProofNumber.toLowerCase().includes(search))
+                      );
+                    }).length === 0 ? (
+                      <div className="p-3 text-xs text-slate-500 italic">No matching customers found</div>
+                    ) : (
+                      customers.filter(c => {
+                        const search = custSearchText.toLowerCase();
+                        return (
+                          (c.name && c.name.toLowerCase().includes(search)) ||
+                          (c.customerCode && c.customerCode.toString().includes(search)) ||
+                          (c.mobile && c.mobile.includes(search)) ||
+                          (c.idProofNumber && c.idProofNumber.toLowerCase().includes(search))
+                        );
+                      }).map(c => (
+                        <div
+                          key={c._id}
+                          onMouseDown={() => {
+                            handleCustomerChange(c._id);
+                            setCustSearchText(`${c.name} (${c.customerCode})`);
+                            setCustSearchFocused(false);
+                          }}
+                          className="p-3 text-xs text-slate-300 hover:bg-slate-900 cursor-pointer flex justify-between items-center"
+                        >
+                          <div>
+                            <span className="font-semibold text-slate-200">{c.name}</span>
+                            <span className="text-slate-500 ml-2 font-mono">#{c.customerCode}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {c.mobile}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Date */}
             <div className="grid grid-cols-3 items-center">
               <label className="text-slate-400 font-semibold">Tran Date * :</label>
@@ -447,34 +534,6 @@ const Transaction = () => {
                   onChange={(e) => handleTranDateChange(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
                 />
-              </div>
-            </div>
-
-            {/* Customer */}
-            <div className="grid grid-cols-3 items-center">
-              <label className="text-slate-400 font-semibold">Customer * :</label>
-              <div className="col-span-2 flex space-x-2">
-                <select
-                  required
-                  disabled={!isEditMode}
-                  value={form.customerId}
-                  onChange={(e) => handleCustomerChange(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-350 focus:outline-none"
-                >
-                  <option value="">Select customer...</option>
-                  {customers.map(c => (
-                    <option key={c._id} value={c._id}>
-                      {c.name} — #{c.customerCode}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  disabled
-                  className="px-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg"
-                >
-                  Search
-                </button>
               </div>
             </div>
 

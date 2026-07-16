@@ -557,33 +557,6 @@ const DealMaster = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-            <div>
-              <label className="block text-slate-400 font-semibold mb-1">Date *</label>
-              <input
-                type="date"
-                required
-                disabled={!isEditMode || currentUser?.role === 'operator' || currentUser?.role === 'staff'}
-                value={form.dealDate}
-                onChange={(e) => handleFinancialChange('dealDate', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-60"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 font-semibold mb-1 flex items-center space-x-1">
-                <span>Ref No.</span>
-                <span className="text-[10px] text-primary-400 font-mono">(auto-generated, editable)</span>
-              </label>
-              <input
-                type="text"
-                disabled={!isEditMode}
-                value={form.refNo}
-                onChange={(e) => setForm({ ...form, refNo: e.target.value })}
-                placeholder="REF-..."
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-60 font-mono"
-              />
-            </div>
-
             <div className="md:col-span-2 relative">
               <label className="block text-slate-400 font-semibold mb-1">Customer * (Search by name, ID, contact)</label>
               <div className="flex space-x-2">
@@ -615,9 +588,9 @@ const DealMaster = () => {
                       {customers.filter(c => {
                         const search = custSearchText.toLowerCase();
                         return (
-                          c.name.toLowerCase().includes(search) ||
-                          c.customerCode.toString().includes(search) ||
-                          c.mobile.includes(search) ||
+                          (c.name && c.name.toLowerCase().includes(search)) ||
+                          (c.customerCode && c.customerCode.toString().includes(search)) ||
+                          (c.mobile && c.mobile.includes(search)) ||
                           (c.idProofNumber && c.idProofNumber.toLowerCase().includes(search))
                         );
                       }).length === 0 ? (
@@ -626,9 +599,9 @@ const DealMaster = () => {
                         customers.filter(c => {
                           const search = custSearchText.toLowerCase();
                           return (
-                            c.name.toLowerCase().includes(search) ||
-                            c.customerCode.toString().includes(search) ||
-                            c.mobile.includes(search) ||
+                            (c.name && c.name.toLowerCase().includes(search)) ||
+                            (c.customerCode && c.customerCode.toString().includes(search)) ||
+                            (c.mobile && c.mobile.includes(search)) ||
                             (c.idProofNumber && c.idProofNumber.toLowerCase().includes(search))
                           );
                         }).map(c => (
@@ -666,6 +639,33 @@ const DealMaster = () => {
                   </button>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+                <span>Ref No.</span>
+                <span className="text-[10px] text-primary-400 font-mono">(auto-generated, editable)</span>
+              </label>
+              <input
+                type="text"
+                disabled={!isEditMode}
+                value={form.refNo}
+                onChange={(e) => setForm({ ...form, refNo: e.target.value })}
+                placeholder="REF-..."
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-60 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Date *</label>
+              <input
+                type="date"
+                required
+                disabled={!isEditMode || currentUser?.role === 'operator' || currentUser?.role === 'staff'}
+                value={form.dealDate}
+                onChange={(e) => handleFinancialChange('dealDate', e.target.value)}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-60"
+              />
             </div>
           </div>
         </div>
