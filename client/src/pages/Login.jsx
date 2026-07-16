@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Lock, User, Coins, AlertCircle } from 'lucide-react';
+import { Lock, User, Coins, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -91,12 +92,20 @@ const Login = () => {
                 <Lock className="h-4 w-4" />
               </div>
               <input
-                type="password"
+                type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (e.g. admin)"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
+                placeholder="Enter password"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPass(v => !v)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                tabIndex={-1}
+              >
+                {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 

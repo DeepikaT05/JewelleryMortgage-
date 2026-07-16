@@ -207,4 +207,29 @@ router.get('/stats', superadminAuth, async (req, res) => {
   }
 });
 
+// ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
+// POST /api/superadmin/change-password
+router.post('/change-password', superadminAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required' });
+  }
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid current password' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error changing password' });
+  }
+});
+
 module.exports = router;
+
