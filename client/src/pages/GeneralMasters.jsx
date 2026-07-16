@@ -77,8 +77,8 @@ const GeneralMasters = () => {
   // --- TIME & COMPANY METRICS LOADER ---
   const fetchActiveCompany = async () => {
     try {
-      const userRes = await axios.get('http://localhost:5000/api/auth/me');
-      const compListRes = await axios.get('http://localhost:5000/api/companies');
+      const userRes = await axios.get('/api/auth/me');
+      const compListRes = await axios.get('/api/companies');
       const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
       setCompanyDetails(activeComp);
     } catch (err) {
@@ -96,7 +96,7 @@ const GeneralMasters = () => {
 
   const fetchCustomersList = async (selectId = null) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/customers?limit=1000');
+      const res = await axios.get('/api/customers?limit=1000');
       const list = res.data.customers;
       setCustomers(list);
       if (activeSubTab === 'customers') {
@@ -116,14 +116,14 @@ const GeneralMasters = () => {
 
   const loadCustomerDetails = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/customers/${id}`);
+      const res = await axios.get(`/api/customers/${id}`);
       const c = res.data;
       setCustomerForm({
         ...c,
         idProofImageUrl: c.idProofImageUrl || '',
         compoundDate: c.compoundDate || ''
       });
-      setIdFilePreview(c.idProofImageUrl ? `http://localhost:5000${c.idProofImageUrl}` : null);
+      setIdFilePreview(c.idProofImageUrl ? `${c.idProofImageUrl}` : null);
       setIdFile(null);
       setIsEditMode(false);
       setIsNewRecord(false);
@@ -134,7 +134,7 @@ const GeneralMasters = () => {
 
   const fetchGroupsList = async (selectId = null) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/groups');
+      const res = await axios.get('/api/groups');
       setGroups(res.data);
       if (activeSubTab === 'groups') {
         if (res.data.length > 0) {
@@ -164,7 +164,7 @@ const GeneralMasters = () => {
 
   const fetchItemsList = async (selectId = null) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/items');
+      const res = await axios.get('/api/items');
       setItems(res.data);
       if (activeSubTab === 'items') {
         if (res.data.length > 0) {
@@ -196,7 +196,7 @@ const GeneralMasters = () => {
 
   const fetchTermsConfig = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/terms');
+      const res = await axios.get('/api/terms');
       setTermsText(res.data.termsText);
     } catch (err) {
       triggerToast('Error fetching terms config', 'error');
@@ -329,13 +329,13 @@ const GeneralMasters = () => {
         }
 
         if (isNewRecord) {
-          const res = await axios.post('http://localhost:5000/api/customers', data, {
+          const res = await axios.post('/api/customers', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           triggerToast('Customer created successfully');
           fetchCustomersList(res.data._id);
         } else {
-          const res = await axios.put(`http://localhost:5000/api/customers/${customerForm._id}`, data, {
+          const res = await axios.put(`/api/customers/${customerForm._id}`, data, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           triggerToast('Customer profile updated');
@@ -347,11 +347,11 @@ const GeneralMasters = () => {
           return;
         }
         if (isNewRecord) {
-          const res = await axios.post('http://localhost:5000/api/groups', groupForm);
+          const res = await axios.post('/api/groups', groupForm);
           triggerToast('Metal group created');
           fetchGroupsList(res.data._id);
         } else {
-          const res = await axios.put(`http://localhost:5000/api/groups/${groupForm._id}`, groupForm);
+          const res = await axios.put(`/api/groups/${groupForm._id}`, groupForm);
           triggerToast('Metal group updated');
           fetchGroupsList(res.data._id);
         }
@@ -361,11 +361,11 @@ const GeneralMasters = () => {
           return;
         }
         if (isNewRecord) {
-          const res = await axios.post('http://localhost:5000/api/items', itemForm);
+          const res = await axios.post('/api/items', itemForm);
           triggerToast('Item added successfully');
           fetchItemsList(res.data._id);
         } else {
-          const res = await axios.put(`http://localhost:5000/api/items/${itemForm._id}`, itemForm);
+          const res = await axios.put(`/api/items/${itemForm._id}`, itemForm);
           triggerToast('Item updated successfully');
           fetchItemsList(res.data._id);
         }
@@ -385,15 +385,15 @@ const GeneralMasters = () => {
     setConfirmDeleteOpen(false);
     try {
       if (activeSubTab === 'customers') {
-        await axios.delete(`http://localhost:5000/api/customers/${customerForm._id}`);
+        await axios.delete(`/api/customers/${customerForm._id}`);
         triggerToast('Customer profile deleted');
         fetchCustomersList();
       } else if (activeSubTab === 'groups') {
-        await axios.delete(`http://localhost:5000/api/groups/${groupForm._id}`);
+        await axios.delete(`/api/groups/${groupForm._id}`);
         triggerToast('Metal group deleted');
         fetchGroupsList();
       } else if (activeSubTab === 'items') {
-        await axios.delete(`http://localhost:5000/api/items/${itemForm._id}`);
+        await axios.delete(`/api/items/${itemForm._id}`);
         triggerToast('Item deleted successfully');
         fetchItemsList();
       }
@@ -405,7 +405,7 @@ const GeneralMasters = () => {
   // Terms and Conditions save
   const handleSaveTerms = async () => {
     try {
-      await axios.put('http://localhost:5000/api/terms', { termsText });
+      await axios.put('/api/terms', { termsText });
       triggerToast('Terms and Conditions updated');
     } catch (err) {
       triggerToast('Error saving terms config', 'error');
@@ -423,7 +423,7 @@ const GeneralMasters = () => {
 
   // Excel bulk export
   const handleExportExcel = () => {
-    window.open('http://localhost:5000/api/customers/export', '_blank');
+    window.open('/api/customers/export', '_blank');
   };
 
   return (

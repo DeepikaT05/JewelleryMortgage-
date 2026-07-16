@@ -82,9 +82,9 @@ const DealMaster = () => {
   // --- TIME & COMPANY METRICS LOADER ---
   const fetchActiveCompany = async () => {
     try {
-      const userRes = await axios.get('http://localhost:5000/api/auth/me');
+      const userRes = await axios.get('/api/auth/me');
       setCurrentUser(userRes.data);
-      const compListRes = await axios.get('http://localhost:5000/api/companies');
+      const compListRes = await axios.get('/api/companies');
       const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
       setCompanyDetails(activeComp);
     } catch (err) {
@@ -115,9 +115,9 @@ const DealMaster = () => {
   const loadMasters = async () => {
     try {
       const [custRes, groupRes, catalogRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/customers?limit=1000'),
-        axios.get('http://localhost:5000/api/groups'),
-        axios.get('http://localhost:5000/api/items')
+        axios.get('/api/customers?limit=1000'),
+        axios.get('/api/groups'),
+        axios.get('/api/items')
       ]);
       setCustomers(custRes.data.customers);
       setGroups(groupRes.data);
@@ -129,7 +129,7 @@ const DealMaster = () => {
 
   const loadDealsList = async (selectId = null) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/deals?limit=1000');
+      const res = await axios.get('/api/deals?limit=1000');
       const list = res.data.deals;
       setDeals(list);
       
@@ -153,7 +153,7 @@ const DealMaster = () => {
 
   const fetchDealDetails = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/deals/${id}`);
+      const res = await axios.get(`/api/deals/${id}`);
       const d = res.data;
       setForm({
         ...d,
@@ -311,11 +311,11 @@ const DealMaster = () => {
     }
     try {
       if (isNewRecord) {
-        const res = await axios.post('http://localhost:5000/api/deals', form);
+        const res = await axios.post('/api/deals', form);
         triggerToast('Deal saved');
         loadDealsList(res.data._id);
       } else {
-        const res = await axios.put(`http://localhost:5000/api/deals/${form._id}`, form);
+        const res = await axios.put(`/api/deals/${form._id}`, form);
         triggerToast('Deal updated');
         loadDealsList(res.data._id);
       }
@@ -331,7 +331,7 @@ const DealMaster = () => {
   const handleConfirmDeleteDeal = async () => {
     setConfirmDeleteOpen(false);
     try {
-      await axios.delete(`http://localhost:5000/api/deals/${form._id}`);
+      await axios.delete(`/api/deals/${form._id}`);
       triggerToast('Deal deleted');
       loadDealsList();
     } catch (err) {
@@ -341,7 +341,7 @@ const DealMaster = () => {
 
   const handleCopyDeal = async (copyId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/deals/copy/${copyId}`);
+      const res = await axios.get(`/api/deals/copy/${copyId}`);
       setForm(prev => ({
         ...prev,
         ...res.data,
@@ -361,7 +361,7 @@ const DealMaster = () => {
     const data = new FormData();
     data.append('itemImage', file);
     try {
-      const res = await axios.post('http://localhost:5000/api/deals/upload-item-image', data, {
+      const res = await axios.post('/api/deals/upload-item-image', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       handleRowChange(idx, 'imageUrl', res.data.imageUrl);
@@ -373,7 +373,7 @@ const DealMaster = () => {
 
   const handleDealPrint = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/deals/${form._id}/print`);
+      const res = await axios.get(`/api/deals/${form._id}/print`);
       setPrintProfile(res.data);
       setIsPrintMode(true);
       setTimeout(() => {
@@ -388,12 +388,12 @@ const DealMaster = () => {
   const handleQuickCreateCust = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/customers', {
+      const res = await axios.post('/api/customers', {
         ...newCustForm,
         companyId: companyDetails?._id
       });
       triggerToast('Borrower created');
-      const custRes = await axios.get('http://localhost:5000/api/customers?limit=1000');
+      const custRes = await axios.get('/api/customers?limit=1000');
       setCustomers(custRes.data.customers);
       handleCustomerChange(res.data._id);
       setShowCustModal(false);
@@ -405,9 +405,9 @@ const DealMaster = () => {
   const handleQuickCreateItem = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/items', newItemForm);
+      await axios.post('/api/items', newItemForm);
       triggerToast('Catalog item added');
-      const catalogRes = await axios.get('http://localhost:5000/api/items');
+      const catalogRes = await axios.get('/api/items');
       setItemsCatalog(catalogRes.data);
       setShowItemModal(false);
     } catch (err) {
@@ -853,7 +853,7 @@ const DealMaster = () => {
                       <td className="py-1 px-1 text-center">
                         {item.imageUrl ? (
                           <div className="relative inline-block border border-slate-850 rounded overflow-hidden h-7 w-10 bg-slate-955 group">
-                            <img src={`http://localhost:5000${item.imageUrl}`} alt="collateral" className="h-full w-full object-cover" />
+                            <img src={`${item.imageUrl}`} alt="collateral" className="h-full w-full object-cover" />
                             {isEditMode && (
                               <button
                                 type="button"

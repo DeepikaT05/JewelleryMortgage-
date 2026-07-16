@@ -33,7 +33,7 @@ const AccountingGroup = () => {
   useEffect(() => {
     const loadCustomers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/customers?limit=1000');
+        const res = await axios.get('/api/customers?limit=1000');
         setCustomers(res.data.customers);
       } catch (err) {
         console.error(err);
@@ -62,7 +62,7 @@ const AccountingGroup = () => {
   const fetchLedger = async () => {
     setLoading(true);
     try {
-      let url = `http://localhost:5000/api/reports/accounting-group-ledger?customerId=${selectedCustomerId}`;
+      let url = `/api/reports/accounting-group-ledger?customerId=${selectedCustomerId}`;
       if (startDate) url += `&startDate=${startDate}`;
       if (endDate) url += `&endDate=${endDate}`;
 

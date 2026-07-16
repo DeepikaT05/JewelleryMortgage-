@@ -57,7 +57,7 @@ const Reports = () => {
 
   const fetchFilteredLedgers = async () => {
     try {
-      let url = 'http://localhost:5000/api/ledgers';
+      let url = '/api/ledgers';
       const params = [];
       if (ledgerStartDate) params.push(`startDate=${ledgerStartDate}`);
       if (ledgerEndDate) params.push(`endDate=${ledgerEndDate}`);
@@ -93,7 +93,7 @@ const Reports = () => {
   useEffect(() => {
     const loadDirectory = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/customers?limit=1000');
+        const res = await axios.get('/api/customers?limit=1000');
         setCustomers(res.data.customers);
       } catch (err) {
         console.error(err);
@@ -101,7 +101,7 @@ const Reports = () => {
     };
     const loadLedgerAccounts = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/ledgers');
+        const res = await axios.get('/api/ledgers');
         setLedgers(res.data);
       } catch (err) {
         console.error(err);
@@ -115,7 +115,7 @@ const Reports = () => {
   const fetchReminderReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/reports/unsettled-reminder?upToDate=${reminderDate}&search=${reminderSearch}`);
+      const res = await axios.get(`/api/reports/unsettled-reminder?upToDate=${reminderDate}&search=${reminderSearch}`);
       setReminderData(res.data);
       setSelectedDeals([]); // Reset checkbox selection
     } catch (err) {
@@ -130,7 +130,7 @@ const Reports = () => {
     if (!selectedCustomerId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/reports/customer-ledger/${selectedCustomerId}`);
+      const res = await axios.get(`/api/reports/customer-ledger/${selectedCustomerId}`);
       setLedgerData(res.data);
     } catch (err) {
       triggerToast('Error compiling ledger statement', 'error');
@@ -143,7 +143,7 @@ const Reports = () => {
   const fetchStockReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/reports/stock-summary');
+      const res = await axios.get('/api/reports/stock-summary');
       setStockData(res.data);
     } catch (err) {
       triggerToast('Error compiling stock data', 'error');
@@ -156,7 +156,7 @@ const Reports = () => {
   const fetchPLReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/reports/profit-loss?startDate=${plRange.startDate}&endDate=${plRange.endDate}`);
+      const res = await axios.get(`/api/reports/profit-loss?startDate=${plRange.startDate}&endDate=${plRange.endDate}`);
       setPlData(res.data);
     } catch (err) {
       triggerToast('Error compiling profit report', 'error');
@@ -169,7 +169,7 @@ const Reports = () => {
   const fetchOutstandingReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/reports/outstanding');
+      const res = await axios.get('/api/reports/outstanding');
       setOutstandingData(res.data);
     } catch (err) {
       triggerToast('Error compiling outstanding balances', 'error');
@@ -193,7 +193,7 @@ const Reports = () => {
       return;
     }
     try {
-      const res = await axios.post('http://localhost:5000/api/reports/unsettled-reminder/send-sms', {
+      const res = await axios.post('/api/reports/unsettled-reminder/send-sms', {
         dealIds: selectedDeals
       });
       triggerToast(res.data.message);

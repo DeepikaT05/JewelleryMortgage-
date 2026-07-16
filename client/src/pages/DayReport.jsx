@@ -21,7 +21,7 @@ const DayReport = () => {
     setError("");
     setReport(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/reports/day-report", { params: { date } });
+      const res = await axios.get("/api/reports/day-report", { params: { date } });
       setReport(res.data);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to fetch day report.");

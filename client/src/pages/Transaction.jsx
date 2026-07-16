@@ -67,9 +67,9 @@ const Transaction = () => {
   // --- TIME & COMPANY METRICS ---
   const fetchActiveCompany = async () => {
     try {
-      const userRes = await axios.get('http://localhost:5000/api/auth/me');
+      const userRes = await axios.get('/api/auth/me');
       setCurrentUser(userRes.data);
-      const compListRes = await axios.get('http://localhost:5000/api/companies');
+      const compListRes = await axios.get('/api/companies');
       const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
       setCompanyDetails(activeComp);
     } catch (err) {
@@ -100,9 +100,9 @@ const Transaction = () => {
   const loadMasters = async () => {
     try {
       const [custRes, dealRes, bankRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/customers?limit=1000'),
-        axios.get('http://localhost:5000/api/deals?limit=1000'),
-        axios.get('http://localhost:5000/api/banks')
+        axios.get('/api/customers?limit=1000'),
+        axios.get('/api/deals?limit=1000'),
+        axios.get('/api/banks')
       ]);
       setCustomers(custRes.data.customers);
       setDeals(dealRes.data.deals);
@@ -114,7 +114,7 @@ const Transaction = () => {
 
   const loadTransactionsList = async (selectId = null) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/transactions?limit=1000');
+      const res = await axios.get('/api/transactions?limit=1000');
       const list = res.data.transactions;
       setTransactions(list);
 
@@ -138,7 +138,7 @@ const Transaction = () => {
 
   const fetchTransactionDetails = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/transactions/${id}`);
+      const res = await axios.get(`/api/transactions/${id}`);
       const t = res.data;
       setForm({
         ...t,
@@ -161,7 +161,7 @@ const Transaction = () => {
   const triggerAutoCalc = async (dealId, dateStr) => {
     if (!dealId || !dateStr) return;
     try {
-      const res = await axios.post('http://localhost:5000/api/transactions/calculate', {
+      const res = await axios.post('/api/transactions/calculate', {
         dealId,
         tranDate: dateStr
       });
@@ -318,11 +318,11 @@ const Transaction = () => {
     }
     try {
       if (isNewRecord) {
-        const res = await axios.post('http://localhost:5000/api/transactions', form);
+        const res = await axios.post('/api/transactions', form);
         triggerToast('Payment transaction saved');
         loadTransactionsList(res.data._id);
       } else {
-        const res = await axios.put(`http://localhost:5000/api/transactions/${form._id}`, form);
+        const res = await axios.put(`/api/transactions/${form._id}`, form);
         triggerToast('Payment transaction updated');
         loadTransactionsList(res.data._id);
       }
@@ -338,7 +338,7 @@ const Transaction = () => {
   const handleConfirmDeleteTran = async () => {
     setConfirmDeleteOpen(false);
     try {
-      await axios.delete(`http://localhost:5000/api/transactions/${form._id}`);
+      await axios.delete(`/api/transactions/${form._id}`);
       triggerToast('Payment transaction deleted');
       loadTransactionsList();
     } catch (err) {
@@ -348,7 +348,7 @@ const Transaction = () => {
 
   const handlePrintReceipt = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/transactions/${form._id}/print`);
+      const res = await axios.get(`/api/transactions/${form._id}/print`);
       setPrintProfile(res.data);
       setIsPrintMode(true);
       setTimeout(() => {
