@@ -436,9 +436,9 @@ router.get('/day-report', authMiddleware, async (req, res) => {
     dayEnd.setUTCHours(23, 59, 59, 999);
 
     // ---------- Opening Balance ----------
-    // Sum of all principal amounts from deals BEFORE this day (funds lent out = debit)
-    // Minus all principal repayments from transactions BEFORE this day
-    // The opening balance represents the total outstanding principal at start of day
+    // Sum of all repayments received BEFORE this day (cash in = credit)
+    // Minus all loans paid out before this day (cash out = debit)
+    // The opening balance represents the net cash position from girvi at start of day
 
     const dealsBeforeDay = await Deal.find({
       companyId,
@@ -450,8 +450,8 @@ router.get('/day-report', authMiddleware, async (req, res) => {
     });
 
     const totalDealsBefore = dealsBeforeDay.reduce((s, d) => s + (d.dealAmount || 0), 0);
-    const totalPrincipalPaidBefore = txsBeforeDay.reduce((s, t) => s + (t.principle.amountPaid || 0), 0);
-    const openingBalance = parseFloat((totalDealsBefore - totalPrincipalPaidBefore).toFixed(2));
+    const totalReceivedBefore = txsBeforeDay.reduce((s, t) => s + (t.totalPaid || 0), 0);
+    const openingBalance = parseFloat((totalReceivedBefore - totalDealsBefore).toFixed(2));
 
     // ---------- Day Deals (new loans given) ----------
     const dayDeals = await Deal.find({
@@ -470,29 +470,28 @@ router.get('/day-report', authMiddleware, async (req, res) => {
     let serial = 1;
     let runningBalance = openingBalance;
 
-    // Add new deals as rows (money lent = increases balance)
+    // Add new deals as rows (loans paid out = decreases balance)
     dayDeals.forEach(d => {
       const principal = d.dealAmount || 0;
-      runningBalance += principal;
+      runningBalance -= principal;
       rows.push({
         serial: serial++,
         type: 'Deal',
         customerName: d.customerId ? d.customerId.name : 'Unknown',
         refNo1: d.refNo || d.dealNo || '',
         refNo2: d.dealNo || '',
-        principalAmt: principal,
+        principalAmt: 0,
         interestAmt: 0,
-        payAmt: 0,
+        payAmt: principal,
         balance: parseFloat(runningBalance.toFixed(2))
       });
     });
 
-    // Add transaction rows (repayments = decreases balance)
+    // Add transaction rows (repayments = increases balance)
     dayTransactions.forEach(t => {
       const principal = t.principle.amountPaid || 0;
       const interest = t.compound.amountPaid || 0;
-      const pay = t.totalPaid || 0;
-      runningBalance -= principal;
+      runningBalance += (principal + interest);
       rows.push({
         serial: serial++,
         type: 'Receipt',
@@ -501,7 +500,7 @@ router.get('/day-report', authMiddleware, async (req, res) => {
         refNo2: t.transactionNo || '',
         principalAmt: principal,
         interestAmt: interest,
-        payAmt: pay,
+        payAmt: 0,
         balance: parseFloat(runningBalance.toFixed(2))
       });
     });

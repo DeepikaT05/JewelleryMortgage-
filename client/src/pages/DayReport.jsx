@@ -58,35 +58,33 @@ const DayReport = () => {
   <title>Day Report - ${fmtDate(report.date)}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Segoe UI",Arial,sans-serif;color:#1a1a2e;padding:32px 40px;font-size:13px}
-    .ht{font-size:22px;font-weight:800;border-bottom:3px solid #1a1a2e;padding-bottom:12px;margin-bottom:16px}
-    .mr{display:flex;gap:32px;margin-bottom:20px}
-    .mb{background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:10px 20px}
-    .ml{font-size:10px;text-transform:uppercase;font-weight:700;color:#777}
-    .mv{font-size:18px;font-weight:800;font-family:monospace;margin-top:3px}
-    table{width:100%;border-collapse:collapse}
-    thead tr{background:#1a1a2e;color:#fff}
-    th{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;text-align:left}
+    body{font-family:"Segoe UI",Arial,sans-serif;color:#0f172a;padding:32px 40px;font-size:13px}
+    .ht{font-size:22px;font-weight:800;border-bottom:3px solid #0f172a;padding-bottom:12px;margin-bottom:20px}
+    .mr{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+    .mb{background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px 16px;flex:1;min-width:180px}
+    .ml{font-size:10px;text-transform:uppercase;font-weight:700;color:#64748b;letter-spacing:0.5px}
+    .mv{font-size:16px;font-weight:800;font-family:monospace;margin-top:4px;color:#0f172a}
+    table{width:100%;border-collapse:collapse;border:1.5px solid #0f172a;margin-top:20px}
+    thead tr{background:#0f172a !important;color:#ffffff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    th{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;text-align:left;border:1px solid #cbd5e1;color:#ffffff}
     th.n,td.n{text-align:right}
-    td{padding:9px 12px;font-size:12px;border-bottom:1px solid #eee}
+    td{padding:9px 12px;font-size:12px;border:1px solid #cbd5e1}
     td.n{font-family:monospace}
-    tr:nth-child(even){background:#f9f9f9}
+    tr:nth-child(even){background:#f8fafc}
     .bd{background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700}
     .br{background:#e3f2fd;color:#1565c0;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700}
-    .tr{background:#1a1a2e;color:#fff;font-weight:700}
-    .tr td{border:none;color:#fff}
-    .cb{margin-top:20px;display:flex;justify-content:flex-end}
-    .cbx{background:#1a1a2e;color:#fff;border-radius:12px;padding:14px 28px;text-align:right;min-width:260px}
-    .cl{font-size:11px;text-transform:uppercase;font-weight:700;opacity:.85}
-    .cv{font-size:22px;font-weight:900;font-family:monospace;margin-top:4px}
-    .fn{margin-top:36px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:12px}
+    .tr{background:#f1f5f9 !important;color:#0f172a !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
+    .tr td{border:1px solid #cbd5e1;color:#0f172a !important}
+    .fn{margin-top:36px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:12px}
   </style>
 </head>
 <body>
   <div class="ht">Day Closing Report &mdash; Daily Audit &amp; Transaction Summary</div>
   <div class="mr">
-    <div class="mb"><div class="ml">Report Date</div><div class="mv">${fmtDate(report.date)}</div></div>
     <div class="mb"><div class="ml">Opening Balance</div><div class="mv">${fmtP(report.openingBalance)}</div></div>
+    <div class="mb"><div class="ml">Total Received (+)</div><div class="mv" style="color:#16a34a">${fmtP(totals.principalAmt + totals.interestAmt)}</div></div>
+    <div class="mb"><div class="ml">Total Paid Out (-)</div><div class="mv" style="color:#dc2626">${fmtP(totals.payAmt)}</div></div>
+    <div class="mb"><div class="ml">Closing Balance</div><div class="mv" style="color:#d97706">${fmtP(report.closingBalance)}</div></div>
   </div>
   <table>
     <thead>
@@ -104,7 +102,7 @@ const DayReport = () => {
         <td class="n">${fmtP(totals.payAmt)}</td>
         <td class="n">${fmtP(report.closingBalance)}</td>
       </tr>
-      <tr style="background:#f5f5f5;font-weight:700;border-top:1.5px solid #1a1a2e;">
+      <tr style="background:#f8fafc;font-weight:700;border-top:1.5px solid #0f172a;">
         <td colspan="5" style="padding-left:12px;padding-top:10px;padding-bottom:10px;font-size:12px">CLOSING BALANCE</td>
         <td colspan="2" class="n" style="padding-top:10px;padding-bottom:10px;font-size:14px;padding-right:12px">${fmtP(report.closingBalance)}</td>
       </tr>
@@ -196,7 +194,7 @@ const DayReport = () => {
           </div>
 
           {/* Balance Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs">
             <div className="bg-slate-900/40 p-4 border border-slate-850 rounded-xl print:border-slate-300">
               <span className="text-slate-500 block uppercase font-bold text-[10px]">Opening Balance</span>
               <span className="text-lg font-bold text-slate-200 print:text-black mt-1 block">
@@ -205,20 +203,27 @@ const DayReport = () => {
               <span className="text-[10px] text-slate-500 mt-1 block">Start of {fmtDate(report.date)}</span>
             </div>
             <div className="bg-slate-900/40 p-4 border border-slate-850 rounded-xl print:border-slate-300">
-              <span className="text-slate-500 block uppercase font-bold text-[10px]">Day Total Pay Received</span>
+              <span className="text-slate-500 block uppercase font-bold text-[10px]">Total Received (+)</span>
               <span className="text-lg font-bold text-emerald-400 print:text-emerald-600 mt-1 block">
-                &#8377;{formatIndianCurrency(report.totals?.payAmt)}
+                &#8377;{formatIndianCurrency(report.totals?.principalAmt + report.totals?.interestAmt)}
               </span>
               <span className="text-[10px] text-slate-500 mt-1 block">
-                Principal: &#8377;{formatIndianCurrency(report.totals?.principalAmt)} &nbsp;|&nbsp; Interest: &#8377;{formatIndianCurrency(report.totals?.interestAmt)}
+                Principal: &#8377;{formatIndianCurrency(report.totals?.principalAmt)} | Interest: &#8377;{formatIndianCurrency(report.totals?.interestAmt)}
               </span>
+            </div>
+            <div className="bg-slate-900/40 p-4 border border-slate-850 rounded-xl print:border-slate-300">
+              <span className="text-slate-500 block uppercase font-bold text-[10px]">Total Paid Out (-)</span>
+              <span className="text-lg font-bold text-rose-400 print:text-rose-650 mt-1 block">
+                &#8377;{formatIndianCurrency(report.totals?.payAmt)}
+              </span>
+              <span className="text-[10px] text-slate-500 mt-1 block">New mortgage loans given</span>
             </div>
             <div className="bg-slate-900/40 p-4 border border-slate-850 rounded-xl print:border-slate-300">
               <span className="text-slate-500 block uppercase font-bold text-[10px]">Closing Balance</span>
               <span className="text-lg font-bold text-amber-500 print:text-amber-600 mt-1 block">
                 &#8377;{formatIndianCurrency(report.closingBalance)}
               </span>
-              <span className="text-[10px] text-slate-500 mt-1 block">End of day outstanding principal</span>
+              <span className="text-[10px] text-slate-500 mt-1 block">End of day cash position</span>
             </div>
           </div>
 
