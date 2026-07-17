@@ -90,7 +90,7 @@ const GirviSetup = () => {
   const loadSettingsData = async () => {
     try {
       // Fetch general setup
-      const setupRes = await axios.get('http://localhost:5000/api/settings/girvi');
+      const setupRes = await axios.get('/api/settings/girvi');
       if (setupRes.data) {
         setGirviForm({
           ...setupRes.data,
@@ -98,12 +98,12 @@ const GirviSetup = () => {
           openingBalance: setupRes.data.openingBalance || 641860.00
         });
         if (setupRes.data.logoFileUrl) {
-          setLogoPreview(`http://localhost:5000${setupRes.data.logoFileUrl}`);
+          setLogoPreview(`${setupRes.data.logoFileUrl}`);
         }
       }
 
       // Fetch SMS setup
-      const smsRes = await axios.get('http://localhost:5000/api/settings/sms');
+      const smsRes = await axios.get('/api/settings/sms');
       if (smsRes.data) {
         setSmsForm(smsRes.data);
       }
@@ -114,10 +114,10 @@ const GirviSetup = () => {
 
   const loadUserAndCompanies = async () => {
     try {
-      const meRes = await axios.get('http://localhost:5000/api/auth/me');
+      const meRes = await axios.get('/api/auth/me');
       setCurrentUser(meRes.data);
       
-      const compRes = await axios.get('http://localhost:5000/api/companies?all=true');
+      const compRes = await axios.get('/api/companies?all=true');
       setCompanies(compRes.data);
     } catch (err) {
       console.error(err);
@@ -149,7 +149,7 @@ const GirviSetup = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/users');
+      const res = await axios.get('/api/auth/users');
       setUsersList(res.data);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -165,7 +165,7 @@ const GirviSetup = () => {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/auth/register', {
+      await axios.post('/api/auth/register', {
         name: userForm.name,
         username: userForm.username,
         password: userForm.password,
@@ -184,7 +184,7 @@ const GirviSetup = () => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/auth/users/${editingUserId}`, {
+      await axios.put(`/api/auth/users/${editingUserId}`, {
         name: userForm.name,
         role: userForm.role,
         companyId: userForm.role === 'admin' ? undefined : userForm.companyId,
@@ -204,7 +204,7 @@ const GirviSetup = () => {
   const handleDeleteUser = async (id) => {
     if (!window.confirm('Are you sure you want to delete this user account?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/auth/users/${id}`);
+      await axios.delete(`/api/auth/users/${id}`);
       triggerToast('User deleted successfully');
       fetchUsers();
     } catch (err) {
@@ -231,7 +231,7 @@ const GirviSetup = () => {
     }
 
     try {
-      await axios.put('http://localhost:5000/api/settings/girvi', data, {
+      await axios.put('/api/settings/girvi', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       triggerToast('General setup entries updated successfully');
@@ -244,7 +244,7 @@ const GirviSetup = () => {
   const handleSaveSms = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('http://localhost:5000/api/settings/sms', smsForm);
+      await axios.put('/api/settings/sms', smsForm);
       triggerToast('SMS dispatch entries updated successfully');
       loadSettingsData();
     } catch (err) {

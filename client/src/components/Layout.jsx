@@ -51,7 +51,7 @@ const Layout = ({ children }) => {
 
   const fetchLedgers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/ledgers');
+      const res = await axios.get('/api/ledgers');
       setLedgers(res.data);
       if (res.data.length > 0 && !selectedLedgerId) {
         setSelectedLedgerId(res.data[0]._id);
@@ -64,7 +64,7 @@ const Layout = ({ children }) => {
   const fetchLedgerTx = async (id) => {
     if (!id) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/ledgers/${id}/transactions`);
+      const res = await axios.get(`/api/ledgers/${id}/transactions`);
       setLedgerTransactions(res.data);
     } catch (err) {
       console.error('Error fetching ledger transactions:', err);
@@ -99,7 +99,7 @@ const Layout = ({ children }) => {
     e.preventDefault();
     try {
       const groupValue = newAccForm.group === 'custom' ? newAccForm.customGroup : newAccForm.group;
-      await axios.post('http://localhost:5000/api/ledgers', {
+      await axios.post('/api/ledgers', {
         name: newAccForm.name,
         group: groupValue,
         openingBalance: newAccForm.openingBalance
@@ -115,7 +115,7 @@ const Layout = ({ children }) => {
     e.preventDefault();
     try {
       const groupValue = editAccForm.group === 'custom' ? editAccForm.customGroup : editAccForm.group;
-      await axios.put(`http://localhost:5000/api/ledgers/${editingAccId}`, {
+      await axios.put(`/api/ledgers/${editingAccId}`, {
         name: editAccForm.name,
         group: groupValue,
         openingBalance: editAccForm.openingBalance
@@ -130,7 +130,7 @@ const Layout = ({ children }) => {
   const handleDeleteAccount = async (id) => {
     if (!window.confirm('Are you sure you want to delete this ledger account? All its transactions will be deleted.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/ledgers/${id}`);
+      await axios.delete(`/api/ledgers/${id}`);
       if (selectedLedgerId === id) setSelectedLedgerId('');
       fetchLedgers();
     } catch (err) {
@@ -142,7 +142,7 @@ const Layout = ({ children }) => {
     e.preventDefault();
     if (!newTxForm.amount) return;
     try {
-      await axios.post(`http://localhost:5000/api/ledgers/${selectedLedgerId}/transactions`, newTxForm);
+      await axios.post(`/api/ledgers/${selectedLedgerId}/transactions`, newTxForm);
       setNewTxForm({ date: new Date().toISOString().split('T')[0], type: 'add', amount: '', remarks: '' });
       fetchLedgerTx(selectedLedgerId);
       fetchLedgers();
@@ -154,7 +154,7 @@ const Layout = ({ children }) => {
   const handleDeleteTx = async (txId) => {
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/ledgers/transactions/${txId}`);
+      await axios.delete(`/api/ledgers/transactions/${txId}`);
       fetchLedgerTx(selectedLedgerId);
       fetchLedgers();
     } catch (err) {
@@ -265,15 +265,16 @@ const Layout = ({ children }) => {
       }
       
       // Get current user
-      const userRes = await axios.get('http://localhost:5000/api/auth/me');
+      const userRes = await axios.get('/api/auth/me');
       setCurrentUser(userRes.data);
 
       // Get all companies
-      const compListRes = await axios.get('http://localhost:5000/api/companies');
+      const compListRes = await axios.get('/api/companies');
       setCompanies(compListRes.data);
 
       // Get current active company
       if (userRes.data.companyId) {
+
         const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
         setCompanyDetails(activeComp);
       }
@@ -303,7 +304,7 @@ const Layout = ({ children }) => {
 
   const handleCompanySwitch = async (companyId) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/companies/switch', { companyId });
+      const res = await axios.post('/api/companies/switch', { companyId });
       // Reload page to refresh all scoped database calls
       window.location.reload();
     } catch (err) {

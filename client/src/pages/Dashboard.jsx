@@ -34,8 +34,8 @@ const Dashboard = () => {
 
   const fetchCompanyDetails = async () => {
     try {
-      const userRes = await axios.get('http://localhost:5000/api/auth/me');
-      const compListRes = await axios.get('http://localhost:5000/api/companies');
+      const userRes = await axios.get('/api/auth/me');
+      const compListRes = await axios.get('/api/companies');
       const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
       setCompanyDetails(activeComp);
     } catch (err) {
@@ -55,10 +55,10 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const metricsRes = await axios.get(`http://localhost:5000/api/dashboard?date=${selectedDate}`);
+      const metricsRes = await axios.get(`/api/dashboard?date=${selectedDate}`);
       setMetrics(metricsRes.data);
 
-      const custRes = await axios.get(`http://localhost:5000/api/customers?search=${search}&page=${page}&limit=5`);
+      const custRes = await axios.get(`/api/customers?search=${search}&page=${page}&limit=5`);
       setCustomers(custRes.data.customers);
       setTotalPages(custRes.data.totalPages);
     } catch (err) {
