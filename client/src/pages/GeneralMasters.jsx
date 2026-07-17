@@ -20,6 +20,16 @@ const GeneralMasters = () => {
   const [items, setItems] = useState([]);
   const [termsText, setTermsText] = useState('');
 
+  // Settings state
+  const [settingsForm, setSettingsForm] = useState({
+    defaultInterestRate: 2.0,
+    defaultInterestFrequency: 'monthly',
+    defaultReturnPeriod: 12,
+    compoundAfterMonths: 12,
+    defaultPayMode: 'cash',
+    dealPrintHeading: 'Girvi Mortgage Loan Receipt'
+  });
+
   // Active indices for navigation
   const [customerIndex, setCustomerIndex] = useState(-1);
   const [groupIndex, setGroupIndex] = useState(-1);
@@ -51,11 +61,11 @@ const GeneralMasters = () => {
   // --- FORM DATA FIELDS STRUCTURES ---
 
   const [customerForm, setCustomerForm] = useState({
-    _id: '', customerCode: 'Auto', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
-    state: 'Maharashtra', country: 'India', pin: '', email: '', phone1: '', phone2: '', phone3: '', mobile: '',
+    _id: '', customerCode: '', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
+    state: 'Maharashtra', country: 'India', pin: '', email: '', mobile: '',
     idProofName: 'Aadhaar Card', idProofNumber: '', idProofImageUrl: '', interestType: 'simple',
-    interestRate: 2.0, interestFrequency: 'monthly', compoundMonthDefault: true, compoundMonth: 1,
-    compoundDate: '', minimumInterestPeriod: 'NA'
+    interestRate: 2.0, interestFrequency: 'monthly',
+    minimumInterestPeriod: 'NA'
   });
   const [idFile, setIdFile] = useState(null);
   const [idFilePreview, setIdFilePreview] = useState(null);
@@ -203,6 +213,36 @@ const GeneralMasters = () => {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get('/api/settings/girvi');
+      if (res.data) {
+        setSettingsForm({
+          defaultInterestRate: res.data.defaultRateOfInterest || 2.0,
+          defaultInterestFrequency: 'monthly',
+          defaultReturnPeriod: 12,
+          compoundAfterMonths: 12,
+          defaultPayMode: 'cash',
+          dealPrintHeading: res.data.dealPrintHeading || 'Girvi Mortgage Loan Receipt'
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      await axios.put('/api/settings/girvi', {
+        defaultRateOfInterest: settingsForm.defaultInterestRate,
+        dealPrintHeading: settingsForm.dealPrintHeading
+      });
+      triggerToast('Settings updated successfully');
+    } catch (err) {
+      triggerToast('Error saving settings', 'error');
+    }
+  };
+
   // Switch Sub-Tabs
   useEffect(() => {
     setIsEditMode(false);
@@ -219,6 +259,8 @@ const GeneralMasters = () => {
       fetchItemsList();
     } else if (activeSubTab === 'terms') {
       fetchTermsConfig();
+    } else if (activeSubTab === 'settings') {
+      fetchSettings();
     }
   }, [activeSubTab]);
 
@@ -260,11 +302,11 @@ const GeneralMasters = () => {
 
   const handleAddNewCustomer = () => {
     setCustomerForm({
-      _id: '', customerCode: 'Auto', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
-      state: 'Maharashtra', country: 'India', pin: '', email: '', phone1: '', phone2: '', phone3: '', mobile: '',
+      _id: '', customerCode: '', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
+      state: 'Maharashtra', country: 'India', pin: '', email: '', mobile: '',
       idProofName: 'Aadhaar Card', idProofNumber: '', idProofImageUrl: '', interestType: 'simple',
-      interestRate: 2.0, interestFrequency: 'monthly', compoundMonthDefault: true, compoundMonth: 1,
-      compoundDate: '', minimumInterestPeriod: 'NA'
+      interestRate: 2.0, interestFrequency: 'monthly',
+      minimumInterestPeriod: 'NA'
     });
     setIdFile(null);
     setIdFilePreview(null);
@@ -469,10 +511,18 @@ const GeneralMasters = () => {
         >
           Terms & Conditions
         </button>
+        <button
+          onClick={() => setActiveSubTab('settings')}
+          className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+            activeSubTab === 'settings' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Settings
+        </button>
       </div>
 
       {/* Consistent Navigation Toolbar */}
-      {activeSubTab !== 'terms' && (
+      {activeSubTab !== 'terms' && activeSubTab !== 'settings' && (
         <Toolbar
           onPrev={handlePrev}
           onNext={handleNext}
@@ -501,7 +551,7 @@ const GeneralMasters = () => {
 
       {/* Dynamic Master Card forms */}
       <div className={`glass-panel p-8 rounded-2xl border border-slate-800 shadow-xl ${
-        activeSubTab === 'customers' ? 'max-w-5xl' : 'max-w-2xl'
+        activeSubTab === 'customers' ? 'max-w-5xl' : activeSubTab === 'settings' ? 'max-w-3xl' : 'max-w-2xl'
       }`}>
         
         {/* VIEW 1: CUSTOMER MASTER FORM */}
@@ -600,39 +650,6 @@ const GeneralMasters = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-slate-455 font-semibold mb-1">Phone 1</label>
-                    <input
-                      type="text"
-                      disabled={!isEditMode}
-                      value={customerForm.phone1}
-                      onChange={(e) => setCustomerForm({ ...customerForm, phone1: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm focus:outline-none disabled:opacity-60 text-slate-100 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-455 font-semibold mb-1">Phone 2</label>
-                    <input
-                      type="text"
-                      disabled={!isEditMode}
-                      value={customerForm.phone2}
-                      onChange={(e) => setCustomerForm({ ...customerForm, phone2: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm focus:outline-none disabled:opacity-60 text-slate-100 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-455 font-semibold mb-1">Phone 3</label>
-                    <input
-                      type="text"
-                      disabled={!isEditMode}
-                      value={customerForm.phone3}
-                      onChange={(e) => setCustomerForm({ ...customerForm, phone3: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm focus:outline-none disabled:opacity-60 text-slate-100 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
                     <label className="block text-slate-455 font-semibold mb-1">
                       Mobile <span className="text-red-500 font-bold">*</span>
                     </label>
@@ -674,13 +691,15 @@ const GeneralMasters = () => {
               {/* Right column inputs */}
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-slate-450 font-semibold mb-1">Client Code</label>
+                  <label className="block text-slate-450 font-semibold mb-1">Client Code <span className="text-red-500 font-bold">*</span></label>
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      disabled
+                      disabled={!isEditMode || !isNewRecord}
                       value={customerForm.customerCode}
-                      className="flex-1 px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-xs font-mono font-bold text-amber-500"
+                      onChange={(e) => setCustomerForm({ ...customerForm, customerCode: e.target.value })}
+                      placeholder="Enter client code"
+                      className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono font-bold text-amber-500 focus:outline-none focus:border-primary-500 disabled:bg-slate-950 disabled:opacity-80"
                     />
                     <button
                       type="button"
@@ -694,14 +713,23 @@ const GeneralMasters = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-455 font-semibold mb-1">City</label>
+                  <label className="block text-slate-455 font-semibold mb-1">City <span className="text-[10px] text-primary-400 ml-1">(F2 to add new)</span></label>
                   <input
                     type="text"
                     list="cities-list"
                     disabled={!isEditMode}
                     value={customerForm.city}
                     onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })}
-                    placeholder="Select or type City"
+                    onKeyDown={(e) => {
+                      if (e.key === 'F2' && isEditMode) {
+                        e.preventDefault();
+                        const newCity = prompt('Enter new city name:');
+                        if (newCity && newCity.trim()) {
+                          setCustomerForm({ ...customerForm, city: newCity.trim() });
+                        }
+                      }
+                    }}
+                    placeholder="Select or type City (F2 for new)"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm focus:outline-none disabled:opacity-60 text-slate-100"
                   />
                   <datalist id="cities-list">
@@ -771,7 +799,7 @@ const GeneralMasters = () => {
             </div>
 
             {/* Calculations Rules */}
-            <div className="border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-4 gap-6 text-xs text-slate-300">
+            <div className="border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
               {/* Radios for Calculation type */}
               <div>
                 <span className="block text-[11px] text-slate-400 font-semibold mb-2">Interest Type</span>
@@ -803,19 +831,18 @@ const GeneralMasters = () => {
                 </div>
               </div>
 
-              {/* Interest Rate & Frequency Radios */}
+              {/* Interest Rate (predefined from settings) */}
               <div className="space-y-3">
                 <div>
                   <label className="block text-[11px] text-slate-400 font-semibold mb-1">
-                    Interest Rate <span className="text-red-500 font-bold">*</span>
+                    Interest Rate <span className="text-[10px] text-primary-400">(predefined)</span>
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    disabled={!isEditMode}
+                    disabled
                     value={customerForm.interestRate}
-                    onChange={(e) => setCustomerForm({ ...customerForm, interestRate: e.target.value })}
-                    className="w-24 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-slate-100 font-mono focus:outline-none"
+                    className="w-24 px-2 py-1 bg-slate-950 border border-slate-850 rounded text-slate-400 font-mono"
                   />
                 </div>
 
@@ -837,39 +864,13 @@ const GeneralMasters = () => {
                 </div>
               </div>
 
-              {/* Compounding Month Default & Date */}
+              {/* Info: Auto compound after 12 months */}
               <div>
-                <span className="block text-[11px] text-slate-400 font-semibold mb-2">
-                  Compd. Month <span className="text-red-500 font-bold">*</span>
-                </span>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      disabled={!isEditMode}
-                      checked={customerForm.compoundMonthDefault}
-                      onChange={(e) => setCustomerForm({ ...customerForm, compoundMonthDefault: e.target.checked })}
-                      className="rounded accent-primary-500"
-                    />
-                    <span>Default</span>
-                  </label>
-                  
-                  {customerForm.interestType === 'compound' && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-[10px] text-slate-500">Cmp Dt:</span>
-                      <input
-                        type="date"
-                        disabled={!isEditMode || customerForm.compoundMonthDefault}
-                        value={customerForm.compoundDate}
-                        onChange={(e) => setCustomerForm({ ...customerForm, compoundDate: e.target.value })}
-                        className="px-2 py-1 bg-slate-900 border border-slate-800 rounded font-mono text-slate-100 focus:outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
+                <span className="block text-[11px] text-slate-400 font-semibold mb-2">Compound Rule</span>
+                <p className="text-[10px] text-slate-500 bg-slate-950/40 border border-slate-850 rounded-lg p-2">
+                  Interest automatically compounds after 12 months if unpaid.
+                </p>
               </div>
-
-              {/* Hidden Minimum Interest Section */}
             </div>
           </div>
         )}
@@ -1020,8 +1021,88 @@ const GeneralMasters = () => {
           </div>
         )}
 
-        {/* FOOTER CLOCK CARD CARD (EXCEPT ON TERMS & CONDITIONS) */}
-        {activeSubTab !== 'terms' && (
+        {/* VIEW 6: SETTINGS MASTER */}
+        {activeSubTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+              <h3 className="text-lg font-bold text-slate-200">Settings</h3>
+              <button
+                onClick={handleSaveSettings}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold shadow-lg flex items-center space-x-1.5"
+              >
+                <Save className="h-4 w-4" />
+                <span>Save Settings</span>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Default Interest Rate (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={settingsForm.defaultInterestRate}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultInterestRate: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Interest Frequency</label>
+                <select
+                  value={settingsForm.defaultInterestFrequency}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultInterestFrequency: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                  <option value="daily">Daily</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Default Return Period (Months)</label>
+                <input
+                  type="number"
+                  value={settingsForm.defaultReturnPeriod}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultReturnPeriod: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Compound After (Months)</label>
+                <input
+                  type="number"
+                  value={settingsForm.compoundAfterMonths}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, compoundAfterMonths: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Interest automatically compounds after this many months if unpaid.</p>
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Default Pay Mode</label>
+                <select
+                  value={settingsForm.defaultPayMode}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultPayMode: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Deal Print Heading</label>
+                <input
+                  type="text"
+                  value={settingsForm.dealPrintHeading}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, dealPrintHeading: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FOOTER CLOCK CARD CARD (EXCEPT ON TERMS & CONDITIONS & SETTINGS) */}
+        {activeSubTab !== 'terms' && activeSubTab !== 'settings' && (
           <div className="mt-8 border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 font-sans">
             <div>
               <p className="font-bold text-slate-350 uppercase tracking-wider">{companyDetails?.name || 'INDRAVIAJY ENT & JWELLERY-JIJI'}</p>

@@ -32,7 +32,11 @@ const Login = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       
       // Redirect to correct panel
-      if (res.data.user && res.data.user.role === 'admin') {
+      if (res.data.user && res.data.user.role === 'super admin') {
+        // Also save sa_token for SuperAdmin panel compatibility
+        localStorage.setItem('sa_token', res.data.token);
+        navigate('/superadmin');
+      } else if (res.data.user && res.data.user.role === 'admin') {
         navigate('/');
       } else {
         navigate('/deal-master');
@@ -125,6 +129,7 @@ const Login = () => {
         <div className="mt-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-6">
           <p>Multi-company scoped system logins.</p>
           <p className="mt-1">Default credentials: <span className="font-mono text-slate-400 font-semibold">admin / admin</span> or <span className="font-mono text-slate-400 font-semibold">operator / operator</span></p>
+          <p className="mt-1">Super Admin: <span className="font-mono text-slate-400 font-semibold">superadmin / superadmin123</span></p>
         </div>
       </div>
     </div>

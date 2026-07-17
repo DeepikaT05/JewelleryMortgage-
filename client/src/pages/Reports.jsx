@@ -253,14 +253,6 @@ const Reports = () => {
           Overdue Reminders
         </button>
         <button
-          onClick={() => setActiveTab('ledger')}
-          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-            activeTab === 'ledger' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Customer Ledger
-        </button>
-        <button
           onClick={() => setActiveTab('stock')}
           className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
             activeTab === 'stock' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
@@ -412,110 +404,7 @@ const Reports = () => {
           </div>
         )}
 
-        {/* REPORT 2: CUSTOMER LEDGER STATEMENT */}
-        {activeTab === 'ledger' && (
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-850 pb-4 no-print">
-              <div>
-                <h3 className="text-lg font-bold text-slate-200">Customer Ledger / Account Statement</h3>
-                <p className="text-xs text-slate-400">Pledges chronologically merged with payment receipts.</p>
-              </div>
-
-              <div className="flex items-center space-x-2 w-full md:w-auto">
-                <select
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-850 rounded-xl text-xs text-slate-350 focus:outline-none"
-                >
-                  <option value="">Select customer ledger...</option>
-                  {customers.map(c => (
-                    <option key={c._id} value={c._id}>{c.name} (Code: {c.customerCode})</option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={fetchLedgerReport}
-                  disabled={!selectedCustomerId}
-                  className="px-4 py-1.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold rounded-xl disabled:opacity-40"
-                >
-                  Generate Statement
-                </button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="py-12 text-center text-slate-500">Compiling customer statements...</div>
-            ) : ledgerData ? (
-              <div className="space-y-6">
-                {/* Ledger Profile details */}
-                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Customer profile</span>
-                    <p className="text-sm font-bold text-slate-100">{ledgerData.customer.name}</p>
-                    <p className="text-slate-400">{ledgerData.customer.address}, {ledgerData.customer.area}</p>
-                    <p className="text-slate-400">{ledgerData.customer.city}, {ledgerData.customer.state}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Account metadata</span>
-                    <p>Customer Code: <span className="font-mono text-amber-500 font-semibold">#{ledgerData.customer.customerCode}</span></p>
-                    <p>Phone Contact: <span className="font-mono text-slate-300">{ledgerData.customer.mobile}</span></p>
-                    <p>Calculation Basis: <span className="font-semibold text-slate-200 capitalize">
-                      {ledgerData.customer.interestType} ({ledgerData.customer.interestRate}%/{ledgerData.customer.interestFrequency})
-                    </span></p>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-950/40 border-b border-slate-850 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Voucher Type</th>
-                        <th className="py-2.5 px-3">Doc No</th>
-                        <th className="py-2.5 px-3">Particulars Details</th>
-                        <th className="py-2.5 px-3 text-right">Debit Owed (+)</th>
-                        <th className="py-2.5 px-3 text-right">Credit Recv (-)</th>
-                        <th className="py-2.5 px-3 text-right">Principal Running Bal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-850 text-xs font-mono">
-                      {ledgerData.ledger.map((item, i) => (
-                        <tr key={i} className="hover:bg-slate-900/10 text-slate-200">
-                          <td className="py-3 px-3 text-slate-400">{new Date(item.date).toLocaleDateString()}</td>
-                          <td className="py-3 px-3 font-sans">
-                            <span className={`px-2 py-0.5 rounded text-[10px] ${
-                              item.type === 'Deal' ? 'bg-amber-950 text-amber-400 border border-amber-500/10' : 'bg-emerald-950 text-emerald-400 border border-emerald-500/10'
-                            }`}>
-                              {item.type}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 font-mono font-semibold text-slate-300">#{item.no}</td>
-                          <td className="py-3 px-3 font-sans text-slate-400">{item.particulars}</td>
-                          <td className="py-3 px-3 text-right text-rose-400 font-bold">
-                            {item.principalImpact > 0 ? `₹${formatIndianCurrency(item.principalImpact)}` : '—'}
-                          </td>
-                          <td className="py-3 px-3 text-right text-emerald-400 font-bold">
-                            {item.principalImpact < 0 ? `₹${formatIndianCurrency(Math.abs(item.principalImpact))}` : '—'}
-                          </td>
-                          <td className="py-3 px-3 text-right text-slate-100 font-bold bg-slate-900/30">
-                            ₹{formatIndianCurrency(item.runningPrincipalOwed)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-slate-500 border border-slate-900 rounded-xl bg-slate-950/20">
-                <Users className="h-8 w-8 mx-auto opacity-35 mb-2" />
-                <p className="text-xs">Please select a customer profile to compile ledger.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* REPORT 3: STOCK SUMMARY */}
+        {/* REPORT 2: STOCK SUMMARY */}
         {activeTab === 'stock' && (
           <div className="space-y-4">
             <div>
@@ -684,18 +573,22 @@ const Reports = () => {
 
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-slate-400 font-semibold">Select Accounting Group:</span>
-                <select
+                <input
+                  type="text"
                   value={selectedGroup}
                   onChange={(e) => setSelectedGroup(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none capitalize"
-                >
+                  placeholder="Type any group name..."
+                  list="accounting-groups-list"
+                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary-500"
+                />
+                <datalist id="accounting-groups-list">
                   {Array.from(new Set([
                     'cash', 'bank', 'crediter', 'debiter',
                     ...ledgers.map(l => l.group).filter(Boolean)
                   ])).map(g => (
                     <option key={g} value={g}>{g.toUpperCase()}</option>
                   ))}
-                </select>
+                </datalist>
               </div>
             </div>
 

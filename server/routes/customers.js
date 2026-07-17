@@ -134,6 +134,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // @desc    Create a customer (includes single image upload)
 router.post('/', authMiddleware, upload.single('idProofImage'), async (req, res) => {
   const {
+    customerCode: clientCustomerCode,
     name, fatherHusbandName, address, state, country, city, area, pin,
     email, phone1, phone2, phone3, mobile,
     idProofName, idProofNumber,
@@ -147,17 +148,23 @@ router.post('/', authMiddleware, upload.single('idProofImage'), async (req, res)
   }
 
   try {
-    // Increment customer code
-    const counter = await Counter.findOneAndUpdate(
-      { id: 'customerCode' },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
-    );
+    // Use client-provided code or auto-increment
+    let customerCode;
+    if (clientCustomerCode && clientCustomerCode !== 'Auto' && clientCustomerCode !== '') {
+      customerCode = clientCustomerCode;
+    } else {
+      const counter = await Counter.findOneAndUpdate(
+        { id: 'customerCode' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      customerCode = counter.seq;
+    }
 
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     const newCustomer = new Customer({
-      customerCode: counter.seq,
+      customerCode,
       name,
       fatherHusbandName,
       address,

@@ -25,7 +25,8 @@ const Toolbar = ({
   hasPrev = true,
   hasNext = true,
   showPrint = true,
-  showFind = true
+  showFind = true,
+  showDelete = true
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-900 border border-slate-800 rounded-xl mb-6 shadow-lg no-print">
@@ -106,15 +107,17 @@ const Toolbar = ({
       </div>
 
       {/* Secondary Actions */}
-      <button
-        onClick={onDelete}
-        disabled={isEditMode}
-        type="button"
-        className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-lg disabled:opacity-40 transition-colors ml-auto"
-      >
-        <Trash2 className="h-4 w-4" />
-        <span>Delete</span>
-      </button>
+      {showDelete && (
+        <button
+          onClick={onDelete}
+          disabled={isEditMode}
+          type="button"
+          className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-lg disabled:opacity-40 transition-colors ml-auto"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span>Delete</span>
+        </button>
+      )}
 
       {showPrint && (
         <button

@@ -477,7 +477,12 @@ export default function SuperAdmin() {
   const showToast = (msg, type = 'success') => setToast({ msg, type });
 
   useEffect(() => {
-    const token = getToken();
+    // Check sa_token first, then fallback to regular token for super admin users
+    let token = getToken();
+    if (!token) {
+      token = localStorage.getItem('token');
+      if (token) localStorage.setItem('sa_token', token);
+    }
     if (token) { setPage('dashboard'); loadStats(); }
   }, []);
 
@@ -500,7 +505,7 @@ export default function SuperAdmin() {
     } finally { setLoading(false); }
   };
 
-  const logout = () => { localStorage.removeItem('sa_token'); setPage('login'); setStats(null); };
+  const logout = () => { localStorage.removeItem('sa_token'); localStorage.removeItem('token'); setPage('login'); setStats(null); window.location.href = '/login'; };
 
   const TABS = [
     { key: 'companies', label: 'Companies', Icon: Building2 },

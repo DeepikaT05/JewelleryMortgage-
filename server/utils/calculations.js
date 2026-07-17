@@ -75,19 +75,15 @@ function calculateInterest({
   let interestAmount = 0;
   let newCompoundBalance = lastCompoundBalance;
 
-  if (interestType === 'simple') {
+  if (interestType === 'simple' && finalMonths < 12) {
+    // Simple interest for periods under 12 months
     const fraction = finalMonths + (finalDays / 30);
     interestAmount = parseFloat((principalAmount * (ratePerMonth / 100) * fraction).toFixed(2));
   } else {
     // Compound Interest Calculation
-    // Compound interval is `compoundMonth` (default monthly = 1)
-    // For compounding:
-    // complete_compound_periods = Math.floor(finalMonths / compoundMonth)
-    // compound_rate = ratePerMonth * compoundMonth
-    // Principal compounded = Principal * (1 + compound_rate/100)^periods
-    // Remaining months and days are calculated as simple interest on the new principal.
-    
-    const compoundingInterval = 12; // Compounding year-wise (every 12 months)
+    // Auto-compound after 12 months regardless of interest type
+    // Compound interval is 12 months (every 12 months unpaid interest compounds)
+    const compoundingInterval = 12;
     const periods = Math.floor(finalMonths / compoundingInterval);
     const remainingMonths = finalMonths % compoundingInterval;
     

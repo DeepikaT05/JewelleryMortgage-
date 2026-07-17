@@ -8,10 +8,8 @@ import {
   Plus, 
   Trash2, 
   Upload, 
-  UserPlus, 
   Search, 
-  X, 
-  PlusSquare
+  X
 } from 'lucide-react';
 
 const DealMaster = () => {
@@ -246,7 +244,7 @@ const DealMaster = () => {
         items: updatedItems,
         groupTotals,
         totalValue: parseFloat(sumValue.toFixed(2)),
-        dealAmount: prev.dealAmount || parseFloat(sumValue.toFixed(2))
+        dealAmount: parseFloat(sumValue.toFixed(2))
       };
       const pct = Number(prev.paidPercent || 100);
       next.paidAmount = parseFloat((next.dealAmount * (pct / 100)).toFixed(2));
@@ -526,12 +524,12 @@ const DealMaster = () => {
         onAdd={handleAddNewDeal}
         onEdit={() => setIsEditMode(true)}
         onSave={handleSaveDeal}
-        onDelete={handleDeleteDeal}
         onPrint={handleDealPrint}
         onCancel={handleCancel}
         isEditMode={isEditMode}
         hasPrev={dealIndex > 0}
         hasNext={dealIndex < deals.length - 1}
+        showDelete={false}
       />
 
       <div className="space-y-6 no-print">
@@ -544,15 +542,6 @@ const DealMaster = () => {
               <span className="bg-slate-950 px-3 py-1 rounded-md text-amber-500 font-bold border border-slate-855 font-mono">
                 Deal No: {form.dealNo}
               </span>
-              {isEditMode && (
-                <button
-                  type="button"
-                  onClick={() => setShowCopyModal(true)}
-                  className="px-3 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-amber-400 rounded-md font-semibold transition-all"
-                >
-                  Copy from deal
-                </button>
-              )}
             </div>
           </div>
 
@@ -628,16 +617,7 @@ const DealMaster = () => {
                   )}
                 </div>
 
-                {isEditMode && (
-                  <button
-                    type="button"
-                    onClick={() => setShowCustModal(true)}
-                    className="p-2 bg-slate-900 border border-slate-800 text-primary-400 hover:text-primary-350 rounded-lg"
-                    title="Quick add customer"
-                  >
-                    <UserPlus className="h-4.5 w-4.5" />
-                  </button>
-                )}
+
               </div>
             </div>
 
@@ -730,33 +710,19 @@ const DealMaster = () => {
                       </td>
 
                       <td className="py-1 px-1">
-                        <div className="flex space-x-1">
-                          <select
-                            disabled={!isEditMode}
-                            value={item.itemName}
-                            onChange={(e) => handleRowChange(idx, 'itemName', e.target.value)}
-                            className="flex-1 p-1 bg-slate-900 border border-slate-800 rounded focus:outline-none text-[11px]"
-                          >
-                            <option value="">Select item...</option>
-                            {getFilteredItems(item.groupId).map(catalogItem => (
-                              <option key={catalogItem._id} value={catalogItem.itemName}>
-                                {catalogItem.itemName}
-                              </option>
-                            ))}
-                          </select>
-                          {isEditMode && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewItemForm({ itemName: '', groupId: item.groupId });
-                                setShowItemModal(true);
-                              }}
-                              className="p-1 bg-slate-800 hover:bg-slate-700 text-primary-400 rounded"
-                            >
-                              <PlusSquare className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
+                        <select
+                          disabled={!isEditMode}
+                          value={item.itemName}
+                          onChange={(e) => handleRowChange(idx, 'itemName', e.target.value)}
+                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded focus:outline-none text-[11px]"
+                        >
+                          <option value="">Select item...</option>
+                          {getFilteredItems(item.groupId).map(catalogItem => (
+                            <option key={catalogItem._id} value={catalogItem.itemName}>
+                              {catalogItem.itemName}
+                            </option>
+                          ))}
+                        </select>
                       </td>
 
                       <td className="py-1 px-1">
@@ -992,32 +958,7 @@ const DealMaster = () => {
               </div>
             </div>
           </div>
-
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3 h-full flex flex-col justify-center">
-            {isEditMode ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowCustModal(true)}
-                  className="w-full py-2.5 bg-slate-905 hover:bg-slate-850 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center space-x-1.5 transition-all"
-                >
-                  <UserPlus className="h-4.5 w-4.5 text-primary-400" />
-                  <span>Add Customer</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowItemModal(true)}
-                  className="w-full py-2.5 bg-slate-905 hover:bg-slate-850 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center space-x-1.5 transition-all"
-                >
-                  <Plus className="h-4.5 w-4.5 text-primary-400" />
-                  <span>Add Item</span>
-                </button>
-              </>
-            ) : (
-              <p className="text-center text-slate-500 italic text-[11px] py-4">Unlock forms to invoke fast Master setups.</p>
-            )}
-          </div>
-        </div>
+      </div>
 
         {/* Company clock footer panel */}
         <div className="mt-8 border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 font-sans">
