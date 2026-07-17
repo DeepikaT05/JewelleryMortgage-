@@ -85,7 +85,7 @@ const Login = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username (e.g. admin)"
+                placeholder="Enter username"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
               />
             </div>
@@ -103,7 +103,7 @@ const Login = () => {
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (e.g. admin)"
+                placeholder="Enter password"
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
               />
               <button
@@ -127,9 +127,7 @@ const Login = () => {
         </form>
 
         <div className="mt-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-6">
-          <p>Multi-company scoped system logins.</p>
-          <p className="mt-1">Default credentials: <span className="font-mono text-slate-400 font-semibold">admin / admin</span> or <span className="font-mono text-slate-400 font-semibold">operator / operator</span></p>
-          <p className="mt-1">Super Admin: <span className="font-mono text-slate-400 font-semibold">superadmin / superadmin123</span></p>
+          <p>Girvi Management System — Secure Login</p>
         </div>
       </div>
     </div>

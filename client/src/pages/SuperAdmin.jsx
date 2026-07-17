@@ -548,7 +548,7 @@ export default function SuperAdmin() {
                   type="text"
                   value={creds.username}
                   onChange={e => setCreds(c => ({ ...c, username: e.target.value }))}
-                  placeholder="superadmin"
+                  placeholder="Enter username"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
                 />
               </div>
@@ -583,7 +583,7 @@ export default function SuperAdmin() {
           </form>
 
           <div className="mt-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-6">
-            <p>Default credentials: <span className="font-mono text-slate-400 font-semibold">superadmin / superadmin123</span></p>
+            <p>Super Admin Control Center — Secure Access</p>
           </div>
         </div>
       </div>
