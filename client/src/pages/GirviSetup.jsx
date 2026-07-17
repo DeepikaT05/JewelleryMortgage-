@@ -25,11 +25,11 @@ const GirviSetup = () => {
   const handleCreateCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/companies', companyForm);
+      const res = await axios.post('/api/companies', companyForm);
       
       // Auto-create manager user for this store if credentials are provided
       if (companyForm.loginId && companyForm.password) {
-        await axios.post('http://localhost:5000/api/auth/register', {
+        await axios.post('/api/auth/register', {
           name: `${companyForm.name} Manager`,
           username: companyForm.loginId,
           password: companyForm.password,
@@ -50,7 +50,7 @@ const GirviSetup = () => {
   const handleUpdateCompany = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/companies/${editingCompanyId}`, companyForm);
+      await axios.put(`/api/companies/${editingCompanyId}`, companyForm);
       triggerToast('Store updated successfully');
       setShowCompanyModal(false);
       setEditingCompanyId(null);
@@ -64,7 +64,7 @@ const GirviSetup = () => {
   const handleDeleteCompany = async (id) => {
     if (!window.confirm('Are you sure you want to delete this store? All associated records will be affected.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/companies/${id}`);
+      await axios.delete(`/api/companies/${id}`);
       triggerToast('Store deleted successfully');
       loadUserAndCompanies();
     } catch (err) {
@@ -75,7 +75,7 @@ const GirviSetup = () => {
   const handleToggleCompanyActive = async (company) => {
     try {
       const updatedStatus = company.isActive === undefined ? false : !company.isActive;
-      await axios.put(`http://localhost:5000/api/companies/${company._id}`, { isActive: updatedStatus });
+      await axios.put(`/api/companies/${company._id}`, { isActive: updatedStatus });
       triggerToast(`Store ${updatedStatus ? 'activated' : 'deactivated'} successfully`);
       loadUserAndCompanies();
     } catch (err) {
