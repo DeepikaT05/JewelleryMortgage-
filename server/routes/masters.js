@@ -63,7 +63,7 @@ groupsRouter.put('/:id', authMiddleware, async (req, res) => {
 });
 
 groupsRouter.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin role required to delete master data' });
   }
   try {
@@ -134,7 +134,7 @@ itemsRouter.put('/:id', authMiddleware, async (req, res) => {
 });
 
 itemsRouter.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin role required to delete master data' });
   }
   try {

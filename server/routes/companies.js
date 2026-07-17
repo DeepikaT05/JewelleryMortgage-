@@ -8,7 +8,8 @@ const authMiddleware = require('../middleware/auth');
 // @desc    Get all companies (for login dropdown or admin management)
 router.get('/', async (req, res) => {
   try {
-    const companies = await Company.find();
+    const filter = req.query.all === 'true' ? {} : { isActive: { $ne: false } };
+    const companies = await Company.find(filter);
     res.json(companies);
   } catch (err) {
     res.status(500).json({ message: 'Server error retrieving companies' });
@@ -51,7 +52,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // @route   DELETE /api/companies/:id
 // @desc    Delete a company
 router.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Permission denied' });
   }
 

@@ -13,7 +13,8 @@ const CompanySchema = new mongoose.Schema({
   financialYearEnd: String,   // e.g. "2027-03-31" or year string
   logoUrl: String,
   printCompanyNameAddress: { type: Boolean, default: true },
-  displayLogoOnReceipt: { type: Boolean, default: true }
+  displayLogoOnReceipt: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Company', CompanySchema);

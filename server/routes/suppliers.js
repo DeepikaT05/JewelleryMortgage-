@@ -62,7 +62,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 router.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Permission denied' });
   }
   try {
@@ -218,7 +218,7 @@ router.put('/deals/:id', authMiddleware, async (req, res) => {
 });
 
 router.delete('/deals/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') return res.status(403).json({ message: 'Admin only' });
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
   try {
     const deleted = await SupplierDeal.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId });
     if (!deleted) return res.status(404).json({ message: 'Supplier deal not found' });

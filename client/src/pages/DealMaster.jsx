@@ -661,7 +661,7 @@ const DealMaster = () => {
               <input
                 type="date"
                 required
-                disabled={!isEditMode || currentUser?.role === 'operator' || currentUser?.role === 'staff'}
+                disabled={!isEditMode || currentUser?.role !== 'admin'}
                 value={form.dealDate}
                 onChange={(e) => handleFinancialChange('dealDate', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-60"

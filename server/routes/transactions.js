@@ -326,7 +326,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // @route   DELETE /api/transactions/:id
 // @desc    Delete a transaction (and rollback deal milestones)
 router.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Permission denied' });
   }
 

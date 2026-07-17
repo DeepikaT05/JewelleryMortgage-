@@ -128,7 +128,7 @@ router.post('/logout', (req, res) => {
 // @route   GET /api/auth/users
 // @desc    List all users (Admin/Super Admin only)
 router.get('/users', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin role required' });
   }
   try {
@@ -142,7 +142,7 @@ router.get('/users', authMiddleware, async (req, res) => {
 // @route   PUT /api/auth/users/:id
 // @desc    Update user details (Admin/Super Admin only)
 router.put('/users/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin role required' });
   }
   const { name, role, companyId, isActive, password } = req.body;
@@ -153,11 +153,10 @@ router.put('/users/:id', authMiddleware, async (req, res) => {
     if (name) user.name = name;
     if (role) user.role = role;
     
-    // For super admin, companyId might be empty or null
-    if (role === 'super admin') {
-      user.companyId = undefined;
-    } else if (companyId) {
+    if (companyId) {
       user.companyId = companyId;
+    } else if (companyId === null || companyId === '') {
+      user.companyId = undefined;
     }
     
     if (isActive !== undefined) user.isActive = isActive;
@@ -177,7 +176,7 @@ router.put('/users/:id', authMiddleware, async (req, res) => {
 // @route   DELETE /api/auth/users/:id
 // @desc    Delete a user (Admin/Super Admin only)
 router.delete('/users/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'super admin') {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin role required' });
   }
   try {

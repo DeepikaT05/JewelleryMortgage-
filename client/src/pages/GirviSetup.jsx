@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Toast from '../components/Toast';
-import { Save, Upload, ShieldCheck, KeyRound, Image, X } from 'lucide-react';
+import { Save, Upload, ShieldCheck, KeyRound, Image, X, Building2, Pencil, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
 
 const GirviSetup = () => {
   const [toast, setToast] = useState(null);
-  const [activeTab, setActiveTab] = useState('general'); // 'general', 'sms', or 'users'
+  const [activeTab, setActiveTab] = useState('general'); // 'general', 'sms', 'users', 'companies'
 
   // User Management State
   const [currentUser, setCurrentUser] = useState(null);
@@ -14,6 +14,74 @@ const GirviSetup = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [userForm, setUserForm] = useState({ name: '', username: '', password: '', role: 'operator', companyId: '', isActive: true });
+
+  // Store Management State
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [editingCompanyId, setEditingCompanyId] = useState(null);
+  const [companyForm, setCompanyForm] = useState({
+    name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '', financialYearStart: '', financialYearEnd: '', loginId: '', password: ''
+  });
+  const [showStorePassword, setShowStorePassword] = useState(false);
+  const handleCreateCompany = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post('http://localhost:5000/api/companies', companyForm);
+      
+      // Auto-create manager user for this store if credentials are provided
+      if (companyForm.loginId && companyForm.password) {
+        await axios.post('http://localhost:5000/api/auth/register', {
+          name: `${companyForm.name} Manager`,
+          username: companyForm.loginId,
+          password: companyForm.password,
+          role: 'manager',
+          companyId: res.data._id
+        });
+      }
+      
+      triggerToast('Store & Manager created successfully');
+      setShowCompanyModal(false);
+      setCompanyForm({ name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '', financialYearStart: '', financialYearEnd: '', loginId: '', password: '' });
+      loadUserAndCompanies();
+    } catch (err) {
+      triggerToast(err.response?.data?.message || 'Error creating store', 'error');
+    }
+  };
+
+  const handleUpdateCompany = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:5000/api/companies/${editingCompanyId}`, companyForm);
+      triggerToast('Store updated successfully');
+      setShowCompanyModal(false);
+      setEditingCompanyId(null);
+      setCompanyForm({ name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '', financialYearStart: '', financialYearEnd: '', loginId: '', password: '' });
+      loadUserAndCompanies();
+    } catch (err) {
+      triggerToast(err.response?.data?.message || 'Error updating store', 'error');
+    }
+  };
+
+  const handleDeleteCompany = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this store? All associated records will be affected.')) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/companies/${id}`);
+      triggerToast('Store deleted successfully');
+      loadUserAndCompanies();
+    } catch (err) {
+      triggerToast('Error deleting store', 'error');
+    }
+  };
+
+  const handleToggleCompanyActive = async (company) => {
+    try {
+      const updatedStatus = company.isActive === undefined ? false : !company.isActive;
+      await axios.put(`http://localhost:5000/api/companies/${company._id}`, { isActive: updatedStatus });
+      triggerToast(`Store ${updatedStatus ? 'activated' : 'deactivated'} successfully`);
+      loadUserAndCompanies();
+    } catch (err) {
+      triggerToast('Error toggling store status', 'error');
+    }
+  };
 
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -49,7 +117,7 @@ const GirviSetup = () => {
       const meRes = await axios.get('http://localhost:5000/api/auth/me');
       setCurrentUser(meRes.data);
       
-      const compRes = await axios.get('http://localhost:5000/api/companies');
+      const compRes = await axios.get('http://localhost:5000/api/companies?all=true');
       setCompanies(compRes.data);
     } catch (err) {
       console.error(err);
@@ -102,7 +170,7 @@ const GirviSetup = () => {
         username: userForm.username,
         password: userForm.password,
         role: userForm.role,
-        companyId: userForm.role === 'super admin' ? undefined : userForm.companyId
+        companyId: userForm.role === 'admin' ? undefined : userForm.companyId
       });
       triggerToast('User created successfully');
       setShowUserModal(false);
@@ -119,7 +187,7 @@ const GirviSetup = () => {
       await axios.put(`http://localhost:5000/api/auth/users/${editingUserId}`, {
         name: userForm.name,
         role: userForm.role,
-        companyId: userForm.role === 'super admin' ? undefined : userForm.companyId,
+        companyId: userForm.role === 'admin' ? undefined : userForm.companyId,
         isActive: userForm.isActive,
         password: userForm.password || undefined
       });
@@ -218,15 +286,25 @@ const GirviSetup = () => {
         >
           SMS Setup
         </button>
-        {(currentUser?.role === 'admin' || currentUser?.role === 'super admin') && (
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === 'users' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            User Management
-          </button>
+        {currentUser?.role === 'admin' && (
+          <>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === 'users' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              User Management
+            </button>
+            <button
+              onClick={() => setActiveTab('companies')}
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === 'companies' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Store Management
+            </button>
+          </>
         )}
       </div>
 
@@ -666,11 +744,11 @@ const GirviSetup = () => {
                           <option value="operator">Operator</option>
                           <option value="manager">Manager</option>
                           <option value="admin">Admin</option>
-                          <option value="super admin">Super Admin</option>
+
                         </select>
                       </div>
 
-                      {userForm.role !== 'super admin' && (
+                      {userForm.role !== 'admin' && (
                         <div>
                           <label className="block text-slate-400 mb-1">Assign Store</label>
                           <select
@@ -707,6 +785,276 @@ const GirviSetup = () => {
                       className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold tracking-wide"
                     >
                       {editingUserId ? 'Save User Settings' : 'Register User'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'companies' && currentUser?.role === 'admin' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-850 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-200 flex items-center space-x-2">
+                  <Building2 className="h-5 w-5 text-primary-400" />
+                  <span>Store/Company Profiles</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Manage multiple branches, stores, or companies configured in the system.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setCompanyForm({
+                    name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '',
+                    financialYearStart: `${new Date().getFullYear()}-04-01`,
+                    financialYearEnd: `${new Date().getFullYear() + 1}-03-31`,
+                    loginId: '',
+                    password: ''
+                  });
+                  setEditingCompanyId(null);
+                  setShowCompanyModal(true);
+                }}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-xs font-bold transition-all shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Store</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto border border-slate-850 rounded-xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-900/40 border-b border-slate-800 text-[10px] text-slate-450 uppercase font-bold tracking-wider">
+                    <th className="py-3 px-4">Name &amp; ID</th>
+                    <th className="py-3 px-4">City</th>
+                    <th className="py-3 px-4">GSTIN</th>
+                    <th className="py-3 px-4">Phone</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Financial Year</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-850 text-xs text-slate-300">
+                  {companies.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="py-8 text-center text-slate-500 italic">No stores configured.</td>
+                    </tr>
+                  ) : (
+                    companies.map(c => (
+                      <tr key={c._id} className="hover:bg-slate-900/20 transition-colors">
+                        <td className="py-3 px-4">
+                          <span className="font-semibold text-slate-200">{c.name}</span>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {c._id}</div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400">{c.city || '—'}</td>
+                        <td className="py-3 px-4 text-slate-400 font-mono">{c.gstin || '—'}</td>
+                        <td className="py-3 px-4 text-slate-400">{c.phone || '—'}</td>
+                        <td className="py-3 px-4 text-slate-400">{c.email || '—'}</td>
+                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                          {c.financialYearStart ? `${c.financialYearStart} → ${c.financialYearEnd}` : '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleToggleCompanyActive(c)}
+                            className="focus:outline-none transition-transform active:scale-95"
+                            title={c.isActive !== false ? 'Deactivate Store' : 'Activate Store'}
+                          >
+                            {c.isActive !== false ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-700/30">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-950/60 text-rose-400 border border-rose-700/30">
+                                Inactive
+                              </span>
+                            )}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => {
+                                setCompanyForm({ ...c });
+                                setEditingCompanyId(c._id);
+                                setShowCompanyModal(true);
+                              }}
+                              className="p-1 rounded bg-slate-850 hover:bg-slate-800 text-slate-300 transition-colors"
+                              title="Edit Store"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCompany(c._id)}
+                              className="p-1 rounded bg-rose-900/20 hover:bg-rose-900/40 text-rose-400 transition-colors"
+                              title="Delete Store"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {showCompanyModal && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+                <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 relative">
+                  <button
+                    onClick={() => setShowCompanyModal(false)}
+                    className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                  <h3 className="font-bold text-slate-100 text-base mb-4">
+                    {editingCompanyId ? 'Edit Store Profile' : 'Add New Store'}
+                  </h3>
+                  <form onSubmit={editingCompanyId ? handleUpdateCompany : handleCreateCompany} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-400 mb-1">Company/Store Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={companyForm.name}
+                        onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        placeholder="e.g. Rama Jewellers Store 2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 mb-1">Address</label>
+                      <input
+                        type="text"
+                        value={companyForm.address || ''}
+                        onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        placeholder="e.g. 45 Bazar Street"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">City</label>
+                        <input
+                          type="text"
+                          value={companyForm.city || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, city: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Area</label>
+                        <input
+                          type="text"
+                          value={companyForm.area || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, area: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">PIN Code</label>
+                        <input
+                          type="text"
+                          value={companyForm.pin || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, pin: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">GSTIN</label>
+                        <input
+                          type="text"
+                          value={companyForm.gstin || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, gstin: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Phone</label>
+                        <input
+                          type="text"
+                          value={companyForm.phone || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={companyForm.email || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">FY Start</label>
+                        <input
+                          type="date"
+                          value={companyForm.financialYearStart || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, financialYearStart: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">FY End</label>
+                        <input
+                          type="date"
+                          value={companyForm.financialYearEnd || ''}
+                          onChange={(e) => setCompanyForm({ ...companyForm, financialYearEnd: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500 font-mono"
+                        />
+                      </div>
+                    </div>
+                    {!editingCompanyId && (
+                      <div className="grid grid-cols-2 gap-3 border-t border-slate-800 pt-3">
+                        <div>
+                          <label className="block text-slate-400 mb-1">Manager Login ID *</label>
+                          <input
+                            type="text"
+                            required
+                            value={companyForm.loginId || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, loginId: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-primary-500 font-mono"
+                            placeholder="e.g. store1_mgr"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 mb-1">Manager Password *</label>
+                          <div className="relative">
+                            <input
+                              type={showStorePassword ? "text" : "password"}
+                              required
+                              value={companyForm.password || ''}
+                              onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
+                              className="w-full pl-3 pr-10 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-350 focus:outline-none focus:border-primary-500"
+                              placeholder="••••••••"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowStorePassword(!showStorePassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                            >
+                              {showStorePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold tracking-wide"
+                    >
+                      {editingCompanyId ? 'Save Store Details' : 'Register Store'}
                     </button>
                   </form>
                 </div>

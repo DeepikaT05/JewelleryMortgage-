@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { formatIndianCurrency } from "../utils/format";
 import { CalendarDays, FileText, Printer, TrendingUp, TrendingDown, Wallet, AlertCircle } from "lucide-react";
@@ -38,13 +38,12 @@ const DayReport = () => {
     const fmtP = (n) => "Rs." + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const tableRows = rows.length === 0
-      ? `<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">No transactions on this date.</td></tr>`
+      ? `<tr><td colspan="7" style="text-align:center;padding:20px;color:#999">No transactions on this date.</td></tr>`
       : rows.map((r) =>
           `<tr>
             <td>${r.serial}</td>
             <td>${r.customerName} <span class="${r.type === "Deal" ? "bd" : "br"}">${r.type}</span></td>
             <td>${r.refNo1}</td>
-            <td>${r.refNo2}</td>
             <td class="n">${r.principalAmt > 0 ? fmtP(r.principalAmt) : "&ndash;"}</td>
             <td class="n">${r.interestAmt > 0 ? fmtP(r.interestAmt) : "&ndash;"}</td>
             <td class="n">${r.payAmt > 0 ? fmtP(r.payAmt) : "&ndash;"}</td>
@@ -92,27 +91,25 @@ const DayReport = () => {
   <table>
     <thead>
       <tr>
-        <th>Sr.</th><th>Customer Name</th><th>Ref No.</th><th>Ref No.</th>
+        <th>Sr.</th><th>Customer Name</th><th>Ref No.</th>
         <th class="n">Principal Amt</th><th class="n">Interest Amt</th><th class="n">Pay Amount</th><th class="n">Balance</th>
       </tr>
     </thead>
     <tbody>${tableRows}</tbody>
     <tfoot>
       <tr class="tr">
-        <td colspan="4" style="padding-left:12px;font-size:12px">TOTAL</td>
+        <td colspan="3" style="padding-left:12px;font-size:12px">TOTAL</td>
         <td class="n">${fmtP(totals.principalAmt)}</td>
         <td class="n">${fmtP(totals.interestAmt)}</td>
         <td class="n">${fmtP(totals.payAmt)}</td>
-        <td></td>
+        <td class="n">${fmtP(report.closingBalance)}</td>
+      </tr>
+      <tr style="background:#f5f5f5;font-weight:700;border-top:1.5px solid #1a1a2e;">
+        <td colspan="5" style="padding-left:12px;padding-top:10px;padding-bottom:10px;font-size:12px">CLOSING BALANCE</td>
+        <td colspan="2" class="n" style="padding-top:10px;padding-bottom:10px;font-size:14px;padding-right:12px">${fmtP(report.closingBalance)}</td>
       </tr>
     </tfoot>
   </table>
-  <div class="cb">
-    <div class="cbx">
-      <div class="cl">Closing Balance</div>
-      <div class="cv">${fmtP(report.closingBalance)}</div>
-    </div>
-  </div>
   <div class="fn">Generated on ${new Date().toLocaleString("en-IN")} | Girvi Gold & Silver Mortgage System</div>
   <script>window.onload = () => window.print();<\/script>
 </body>
@@ -233,7 +230,6 @@ const DayReport = () => {
                   <th className="py-3 px-4">Sr No.</th>
                   <th className="py-3 px-4">Customer Name</th>
                   <th className="py-3 px-4">Ref No.</th>
-                  <th className="py-3 px-4">Ref No.</th>
                   <th className="py-3 px-4 text-right">Principal Amt</th>
                   <th className="py-3 px-4 text-right">Interest Amt</th>
                   <th className="py-3 px-4 text-right">Pay Amount</th>
@@ -243,11 +239,11 @@ const DayReport = () => {
               <tbody className="divide-y divide-slate-850 text-xs text-slate-300 print:divide-slate-200 print:text-black">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center text-slate-500 italic">Compiling day report...</td>
+                    <td colSpan="7" className="py-8 text-center text-slate-500 italic">Compiling day report...</td>
                   </tr>
                 ) : !report.rows || report.rows.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center text-slate-500 italic">No transactions or deals found for this date.</td>
+                    <td colSpan="7" className="py-8 text-center text-slate-500 italic">No transactions or deals found for this date.</td>
                   </tr>
                 ) : (
                   report.rows.map((row, idx) => (
@@ -265,7 +261,6 @@ const DayReport = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-350 print:text-black">{row.refNo1}</td>
-                      <td className="py-3 px-4 font-mono text-slate-350 print:text-black">{row.refNo2}</td>
                       <td className="py-3 px-4 text-right font-mono text-rose-400 print:text-rose-600">
                         {row.principalAmt > 0 ? `\u20B9${formatIndianCurrency(row.principalAmt)}` : "\u2014"}
                       </td>
@@ -285,7 +280,7 @@ const DayReport = () => {
               {report.rows && report.rows.length > 0 && (
                 <tfoot>
                   <tr className="bg-slate-900/60 border-t-2 border-slate-800 text-xs font-bold">
-                    <td colSpan="4" className="py-3 px-4 text-slate-450 uppercase tracking-wider">Day Total</td>
+                    <td colSpan="3" className="py-3 px-4 text-slate-450 uppercase tracking-wider">Day Total</td>
                     <td className="py-3 px-4 text-right font-mono text-rose-400">
                       &#8377;{formatIndianCurrency(report.totals?.principalAmt)}
                     </td>
@@ -295,13 +290,15 @@ const DayReport = () => {
                     <td className="py-3 px-4 text-right font-mono text-emerald-400">
                       &#8377;{formatIndianCurrency(report.totals?.payAmt)}
                     </td>
-                    <td className="py-3 px-4"></td>
+                    <td className="py-3 px-4 text-right font-mono font-bold text-amber-500">
+                      &#8377;{formatIndianCurrency(report.closingBalance)}
+                    </td>
                   </tr>
                   <tr className="bg-amber-900/10 border-t border-amber-900/30 text-xs font-bold">
-                    <td colSpan="6" className="py-3 px-4 text-amber-500 uppercase tracking-wider">
+                    <td colSpan="5" className="py-3 px-4 text-amber-500 uppercase tracking-wider">
                       Closing Balance
                     </td>
-                    <td colSpan="2" className="py-3 px-4 text-right font-mono text-lg text-amber-400 print:text-amber-600">
+                    <td colSpan="2" className="py-3 px-4 text-right font-mono text-lg text-amber-400 print:text-amber-600 font-black">
                       &#8377;{formatIndianCurrency(report.closingBalance)}
                     </td>
                   </tr>

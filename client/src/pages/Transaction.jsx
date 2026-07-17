@@ -529,7 +529,7 @@ const Transaction = () => {
                 <input
                   type="date"
                   required
-                  disabled={!isEditMode || currentUser?.role === 'operator' || currentUser?.role === 'staff'}
+                  disabled={!isEditMode || currentUser?.role !== 'admin'}
                   value={form.tranDate}
                   onChange={(e) => handleTranDateChange(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
@@ -643,7 +643,7 @@ const Transaction = () => {
               <div className="col-span-2">
                 <input
                   type="date"
-                  disabled={!isEditMode || !form.isSettlement || currentUser?.role === 'operator' || currentUser?.role === 'staff'}
+                  disabled={!isEditMode || !form.isSettlement || currentUser?.role !== 'admin'}
                   value={form.closingDate}
                   onChange={(e) => setForm({ ...form, closingDate: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none disabled:opacity-30"

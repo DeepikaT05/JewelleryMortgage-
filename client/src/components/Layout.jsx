@@ -27,6 +27,7 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [companyDetails, setCompanyDetails] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [time, setTime] = useState(new Date());
@@ -85,14 +86,14 @@ const Layout = ({ children }) => {
   // Global Ctrl + L Listener
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+      if (currentUser?.role === 'admin' && e.ctrlKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();
         setShowLedgerModal(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [currentUser]);
 
   const handleCreateAccount = async (e) => {
     e.preventDefault();
@@ -253,6 +254,16 @@ const Layout = ({ children }) => {
     try {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
+      if (currentUser) {
+        // Redirect store users to deal-master if they try to access restricted paths (like /)
+        const isStoreUser = currentUser.role !== 'admin';
+        const allowedPaths = ['/deal-master', '/transaction', '/day-report'];
+        if (isStoreUser && !allowedPaths.includes(location.pathname)) {
+          navigate('/deal-master');
+        }
+        return;
+      }
+      
       // Get current user
       const userRes = await axios.get('http://localhost:5000/api/auth/me');
       setCurrentUser(userRes.data);
@@ -263,10 +274,17 @@ const Layout = ({ children }) => {
 
       // Get current active company
       if (userRes.data.companyId) {
-        const companyRes = await axios.get(`http://localhost:5000/api/companies`);
         const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
         setCompanyDetails(activeComp);
       }
+      
+      // Redirect store users to deal-master if they try to access restricted paths (like /)
+      const isStoreUser = userRes.data.role !== 'admin';
+      const allowedPaths = ['/deal-master', '/transaction', '/day-report'];
+      if (isStoreUser && !allowedPaths.includes(location.pathname)) {
+        navigate('/deal-master');
+      }
+      setLoading(false);
     } catch (err) {
       console.error('Session validation failed:', err);
       localStorage.removeItem('token');
@@ -294,22 +312,22 @@ const Layout = ({ children }) => {
   };
 
   const role = currentUser?.role;
-  const isAdmin = role === 'admin' || role === 'super admin';
+  const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const isOperator = role === 'operator' || role === 'staff';
 
   const allMenuItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin', 'super admin'] },
-    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
-    { name: 'Accounting Group', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
-    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'super admin', 'manager'] },
-    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin', 'super admin'] }
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Accounting Group', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
 
-  const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
+  const menuItems = role ? allMenuItems.filter(item => item.roles.includes(role)) : [];
 
   // Format date nicely
   const formatDate = (date) => {
@@ -320,6 +338,17 @@ const Layout = ({ children }) => {
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', { hour12: true });
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-955 text-slate-100 font-sans">
+        <div className="flex flex-col items-center space-y-4">
+          <Coins className="h-10 w-10 text-primary-500 animate-spin" />
+          <span className="text-sm font-semibold text-slate-450 tracking-wide">Verifying session...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
@@ -456,13 +485,22 @@ const Layout = ({ children }) => {
             })}
           </div>
 
-          <div className="mt-8 border-t border-slate-850 pt-4 text-center">
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
-              Girvi Management
-            </span>
-            <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
-              v1.0.0 (Financial Apr26)
-            </span>
+          <div className="mt-auto space-y-1.5 pt-4 border-t border-slate-850">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-950/20 hover:text-rose-300 transition-all text-left"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
+            <div className="text-center pt-2">
+              <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
+                {currentUser?.role === 'admin' ? 'Girvi Management' : 'Store Manager Panel'}
+              </span>
+              <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
+                v1.0.0 (Financial Apr26)
+              </span>
+            </div>
           </div>
         </aside>
 
