@@ -40,7 +40,9 @@ const Layout = ({ children }) => {
   const [ledgers, setLedgers] = useState([]);
   const [selectedLedgerId, setSelectedLedgerId] = useState('');
   const [ledgerTransactions, setLedgerTransactions] = useState([]);
-  const [ledgerSubTab, setLedgerSubTab] = useState('list'); // 'list' or 'details'
+  const [ledgerSubTab, setLedgerSubTab] = useState('details'); // Default to details for full ledger statements
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showTxForm, setShowTxForm] = useState(false);
 
   // Forms
   const [newAccForm, setNewAccForm] = useState({ name: '', group: 'cash', customGroup: '', openingBalance: 0 });
@@ -89,6 +91,9 @@ const Layout = ({ children }) => {
       // 1. Alt + L or Ctrl + L: Toggle Ledger Modal
       if ((e.altKey && e.key.toLowerCase() === 'l') || (e.ctrlKey && e.key.toLowerCase() === 'l')) {
         e.preventDefault();
+        setLedgerSubTab('details');
+        setShowCreateForm(false);
+        setShowTxForm(false);
         setShowLedgerModal(prev => !prev);
       }
       
@@ -171,6 +176,7 @@ const Layout = ({ children }) => {
         openingBalance: newAccForm.openingBalance
       });
       setNewAccForm({ name: '', group: 'cash', customGroup: '', openingBalance: 0 });
+      setShowCreateForm(false);
       fetchLedgers();
     } catch (err) {
       console.error('Error creating ledger account:', err);
@@ -187,6 +193,7 @@ const Layout = ({ children }) => {
         openingBalance: editAccForm.openingBalance
       });
       setEditingAccId(null);
+      setShowCreateForm(false);
       fetchLedgers();
     } catch (err) {
       console.error('Error updating ledger account:', err);
@@ -210,6 +217,7 @@ const Layout = ({ children }) => {
     try {
       await axios.post(`/api/ledgers/${selectedLedgerId}/transactions`, newTxForm);
       setNewTxForm({ date: new Date().toISOString().split('T')[0], type: 'add', amount: '', remarks: '' });
+      setShowTxForm(false);
       fetchLedgerTx(selectedLedgerId);
       fetchLedgers();
     } catch (err) {
@@ -641,188 +649,207 @@ const Layout = ({ children }) => {
             <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-300">
               {/* TAB 1: ACCOUNTS LIST VIEW */}
               {ledgerSubTab === 'list' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Account Creation/Editing Form */}
-                  <div className="lg:col-span-1 bg-slate-950/20 p-5 border border-slate-850 rounded-xl space-y-4 h-fit">
-                    <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">
-                      {editingAccId ? 'Edit Ledger Account' : 'Create Custom Account'}
-                    </h3>
-                    {editingAccId ? (
-                      <form onSubmit={handleUpdateAccount} className="space-y-4 text-xs">
-                        <div>
-                          <label className="block text-slate-400 mb-1">Account Name</label>
-                          <input
-                            type="text"
-                            required
-                            value={editAccForm.name}
-                            onChange={(e) => setEditAccForm({ ...editAccForm, name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 mb-1">Accounting Group</label>
-                          <select
-                            value={editAccForm.group}
-                            onChange={(e) => setEditAccForm({ ...editAccForm, group: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
-                          >
-                            <option value="cash">Cash</option>
-                            <option value="bank">Bank</option>
-                            <option value="crediter">Creditor</option>
-                            <option value="debiter">Debtor</option>
-                            <option value="custom">Custom...</option>
-                          </select>
-                        </div>
-                        {editAccForm.group === 'custom' && (
-                          <div>
-                            <label className="block text-slate-400 mb-1">Custom Group Name</label>
-                            <input
-                              type="text"
-                              required
-                              value={editAccForm.customGroup}
-                              onChange={(e) => setEditAccForm({ ...editAccForm, customGroup: e.target.value })}
-                              placeholder="e.g. expenses"
-                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <label className="block text-slate-400 mb-1">Opening Balance (₹)</label>
-                          <input
-                            type="number"
-                            required
-                            value={editAccForm.openingBalance}
-                            onChange={(e) => setEditAccForm({ ...editAccForm, openingBalance: Number(e.target.value) })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
-                          />
-                        </div>
-                        <div className="flex space-x-2 pt-2">
-                          <button type="submit" className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold">
-                            Update
-                          </button>
-                          <button type="button" onClick={() => setEditingAccId(null)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg">
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <form onSubmit={handleCreateAccount} className="space-y-4 text-xs">
-                        <div>
-                          <label className="block text-slate-400 mb-1">Account Name</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="e.g. HDFC Current A/C"
-                            value={newAccForm.name}
-                            onChange={(e) => setNewAccForm({ ...newAccForm, name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 mb-1">Accounting Group</label>
-                          <select
-                            value={newAccForm.group}
-                            onChange={(e) => setNewAccForm({ ...newAccForm, group: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
-                          >
-                            <option value="cash">Cash</option>
-                            <option value="bank">Bank</option>
-                            <option value="crediter">Creditor</option>
-                            <option value="debiter">Debtor</option>
-                            <option value="custom">Custom...</option>
-                          </select>
-                        </div>
-                        {newAccForm.group === 'custom' && (
-                          <div>
-                            <label className="block text-slate-400 mb-1">Custom Group Name</label>
-                            <input
-                              type="text"
-                              required
-                              value={newAccForm.customGroup}
-                              onChange={(e) => setNewAccForm({ ...newAccForm, customGroup: e.target.value })}
-                              placeholder="e.g. expenses"
-                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <label className="block text-slate-400 mb-1">Opening Balance (₹)</label>
-                          <input
-                            type="number"
-                            placeholder="0.00"
-                            value={newAccForm.openingBalance || ''}
-                            onChange={(e) => setNewAccForm({ ...newAccForm, openingBalance: Number(e.target.value) })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
-                          />
-                        </div>
-                        <button type="submit" className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold flex items-center justify-center space-x-1">
-                          <Plus className="h-4 w-4" />
-                          <span>Add Account</span>
-                        </button>
-                      </form>
-                    )}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center bg-slate-950/20 p-4 border border-slate-850 rounded-xl">
+                    <h3 className="text-sm font-bold text-white">Registered Ledger Accounts</h3>
+                    <button
+                      onClick={() => {
+                        setEditingAccId(null);
+                        setShowCreateForm(!showCreateForm);
+                      }}
+                      className="px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1"
+                    >
+                      {showCreateForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                      <span>{showCreateForm ? 'Hide Form' : 'Create Account'}</span>
+                    </button>
                   </div>
 
-                  {/* Accounts List Table */}
-                  <div className="lg:col-span-2 space-y-4">
-                    <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-950/40 border-b border-slate-800 text-[10px] text-slate-455 uppercase font-bold tracking-wider">
-                            <th className="py-3 px-4">Account Name</th>
-                            <th className="py-3 px-4">Group</th>
-                            <th className="py-3 px-4 text-right">Opening Bal</th>
-                            <th className="py-3 px-4 text-right">Additions (DD)</th>
-                            <th className="py-3 px-4 text-right">Deductions</th>
-                            <th className="py-3 px-4 text-right">Closing Bal</th>
-                            <th className="py-3 px-4 text-center">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-850 text-xs">
-                          {ledgers.length === 0 ? (
-                            <tr>
-                              <td colSpan="7" className="py-4 text-center text-slate-500 italic">No ledger accounts registered.</td>
+                  <div className={showCreateForm ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "block"}>
+                    {/* Account Creation/Editing Form */}
+                    {showCreateForm && (
+                      <div className="lg:col-span-1 bg-slate-950/20 p-5 border border-slate-850 rounded-xl space-y-4 h-fit">
+                        <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">
+                          {editingAccId ? 'Edit Ledger Account' : 'Create Custom Account'}
+                        </h3>
+                        {editingAccId ? (
+                          <form onSubmit={handleUpdateAccount} className="space-y-4 text-xs">
+                            <div>
+                              <label className="block text-slate-400 mb-1">Account Name</label>
+                              <input
+                                type="text"
+                                required
+                                value={editAccForm.name}
+                                onChange={(e) => setEditAccForm({ ...editAccForm, name: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-400 mb-1">Accounting Group</label>
+                              <select
+                                value={editAccForm.group}
+                                onChange={(e) => setEditAccForm({ ...editAccForm, group: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
+                              >
+                                <option value="cash">Cash</option>
+                                <option value="bank">Bank</option>
+                                <option value="crediter">Creditor</option>
+                                <option value="debiter">Debtor</option>
+                                <option value="custom">Custom...</option>
+                              </select>
+                            </div>
+                            {editAccForm.group === 'custom' && (
+                              <div>
+                                <label className="block text-slate-400 mb-1">Custom Group Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={editAccForm.customGroup}
+                                  onChange={(e) => setEditAccForm({ ...editAccForm, customGroup: e.target.value })}
+                                  placeholder="e.g. expenses"
+                                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-slate-400 mb-1">Opening Balance (₹)</label>
+                              <input
+                                type="number"
+                                required
+                                value={editAccForm.openingBalance}
+                                onChange={(e) => setEditAccForm({ ...editAccForm, openingBalance: Number(e.target.value) })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
+                              />
+                            </div>
+                            <div className="flex space-x-2 pt-2">
+                              <button type="submit" className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold">
+                                Update
+                              </button>
+                              <button type="button" onClick={() => { setEditingAccId(null); setShowCreateForm(false); }} className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg">
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <form onSubmit={handleCreateAccount} className="space-y-4 text-xs">
+                            <div>
+                              <label className="block text-slate-400 mb-1">Account Name</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. HDFC Current A/C"
+                                value={newAccForm.name}
+                                onChange={(e) => setNewAccForm({ ...newAccForm, name: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-400 mb-1">Accounting Group</label>
+                              <select
+                                value={newAccForm.group}
+                                onChange={(e) => setNewAccForm({ ...newAccForm, group: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
+                              >
+                                <option value="cash">Cash</option>
+                                <option value="bank">Bank</option>
+                                <option value="crediter">Creditor</option>
+                                <option value="debiter">Debtor</option>
+                                <option value="custom">Custom...</option>
+                              </select>
+                            </div>
+                            {newAccForm.group === 'custom' && (
+                              <div>
+                                <label className="block text-slate-400 mb-1">Custom Group Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={newAccForm.customGroup}
+                                  onChange={(e) => setNewAccForm({ ...newAccForm, customGroup: e.target.value })}
+                                  placeholder="e.g. expenses"
+                                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-slate-400 mb-1">Opening Balance (₹)</label>
+                              <input
+                                type="number"
+                                placeholder="0.00"
+                                value={newAccForm.openingBalance || ''}
+                                onChange={(e) => setNewAccForm({ ...newAccForm, openingBalance: Number(e.target.value) })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
+                              />
+                            </div>
+                            <button type="submit" className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold flex items-center justify-center space-x-1">
+                              <Plus className="h-4 w-4" />
+                              <span>Add Account</span>
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Accounts List Table */}
+                    <div className={showCreateForm ? "lg:col-span-2" : "w-full"}>
+                      <div className="overflow-x-auto border border-slate-800 rounded-xl">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-950/40 border-b border-slate-800 text-[10px] text-slate-455 uppercase font-bold tracking-wider">
+                              <th className="py-3 px-4">Account Name</th>
+                              <th className="py-3 px-4">Group</th>
+                              <th className="py-3 px-4 text-right">Opening Bal</th>
+                              <th className="py-3 px-4 text-right">Additions (DD)</th>
+                              <th className="py-3 px-4 text-right">Deductions</th>
+                              <th className="py-3 px-4 text-right">Closing Bal</th>
+                              <th className="py-3 px-4 text-center">Actions</th>
                             </tr>
-                          ) : (
-                            ledgers.map(acc => (
-                              <tr key={acc._id} className="hover:bg-slate-950/10">
-                                <td className="py-3 px-4 font-semibold text-slate-200">{acc.name}</td>
-                                <td className="py-3 px-4 uppercase text-[10px] font-mono text-slate-400">{acc.group}</td>
-                                <td className="py-3 px-4 text-right font-mono">₹{acc.openingBalance.toFixed(2)}</td>
-                                <td className="py-3 px-4 text-right font-mono text-emerald-400">+₹{acc.totalAdd.toFixed(2)}</td>
-                                <td className="py-3 px-4 text-right font-mono text-rose-455">-₹{acc.totalDeduct.toFixed(2)}</td>
-                                <td className="py-3 px-4 text-right font-mono font-bold text-amber-500">₹{acc.closingBalance.toFixed(2)}</td>
-                                <td className="py-3 px-4 text-center">
-                                  <div className="flex justify-center space-x-2">
-                                    <button
-                                      onClick={() => {
-                                        setEditingAccId(acc._id);
-                                        setEditAccForm({
-                                          name: acc.name,
-                                          group: ['cash', 'bank', 'crediter', 'debiter'].includes(acc.group) ? acc.group : 'custom',
-                                          customGroup: ['cash', 'bank', 'crediter', 'debiter'].includes(acc.group) ? '' : acc.group,
-                                          openingBalance: acc.openingBalance
-                                        });
-                                      }}
-                                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-semibold"
-                                    >
-                                      Edit
-                                    </button>
-                                    {acc.name !== 'Cash' && !acc.bankId && (
-                                      <button
-                                        onClick={() => handleDeleteAccount(acc._id)}
-                                        className="p-1 text-rose-500 hover:text-rose-400"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
+                          </thead>
+                          <tbody className="divide-y divide-slate-850 text-xs">
+                            {ledgers.length === 0 ? (
+                              <tr>
+                                <td colSpan="7" className="py-4 text-center text-slate-500 italic">No ledger accounts registered.</td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
+                            ) : (
+                              ledgers.map(acc => (
+                                <tr key={acc._id} className="hover:bg-slate-950/10">
+                                  <td className="py-3 px-4 font-semibold text-slate-200">{acc.name}</td>
+                                  <td className="py-3 px-4 uppercase text-[10px] font-mono text-slate-400">{acc.group}</td>
+                                  <td className="py-3 px-4 text-right font-mono">₹{acc.openingBalance.toFixed(2)}</td>
+                                  <td className="py-3 px-4 text-right font-mono text-emerald-400">+₹{acc.totalAdd.toFixed(2)}</td>
+                                  <td className="py-3 px-4 text-right font-mono text-rose-455">-₹{acc.totalDeduct.toFixed(2)}</td>
+                                  <td className="py-3 px-4 text-right font-mono font-bold text-amber-500">₹{acc.closingBalance.toFixed(2)}</td>
+                                  <td className="py-3 px-4 text-center">
+                                    <div className="flex justify-center space-x-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingAccId(acc._id);
+                                          setEditAccForm({
+                                            name: acc.name,
+                                            group: ['cash', 'bank', 'crediter', 'debiter'].includes(acc.group) ? acc.group : 'custom',
+                                            customGroup: ['cash', 'bank', 'crediter', 'debiter'].includes(acc.group) ? '' : acc.group,
+                                            openingBalance: acc.openingBalance
+                                          });
+                                          setShowCreateForm(true); // Open form for editing!
+                                        }}
+                                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-semibold"
+                                      >
+                                        Edit
+                                      </button>
+                                      {acc.name !== 'Cash' && !acc.bankId && (
+                                        <button
+                                          onClick={() => handleDeleteAccount(acc._id)}
+                                          className="p-1 text-rose-500 hover:text-rose-400"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -854,19 +881,19 @@ const Layout = ({ children }) => {
                         <div className="flex flex-wrap gap-4 text-xs font-mono">
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-slate-455 block text-[10px] uppercase font-sans">Opening</span>
-                            <span className="text-slate-200">₹{acc.openingBalance.toFixed(2)}</span>
+                            <span className="text-slate-200">₹${acc.openingBalance.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-emerald-500/80 block text-[10px] uppercase font-sans">Total Add (DD)</span>
-                            <span className="text-emerald-400">+₹{acc.totalAdd.toFixed(2)}</span>
+                            <span className="text-emerald-400">+₹${acc.totalAdd.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-rose-500/80 block text-[10px] uppercase font-sans">Total Deduct</span>
-                            <span className="text-rose-455">-₹{acc.totalDeduct.toFixed(2)}</span>
+                            <span className="text-rose-455">-₹${acc.totalDeduct.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-amber-500 block text-[10px] uppercase font-sans">Closing Balance</span>
-                            <span className="text-amber-400 font-bold">₹{acc.closingBalance.toFixed(2)}</span>
+                            <span className="text-amber-400 font-bold">₹${acc.closingBalance.toFixed(2)}</span>
                           </div>
                           <button
                             onClick={handlePrintLedger}
@@ -880,65 +907,77 @@ const Layout = ({ children }) => {
                     })()}
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="flex justify-between items-center bg-slate-950/20 p-4 border border-slate-850 rounded-xl">
+                    <h3 className="text-sm font-bold text-white">Statement of Account</h3>
+                    <button
+                      onClick={() => setShowTxForm(!showTxForm)}
+                      className="px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1"
+                    >
+                      {showTxForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                      <span>{showTxForm ? 'Hide Form' : 'Post Transaction'}</span>
+                    </button>
+                  </div>
+
+                  <div className={showTxForm ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "block"}>
                     {/* Add manual entry form */}
-                    <div className="lg:col-span-1 bg-slate-950/20 p-5 border border-slate-850 rounded-xl space-y-4 h-fit">
-                      <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">Add Manual Ledger Transaction</h3>
-                      <form onSubmit={handleCreateTx} className="space-y-4 text-xs">
-                        <div className="grid grid-cols-2 gap-3">
+                    {showTxForm && (
+                      <div className="lg:col-span-1 bg-slate-950/20 p-5 border border-slate-850 rounded-xl space-y-4 h-fit">
+                        <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">Add Manual Ledger Transaction</h3>
+                        <form onSubmit={handleCreateTx} className="space-y-4 text-xs">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-400 mb-1">Date</label>
+                              <input
+                                type="date"
+                                required
+                                value={newTxForm.date}
+                                onChange={(e) => setNewTxForm({ ...newTxForm, date: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-400 mb-1">Type</label>
+                              <select
+                                value={newTxForm.type}
+                                onChange={(e) => setNewTxForm({ ...newTxForm, type: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
+                              >
+                                <option value="add">Deposit / DD (+)</option>
+                                <option value="deduct">Payment / Deduct (-)</option>
+                              </select>
+                            </div>
+                          </div>
                           <div>
-                            <label className="block text-slate-400 mb-1">Date</label>
+                            <label className="block text-slate-400 mb-1">Amount (₹) *</label>
                             <input
-                              type="date"
+                              type="number"
                               required
-                              value={newTxForm.date}
-                              onChange={(e) => setNewTxForm({ ...newTxForm, date: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                              placeholder="0.00"
+                              value={newTxForm.amount}
+                              onChange={(e) => setNewTxForm({ ...newTxForm, amount: Number(e.target.value) })}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
                             />
                           </div>
                           <div>
-                            <label className="block text-slate-400 mb-1">Type</label>
-                            <select
-                              value={newTxForm.type}
-                              onChange={(e) => setNewTxForm({ ...newTxForm, type: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 focus:outline-none"
-                            >
-                              <option value="add">Deposit / DD (+)</option>
-                              <option value="deduct">Payment / Deduct (-)</option>
-                            </select>
+                            <label className="block text-slate-400 mb-1">Remarks / Narrative</label>
+                            <textarea
+                              rows="2"
+                              placeholder="Transaction notes"
+                              value={newTxForm.remarks}
+                              onChange={(e) => setNewTxForm({ ...newTxForm, remarks: e.target.value })}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                            />
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 mb-1">Amount (₹) *</label>
-                          <input
-                            type="number"
-                            required
-                            placeholder="0.00"
-                            value={newTxForm.amount}
-                            onChange={(e) => setNewTxForm({ ...newTxForm, amount: Number(e.target.value) })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-slate-400 mb-1">Remarks / Narrative</label>
-                          <textarea
-                            rows="2"
-                            placeholder="Transaction notes"
-                            value={newTxForm.remarks}
-                            onChange={(e) => setNewTxForm({ ...newTxForm, remarks: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
-                          />
-                        </div>
-                        <button type="submit" className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold flex items-center justify-center space-x-1">
-                          <Plus className="h-4 w-4" />
-                          <span>Post Transaction</span>
-                        </button>
-                      </form>
-                    </div>
+                          <button type="submit" className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold flex items-center justify-center space-x-1">
+                            <Plus className="h-4 w-4" />
+                            <span>Post Transaction</span>
+                          </button>
+                        </form>
+                      </div>
+                    )}
 
                     {/* Transaction History log */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <h3 className="text-sm font-bold text-white">Statement of Account</h3>
+                    <div className={showTxForm ? "lg:col-span-2 space-y-4" : "w-full space-y-4"}>
                       <div className="overflow-x-auto border border-slate-800 rounded-xl">
                         <table className="w-full text-left border-collapse">
                           <thead>
@@ -965,7 +1004,7 @@ const Layout = ({ children }) => {
                                   </td>
                                   <td className="py-2 px-4 text-[10px] text-slate-400">{t.refType.toUpperCase()}</td>
                                   <td className="py-2 px-4 text-slate-350 font-sans max-w-[200px] truncate" title={t.remarks}>{t.remarks}</td>
-                                  <td className="py-2 px-4 text-right font-bold">₹{t.amount.toFixed(2)}</td>
+                                  <td className="py-2 px-4 text-right font-bold">₹${t.amount.toFixed(2)}</td>
                                   <td className="py-2 px-4 text-center">
                                     {t.refType === 'manual' ? (
                                       <button onClick={() => handleDeleteTx(t._id)} className="text-rose-500 hover:text-rose-400 p-0.5">
