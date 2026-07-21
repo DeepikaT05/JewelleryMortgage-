@@ -15,3 +15,18 @@ client/dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Superadmin App
+superadmin/node_modules/
+superadmin/dist/
+superadmin/.env
+
+# Uploads
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Local duplicates
+JewelleryMortgage-/
+
+
+

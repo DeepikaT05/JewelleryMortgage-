@@ -8,9 +8,20 @@ import {
   Plus, 
   Trash2, 
   Upload, 
+  UserPlus, 
   Search, 
-  X
+  X, 
+  PlusSquare
 } from 'lucide-react';
+
+const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const baseUrl = axios.defaults.baseURL || '';
+  const base = baseUrl.replace(/\/$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
 
 const DealMaster = () => {
   const [toast, setToast] = useState(null);
@@ -77,21 +88,56 @@ const DealMaster = () => {
   const [printProfile, setPrintProfile] = useState(null);
   const [isPrintMode, setIsPrintMode] = useState(false);
 
+  const [defaultSettings, setDefaultSettings] = useState({
+    defaultArea: '',
+    defaultCity: 'Mumbai',
+    defaultState: 'Maharashtra',
+    defaultCountry: 'India'
+  });
+
   // --- TIME & COMPANY METRICS LOADER ---
   const fetchActiveCompany = async () => {
     try {
       const userRes = await axios.get('/api/auth/me');
       setCurrentUser(userRes.data);
       const compListRes = await axios.get('/api/companies');
-      const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
+      let activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
+      if (!activeComp && compListRes.data.length > 0) {
+        activeComp = compListRes.data[0];
+      }
       setCompanyDetails(activeComp);
     } catch (err) {
       console.error(err);
     }
   };
 
+  const fetchDefaultSettings = async () => {
+    try {
+      const res = await axios.get('/api/settings/girvi');
+      if (res.data) {
+        const defaults = {
+          defaultArea: res.data.defaultArea || '',
+          defaultCity: res.data.defaultCity || 'Mumbai',
+          defaultState: res.data.defaultState || 'Maharashtra',
+          defaultCountry: res.data.defaultCountry || 'India'
+        };
+        setDefaultSettings(defaults);
+        setNewCustForm(prev => ({
+          ...prev,
+          area: defaults.defaultArea,
+          city: defaults.defaultCity,
+          state: defaults.defaultState,
+          country: defaults.defaultCountry
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading location defaults:', err);
+    }
+  };
+
   useEffect(() => {
     fetchActiveCompany();
+    fetchDefaultSettings();
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -415,7 +461,11 @@ const DealMaster = () => {
 
   const getFilteredItems = (groupId) => {
     if (!groupId) return [];
-    return itemsCatalog.filter(it => (it.groupId?._id || it.groupId) === groupId);
+    const targetGroupId = typeof groupId === 'object' ? (groupId._id || groupId) : groupId;
+    return itemsCatalog.filter(it => {
+      const itGroupId = it.groupId?._id || it.groupId;
+      return String(itGroupId) === String(targetGroupId);
+    });
   };
 
   const handlePrev = () => {
@@ -524,12 +574,16 @@ const DealMaster = () => {
         onAdd={handleAddNewDeal}
         onEdit={() => setIsEditMode(true)}
         onSave={handleSaveDeal}
+        onDelete={handleDeleteDeal}
         onPrint={handleDealPrint}
         onCancel={handleCancel}
         isEditMode={isEditMode}
         hasPrev={dealIndex > 0}
         hasNext={dealIndex < deals.length - 1}
+        showPrev={false}
+        showNext={false}
         showDelete={false}
+        showCancel={false}
       />
 
       <div className="space-y-6 no-print">
@@ -542,6 +596,15 @@ const DealMaster = () => {
               <span className="bg-slate-950 px-3 py-1 rounded-md text-amber-500 font-bold border border-slate-855 font-mono">
                 Deal No: {form.dealNo}
               </span>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowCopyModal(true)}
+                  className="px-3 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-amber-400 rounded-md font-semibold transition-all"
+                >
+                  Copy from deal
+                </button>
+              )}
             </div>
           </div>
 
@@ -616,8 +679,6 @@ const DealMaster = () => {
                     </div>
                   )}
                 </div>
-
-
               </div>
             </div>
 
@@ -666,209 +727,252 @@ const DealMaster = () => {
             )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1200px]">
-              <thead>
-                <tr className="bg-slate-950/60 border-b border-slate-850 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                  <th className="py-2 px-3">S.No</th>
-                  <th className="py-2 px-1 w-44">Group</th>
-                  <th className="py-2 px-1 w-48">Item Name</th>
-                  <th className="py-2 px-1 w-16 text-right">Pcs</th>
-                  <th className="py-2 px-1 w-48">Remarks</th>
-                  <th className="py-2 px-1 w-24 text-right">Gross Wt.</th>
-                  <th className="py-2 px-1 w-24 text-right">Less Wt.</th>
-                  <th className="py-2 px-1 w-24 text-right">Net Wt.</th>
-                  <th className="py-2 px-1 w-20 text-right">Purity %</th>
-                  <th className="py-2 px-1 w-24 text-right">Pure Wt.</th>
-                  <th className="py-2 px-1 w-24 text-right">Rate</th>
-                  <th className="py-2 px-1 w-32 text-right">Estimated Value</th>
-                  <th className="py-2 px-1 w-20 text-center">Image</th>
-                  {isEditMode && <th className="py-2 px-1 w-10"></th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850 text-xs">
-                {form.items.length === 0 ? (
-                  <tr>
-                    <td colSpan="14" className="py-6 text-center text-slate-500">No items configured. Click 'Add Item row'.</td>
-                  </tr>
-                ) : (
-                  form.items.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-900/20 text-slate-200">
-                      <td className="py-2 px-3 text-slate-500 font-semibold">{idx + 1}</td>
-                      
-                      <td className="py-1 px-1">
+          <div className="space-y-4">
+            {form.items.length === 0 ? (
+              <div className="py-8 text-center text-slate-500 bg-slate-900/10 border border-slate-800/40 rounded-xl">
+                No items configured. Click 'Add Item row'.
+              </div>
+            ) : (
+              form.items.map((item, idx) => (
+                <div key={idx} className="bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 space-y-4 relative hover:border-slate-700/60 transition-all">
+                  {/* Card Header */}
+                  <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+                    <span className="text-xs font-bold text-amber-500 font-mono">Item #{idx + 1}</span>
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItemRow(idx)}
+                        className="p-1 text-rose-500 hover:text-rose-450 hover:bg-rose-550/10 rounded transition-colors"
+                        title="Remove Item Row"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Card Content Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    {/* Section 1: Item Catalog Info */}
+                    <div className="md:col-span-4 space-y-3">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Group</label>
                         <select
                           disabled={!isEditMode}
-                          value={item.groupId}
+                          value={item.groupId?._id || item.groupId || ''}
                           onChange={(e) => handleRowChange(idx, 'groupId', e.target.value)}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded focus:outline-none text-[11px]"
+                          className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none text-xs text-slate-200"
                         >
                           {groups.map(g => (
                             <option key={g._id} value={g._id}>{g.groupName}</option>
                           ))}
                         </select>
-                      </td>
+                      </div>
 
-                      <td className="py-1 px-1">
-                        <select
-                          disabled={!isEditMode}
-                          value={item.itemName}
-                          onChange={(e) => handleRowChange(idx, 'itemName', e.target.value)}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded focus:outline-none text-[11px]"
-                        >
-                          <option value="">Select item...</option>
-                          {getFilteredItems(item.groupId).map(catalogItem => (
-                            <option key={catalogItem._id} value={catalogItem.itemName}>
-                              {catalogItem.itemName}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Item Name</label>
+                        <div className="flex space-x-1">
+                          <select
+                            disabled={!isEditMode}
+                            value={item.itemName}
+                            onChange={(e) => handleRowChange(idx, 'itemName', e.target.value)}
+                            className="flex-1 p-2 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none text-xs text-slate-200"
+                          >
+                            <option value="">Select item...</option>
+                            {getFilteredItems(item.groupId).map(catalogItem => (
+                              <option key={catalogItem._id} value={catalogItem.itemName}>
+                                {catalogItem.itemName}
+                              </option>
+                            ))}
+                          </select>
+                          {isEditMode && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewItemForm({ itemName: '', groupId: item.groupId });
+                                setShowItemModal(true);
+                              }}
+                              className="p-2 bg-slate-800 hover:bg-slate-700 text-primary-400 rounded-lg"
+                            >
+                              <PlusSquare className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                      <td className="py-1 px-1">
-                        <input
-                          type="number"
-                          disabled={!isEditMode}
-                          value={item.pcs}
-                          onChange={(e) => handleRowChange(idx, 'pcs', Number(e.target.value))}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded text-right focus:outline-none font-mono text-[11px]"
-                        />
-                      </td>
-
-                      <td className="py-1 px-1">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Remarks / Notes</label>
                         <input
                           type="text"
                           disabled={!isEditMode}
                           value={item.remarks}
                           onChange={(e) => handleRowChange(idx, 'remarks', e.target.value)}
                           placeholder="Notes"
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded focus:outline-none text-[11px] text-slate-100"
+                          className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none text-xs text-slate-200"
                         />
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="py-1 px-1">
-                        <input
-                          type="number"
-                          step="0.001"
-                          disabled={!isEditMode}
-                          value={item.grossWeight}
-                          onChange={(e) => handleRowChange(idx, 'grossWeight', Number(e.target.value))}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded text-right focus:outline-none font-mono text-[11px]"
-                        />
-                      </td>
+                    {/* Section 2: Weight specifications */}
+                    <div className="md:col-span-3 space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Pcs</label>
+                          <input
+                            type="number"
+                            disabled={!isEditMode}
+                            value={item.pcs}
+                            onChange={(e) => handleRowChange(idx, 'pcs', Number(e.target.value))}
+                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-right focus:outline-none font-mono text-xs text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Purity %</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            disabled={!isEditMode}
+                            value={item.purityPercent}
+                            onChange={(e) => handleRowChange(idx, 'purityPercent', Number(e.target.value))}
+                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-right focus:outline-none font-mono text-xs text-slate-200"
+                          />
+                        </div>
+                      </div>
 
-                      <td className="py-1 px-1">
-                        <input
-                          type="number"
-                          step="0.001"
-                          disabled={!isEditMode}
-                          value={item.lessWeight}
-                          onChange={(e) => handleRowChange(idx, 'lessWeight', Number(e.target.value))}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded text-right focus:outline-none font-mono text-[11px]"
-                        />
-                      </td>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Gross Wt</label>
+                          <input
+                            type="number"
+                            step="0.001"
+                            disabled={!isEditMode}
+                            value={item.grossWeight}
+                            onChange={(e) => handleRowChange(idx, 'grossWeight', Number(e.target.value))}
+                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-right focus:outline-none font-mono text-xs text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Less Wt</label>
+                          <input
+                            type="number"
+                            step="0.001"
+                            disabled={!isEditMode}
+                            value={item.lessWeight}
+                            onChange={(e) => handleRowChange(idx, 'lessWeight', Number(e.target.value))}
+                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-right focus:outline-none font-mono text-xs text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Net Wt</label>
+                          <input
+                            type="text"
+                            disabled
+                            value={item.netWeight?.toFixed(3)}
+                            className="w-full p-2 bg-slate-950 border border-slate-850 rounded-lg text-right font-mono text-xs text-slate-400"
+                          />
+                        </div>
+                      </div>
 
-                      <td className="py-1 px-1">
-                        <input
-                          type="text"
-                          disabled
-                          value={item.netWeight?.toFixed(3)}
-                          className="w-full p-1 bg-slate-950 border border-slate-855 rounded text-right font-mono text-[11px] text-slate-400"
-                        />
-                      </td>
-
-                      <td className="py-1 px-1">
-                        <input
-                          type="number"
-                          step="0.1"
-                          disabled={!isEditMode}
-                          value={item.purityPercent}
-                          onChange={(e) => handleRowChange(idx, 'purityPercent', Number(e.target.value))}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded text-right focus:outline-none font-mono text-[11px]"
-                        />
-                      </td>
-
-                      <td className="py-1 px-1">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Pure Wt</label>
                         <input
                           type="text"
                           disabled
                           value={item.pureWeight?.toFixed(3)}
-                          className="w-full p-1 bg-slate-950 border border-slate-855 rounded text-right font-mono text-[11px] text-slate-400"
+                          className="w-full p-2 bg-slate-950 border border-slate-850 rounded-lg text-right font-mono text-xs text-slate-400"
                         />
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="py-1 px-1">
+                    {/* Section 3: Financial valuation */}
+                    <div className="md:col-span-3 space-y-3">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Rate</label>
                         <input
                           type="number"
                           disabled={!isEditMode}
                           value={item.rate}
                           onChange={(e) => handleRowChange(idx, 'rate', Number(e.target.value))}
-                          className="w-full p-1 bg-slate-900 border border-slate-800 rounded text-right focus:outline-none font-mono text-[11px]"
+                          className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-right focus:outline-none font-mono text-xs text-slate-200"
                         />
-                      </td>
+                      </div>
 
-                      <td className="py-1 px-1">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Estimated Value</label>
                         <input
                           type="text"
                           disabled
                           value={`₹${formatIndianCurrency(item.estimatedValue)}`}
-                          className="w-full p-1 bg-slate-955 border border-slate-855 rounded text-right font-mono text-[11px] text-slate-400"
+                          className="w-full p-2 bg-slate-950 border border-slate-850 rounded-lg text-right font-mono text-xs text-slate-400 font-bold text-amber-500/80"
                         />
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="py-1 px-1 text-center">
-                        {item.imageUrl ? (
-                          <div className="relative inline-block border border-slate-850 rounded overflow-hidden h-7 w-10 bg-slate-955 group">
-                            <img src={`${item.imageUrl}`} alt="collateral" className="h-full w-full object-cover" />
-                            {isEditMode && (
+                    {/* Section 4: Collateral Image */}
+                    <div className="md:col-span-2 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-slate-850 pt-3 md:pt-0 md:pl-4">
+                      <label className="block text-[10px] text-slate-400 font-semibold mb-2 uppercase tracking-wider text-center w-full">Image</label>
+                      {item.imageUrl ? (
+                        <div className="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-md w-28 h-24">
+                          <img
+                            src={getImageUrl(item.imageUrl)}
+                            alt="collateral"
+                            className="w-full h-full object-cover"
+                          />
+                          {isEditMode && (
+                            <>
                               <button
                                 type="button"
                                 onClick={() => handleRowChange(idx, 'imageUrl', '')}
-                                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-500 transition-opacity"
+                                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity"
+                                title="Remove photo"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-5 w-5" />
                               </button>
-                            )}
-                          </div>
+                              <label
+                                className="absolute bottom-0 left-0 right-0 bg-black/60 text-[9px] text-slate-300 text-center py-1 cursor-pointer hover:bg-primary-900/60 transition-colors"
+                                title="Change photo"
+                              >
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleItemImageUpload(idx, e.target.files[0])}
+                                  className="hidden"
+                                />
+                              </label>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        isEditMode ? (
+                          <label className="flex flex-col items-center justify-center gap-1 p-3 bg-slate-900 border border-dashed border-slate-700 hover:border-primary-500 rounded-xl cursor-pointer transition-colors w-28 h-24">
+                            <Upload className="h-5 w-5 text-primary-400" />
+                            <span className="text-[10px] text-slate-400 font-semibold">Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleItemImageUpload(idx, e.target.files[0])}
+                              className="hidden"
+                            />
+                          </label>
                         ) : (
-                          isEditMode && (
-                            <label className="flex items-center justify-center p-1 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded cursor-pointer transition-colors w-10 mx-auto">
-                              <Upload className="h-3.5 w-3.5 text-primary-400" />
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleItemImageUpload(idx, e.target.files[0])}
-                                className="hidden"
-                              />
-                            </label>
-                          )
-                        )}
-                      </td>
-
-                      {isEditMode && (
-                        <td className="py-1 px-1 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItemRow(idx)}
-                            className="p-1 text-rose-500 hover:text-rose-455"
-                          >
-                            <Trash2 className="h-4.5 w-4.5" />
-                          </button>
-                        </td>
+                          <div className="flex flex-col items-center justify-center border border-slate-800 bg-slate-900/40 rounded-xl w-28 h-24 text-slate-500 text-xs italic">
+                            No Image
+                          </div>
+                        )
                       )}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Group Gross Totals intentionally removed per business requirements */}
 
         {/* Bottom accounting blocks */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 lg:col-span-3 space-y-4 text-xs">
+        <div className="grid grid-cols-1 gap-6 items-start">
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-slate-400 font-semibold mb-1 font-sans">Deal Amount : *</label>
@@ -958,7 +1062,7 @@ const DealMaster = () => {
               </div>
             </div>
           </div>
-      </div>
+        </div>
 
         {/* Company clock footer panel */}
         <div className="mt-8 border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 font-sans">

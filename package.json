@@ -4,10 +4,11 @@
   "description": "Girvi/Gold-Silver Mortgage Loan Management System",
   "main": "server/server.js",
   "scripts": {
-    "install-all": "npm install && npm install --prefix server && npm install --prefix client --legacy-peer-deps",
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client --legacy-peer-deps && npm install --prefix superadmin --legacy-peer-deps",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "superadmin": "npm run dev --prefix superadmin",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run superadmin\""
   },
   "dependencies": {
     "concurrently": "^8.2.2"

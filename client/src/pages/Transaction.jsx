@@ -450,27 +450,6 @@ const Transaction = () => {
           </div>
 
           <div className="space-y-4">
-            {/* Deal No selector (on left side) */}
-            <div className="grid grid-cols-3 items-center">
-              <label className="text-slate-400 font-semibold">Deal No. * :</label>
-              <div className="col-span-2">
-                <select
-                  required
-                  disabled={!isEditMode}
-                  value={form.dealId}
-                  onChange={(e) => handleDealChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-350 focus:outline-none"
-                >
-                  <option value="">Select active deal...</option>
-                  {deals.map(d => (
-                    <option key={d._id} value={d._id}>
-                      Deal #{d.dealNo} - {d.customerId?.name || ''} (₹{d.dealAmount})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             {/* Customer */}
             <div className="grid grid-cols-3 items-center relative">
               <label className="text-slate-400 font-semibold">Customer * :</label>
@@ -543,6 +522,29 @@ const Transaction = () => {
               </div>
             </div>
 
+            {/* Deal No selector */}
+            <div className="grid grid-cols-3 items-center">
+              <label className="text-slate-400 font-semibold">Deal No. * :</label>
+              <div className="col-span-2">
+                <select
+                  required
+                  disabled={!isEditMode}
+                  value={form.dealId}
+                  onChange={(e) => handleDealChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
+                >
+                  <option value="">Select active deal...</option>
+                  {deals
+                    .filter(d => d.customerId?._id === form.customerId || d.customerId === form.customerId)
+                    .map(d => (
+                      <option key={d._id} value={d._id}>
+                        Deal #{d.dealNo} (₹{d.dealAmount})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
             {/* Date */}
             <div className="grid grid-cols-3 items-center">
               <label className="text-slate-400 font-semibold">Tran Date * :</label>
@@ -550,9 +552,10 @@ const Transaction = () => {
                 <input
                   type="date"
                   required
-                  disabled
+                  disabled={!isEditMode || currentUser?.role !== 'admin'}
                   value={form.tranDate}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-850 rounded-lg text-sm text-slate-400 focus:outline-none"
+                  onChange={(e) => handleTranDateChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
                 />
               </div>
             </div>
@@ -605,7 +608,7 @@ const Transaction = () => {
                   type="text"
                   disabled
                   value={form.noOfMonths}
-                  className="w-24 px-3 py-2 bg-slate-955 border border-slate-850 rounded-lg font-mono text-slate-400 text-right"
+                  className="w-full px-3 py-2 bg-slate-955 border border-slate-850 rounded-lg font-mono text-slate-400 text-right"
                 />
               </div>
             </div>
@@ -619,33 +622,6 @@ const Transaction = () => {
                   disabled
                   value={form.noOfDays}
                   className="w-full px-3 py-2 bg-slate-955 border border-slate-850 rounded-lg font-mono text-slate-400 text-right"
-                />
-              </div>
-            </div>
-
-            {/* Closing Date (today) */}
-            <div className="grid grid-cols-3 items-center">
-              <label className="text-slate-400 font-semibold">Closing Date :</label>
-              <div className="col-span-2">
-                <input
-                  type="date"
-                  disabled
-                  value={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-850 rounded-lg text-sm text-slate-400 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Discount (on left side) */}
-            <div className="grid grid-cols-3 items-center">
-              <label className="text-slate-400 font-semibold">Discount :</label>
-              <div className="col-span-2">
-                <input
-                  type="number"
-                  disabled={!isEditMode}
-                  value={form.discount}
-                  onChange={(e) => handleDiscountChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg font-mono text-slate-100 text-right focus:outline-none"
                 />
               </div>
             </div>
@@ -713,6 +689,8 @@ const Transaction = () => {
               </div>
             </div>
 
+
+
             {/* Remarks */}
             <div className="grid grid-cols-3 items-center">
               <label className="text-slate-400 font-semibold">Remarks :</label>
@@ -723,6 +701,20 @@ const Transaction = () => {
                   value={form.remarks}
                   onChange={(e) => setForm({ ...form, remarks: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Discount */}
+            <div className="grid grid-cols-3 items-center">
+              <label className="text-slate-400 font-semibold">Discount :</label>
+              <div className="col-span-2">
+                <input
+                  type="number"
+                  disabled={!isEditMode}
+                  value={form.discount}
+                  onChange={(e) => handleDiscountChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
                 />
               </div>
             </div>
@@ -751,6 +743,7 @@ const Transaction = () => {
               <label className="text-slate-400 font-semibold">Transaction No. :</label>
               <span className="col-span-2 font-mono font-bold text-amber-500 text-sm">#{form.transactionNo}</span>
             </div>
+
 
             {/* Deal Start Date */}
             <div className="grid grid-cols-3 items-center">
@@ -850,8 +843,12 @@ const Transaction = () => {
               </div>
             </div>
 
-            {/* Total Paid */}
+            {/* Discount & Total Paid */}
             <div className="border-t border-slate-850 pt-4 space-y-3">
+
+
+
+
               <div className="grid grid-cols-3 items-center font-bold text-sm pt-2">
                 <label className="text-slate-350">Total Paid :</label>
                 <span className="col-span-2 text-right font-mono text-emerald-400 text-base">₹{formatIndianCurrency(form.totalPaid)}</span>

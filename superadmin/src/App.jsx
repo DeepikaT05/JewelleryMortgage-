@@ -6,7 +6,7 @@ import {
   Coins, AlertCircle, CheckCircle, ToggleLeft, ToggleRight, X
 } from 'lucide-react';
 
-const API = import.meta.env.VITE_API_URL || '';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const getToken = () => localStorage.getItem('sa_token');
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
@@ -93,7 +93,7 @@ const Badge = ({ active }) => (
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, Icon }) {
   return (
-    <div className="flex-1 min-w-[140px] glass-panel rounded-2xl p-5 border border-slate-800">
+    <div className="flex-1 min-w-[140px] glass-panel rounded-2xl p-5 border border-slate-850">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
         <div className="p-2 bg-primary-500/10 rounded-xl text-primary-500"><Icon className="h-4 w-4" /></div>
@@ -464,7 +464,7 @@ function SettingsTab({ showToast }) {
 }
 
 // ─── MAIN SUPERADMIN PAGE ─────────────────────────────────────────────────────
-export default function SuperAdmin() {
+export default function App() {
   const [page, setPage] = useState('login');
   const [tab, setTab] = useState('companies');
   const [creds, setCreds] = useState({ username: '', password: '' });
@@ -477,12 +477,7 @@ export default function SuperAdmin() {
   const showToast = (msg, type = 'success') => setToast({ msg, type });
 
   useEffect(() => {
-    // Check sa_token first, then fallback to regular token for super admin users
-    let token = getToken();
-    if (!token) {
-      token = localStorage.getItem('token');
-      if (token) localStorage.setItem('sa_token', token);
-    }
+    const token = getToken();
     if (token) { setPage('dashboard'); loadStats(); }
   }, []);
 
@@ -505,7 +500,7 @@ export default function SuperAdmin() {
     } finally { setLoading(false); }
   };
 
-  const logout = () => { localStorage.removeItem('sa_token'); localStorage.removeItem('token'); setPage('login'); setStats(null); window.location.href = '/login'; };
+  const logout = () => { localStorage.removeItem('sa_token'); setPage('login'); setStats(null); };
 
   const TABS = [
     { key: 'companies', label: 'Companies', Icon: Building2 },
@@ -548,7 +543,7 @@ export default function SuperAdmin() {
                   type="text"
                   value={creds.username}
                   onChange={e => setCreds(c => ({ ...c, username: e.target.value }))}
-                  placeholder="Enter username"
+                  placeholder="superadmin"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl text-sm focus:outline-none text-slate-100 placeholder-slate-500 transition-all"
                 />
               </div>
@@ -583,7 +578,7 @@ export default function SuperAdmin() {
           </form>
 
           <div className="mt-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-6">
-            <p>Super Admin Control Center — Secure Access</p>
+            <p>Default credentials: <span className="font-mono text-slate-400 font-semibold">superadmin / superadmin123</span></p>
           </div>
         </div>
       </div>

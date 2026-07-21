@@ -3,6 +3,15 @@ import axios from 'axios';
 import Toast from '../components/Toast';
 import { Save, Upload, ShieldCheck, KeyRound, Image, X, Building2, Pencil, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
 
+const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const baseUrl = axios.defaults.baseURL || '';
+  const base = baseUrl.replace(/\/$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
+
 const GirviSetup = () => {
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'sms', 'users', 'companies'
@@ -25,11 +34,11 @@ const GirviSetup = () => {
   const handleCreateCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('/api/companies', companyForm);
+      const res = await axios.post('http://localhost:5000/api/companies', companyForm);
       
       // Auto-create manager user for this store if credentials are provided
       if (companyForm.loginId && companyForm.password) {
-        await axios.post('/api/auth/register', {
+        await axios.post('http://localhost:5000/api/auth/register', {
           name: `${companyForm.name} Manager`,
           username: companyForm.loginId,
           password: companyForm.password,
@@ -50,7 +59,7 @@ const GirviSetup = () => {
   const handleUpdateCompany = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`/api/companies/${editingCompanyId}`, companyForm);
+      await axios.put(`http://localhost:5000/api/companies/${editingCompanyId}`, companyForm);
       triggerToast('Store updated successfully');
       setShowCompanyModal(false);
       setEditingCompanyId(null);
@@ -64,7 +73,7 @@ const GirviSetup = () => {
   const handleDeleteCompany = async (id) => {
     if (!window.confirm('Are you sure you want to delete this store? All associated records will be affected.')) return;
     try {
-      await axios.delete(`/api/companies/${id}`);
+      await axios.delete(`http://localhost:5000/api/companies/${id}`);
       triggerToast('Store deleted successfully');
       loadUserAndCompanies();
     } catch (err) {
@@ -75,7 +84,7 @@ const GirviSetup = () => {
   const handleToggleCompanyActive = async (company) => {
     try {
       const updatedStatus = company.isActive === undefined ? false : !company.isActive;
-      await axios.put(`/api/companies/${company._id}`, { isActive: updatedStatus });
+      await axios.put(`http://localhost:5000/api/companies/${company._id}`, { isActive: updatedStatus });
       triggerToast(`Store ${updatedStatus ? 'activated' : 'deactivated'} successfully`);
       loadUserAndCompanies();
     } catch (err) {
@@ -95,10 +104,14 @@ const GirviSetup = () => {
         setGirviForm({
           ...setupRes.data,
           defaultRateOfInterest: setupRes.data.defaultRateOfInterest || 3.00,
-          openingBalance: setupRes.data.openingBalance || 641860.00
+          openingBalance: setupRes.data.openingBalance || 641860.00,
+          defaultArea: setupRes.data.defaultArea || '',
+          defaultCity: setupRes.data.defaultCity || 'Mumbai',
+          defaultState: setupRes.data.defaultState || 'Maharashtra',
+          defaultCountry: setupRes.data.defaultCountry || 'India'
         });
         if (setupRes.data.logoFileUrl) {
-          setLogoPreview(`${setupRes.data.logoFileUrl}`);
+          setLogoPreview(getImageUrl(setupRes.data.logoFileUrl));
         }
       }
 
@@ -133,7 +146,11 @@ const GirviSetup = () => {
     customerNoticeSubject: 'Outstanding Pledge Loan Reminder',
     openingBalance: 641860.00,
     dealPrintHeading: 'Girvi Mortgage Loan Receipt',
-    logoFileUrl: ''
+    logoFileUrl: '',
+    defaultArea: '',
+    defaultCity: 'Mumbai',
+    defaultState: 'Maharashtra',
+    defaultCountry: 'India'
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -268,8 +285,7 @@ const GirviSetup = () => {
         <p className="text-slate-400 text-sm mt-1">Configure company profiles, receipt templates, lock values, and notification APIs.</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-lg">
+      <div className="flex space-x-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-sm">
         <button
           onClick={() => setActiveTab('general')}
           className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
@@ -422,6 +438,53 @@ const GirviSetup = () => {
                   />
                 </div>
 
+                {/* Default Customer Location Fields */}
+                <div className="border-t border-slate-800/60 pt-4 mt-4 space-y-4">
+                  <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Default Customer Address defaults</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Default Country</label>
+                      <input
+                        type="text"
+                        value={girviForm.defaultCountry}
+                        onChange={(e) => setGirviForm({ ...girviForm, defaultCountry: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 focus:outline-none"
+                        placeholder="e.g. India"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Default State</label>
+                      <input
+                        type="text"
+                        value={girviForm.defaultState}
+                        onChange={(e) => setGirviForm({ ...girviForm, defaultState: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 focus:outline-none"
+                        placeholder="e.g. Maharashtra"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Default City</label>
+                      <input
+                        type="text"
+                        value={girviForm.defaultCity}
+                        onChange={(e) => setGirviForm({ ...girviForm, defaultCity: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 focus:outline-none"
+                        placeholder="e.g. Mumbai"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Default Area</label>
+                      <input
+                        type="text"
+                        value={girviForm.defaultArea}
+                        onChange={(e) => setGirviForm({ ...girviForm, defaultArea: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 focus:outline-none"
+                        placeholder="e.g. Bandra"
+                      />
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <div className="space-y-4">
@@ -502,7 +565,8 @@ const GirviSetup = () => {
           </form>
         )}
 
-        {/* TAB 2: USER MANAGEMENT */}
+
+        {/* TAB 3: USER MANAGEMENT */}
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-850 pb-2">

@@ -26,33 +26,41 @@ const Toolbar = ({
   hasNext = true,
   showPrint = true,
   showFind = true,
+  showPrev = true,
+  showNext = true,
+  showCancel = true,
   showDelete = true
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-900 border border-slate-800 rounded-xl mb-6 shadow-lg no-print">
       {/* Navigation Controls */}
-      <button
-        onClick={onPrev}
-        disabled={isEditMode || !hasPrev}
-        type="button"
-        className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-lg disabled:opacity-30 transition-colors"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        <span>Prev</span>
-      </button>
-      <button
-        onClick={onNext}
-        disabled={isEditMode || !hasNext}
-        type="button"
-        className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-lg disabled:opacity-30 transition-colors"
-      >
-        <span>Next</span>
-        <ChevronRight className="h-4 w-4" />
-      </button>
+      {showPrev && (
+        <button
+          onClick={onPrev}
+          disabled={isEditMode || !hasPrev}
+          type="button"
+          className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-lg disabled:opacity-30 transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span>Prev</span>
+        </button>
+      )}
+      {showNext && (
+        <button
+          onClick={onNext}
+          disabled={isEditMode || !hasNext}
+          type="button"
+          className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 rounded-lg disabled:opacity-30 transition-colors"
+        >
+          <span>Next</span>
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      )}
 
       {/* Primary Actions */}
       {showFind && (
         <button
+          id="toolbar-find-button"
           onClick={onFind}
           disabled={isEditMode}
           type="button"
@@ -64,6 +72,7 @@ const Toolbar = ({
       )}
 
       <button
+        id="toolbar-add-button"
         onClick={onAdd}
         disabled={isEditMode}
         type="button"
@@ -74,6 +83,7 @@ const Toolbar = ({
       </button>
 
       <button
+        id="toolbar-edit-button"
         onClick={onEdit}
         disabled={isEditMode}
         type="button"
@@ -86,6 +96,7 @@ const Toolbar = ({
       {/* Edit Mode Actions */}
       <div className="flex items-center border-l border-r border-slate-800 px-2 gap-2">
         <button
+          id="toolbar-save-button"
           onClick={onSave}
           disabled={!isEditMode}
           type="button"
@@ -95,20 +106,24 @@ const Toolbar = ({
           <span>Save</span>
         </button>
 
-        <button
-          onClick={onCancel}
-          disabled={!isEditMode}
-          type="button"
-          className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg disabled:opacity-40 transition-colors"
-        >
-          <XSquare className="h-4 w-4" />
-          <span>Cancel</span>
-        </button>
+        {showCancel && (
+          <button
+            id="toolbar-cancel-button"
+            onClick={onCancel}
+            disabled={!isEditMode}
+            type="button"
+            className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg disabled:opacity-40 transition-colors"
+          >
+            <XSquare className="h-4 w-4" />
+            <span>Cancel</span>
+          </button>
+        )}
       </div>
 
       {/* Secondary Actions */}
       {showDelete && (
         <button
+          id="toolbar-delete-button"
           onClick={onDelete}
           disabled={isEditMode}
           type="button"
@@ -121,6 +136,7 @@ const Toolbar = ({
 
       {showPrint && (
         <button
+          id="toolbar-print-button"
           onClick={onPrint}
           disabled={isEditMode}
           type="button"

@@ -58,7 +58,7 @@ const seedDatabase = async () => {
     let superAdmin = await User.findOne({ username: 'superadmin' });
     if (!superAdmin) {
       const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash('superadmin@123', salt);
+      const passwordHash = await bcrypt.hash('superadmin123', salt);
 
       superAdmin = new User({
         userId: 1000,
@@ -70,7 +70,45 @@ const seedDatabase = async () => {
         isActive: true
       });
       await superAdmin.save();
-      console.log('Seeded default super admin user.');
+      console.log('Seeded default super admin user (superadmin/superadmin123).');
+    }
+
+    // 3. Seed Admin User
+    let admin = await User.findOne({ username: 'admin' });
+    if (!admin) {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash('admin', salt);
+
+      admin = new User({
+        userId: 1001,
+        name: 'System Administrator',
+        username: 'admin',
+        passwordHash,
+        role: 'admin',
+        companyId: company._id,
+        isActive: true
+      });
+      await admin.save();
+      console.log('Seeded default admin user successfully (admin/admin).');
+    }
+
+    // 3. Seed Operator User
+    let operator = await User.findOne({ username: 'operator' });
+    if (!operator) {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash('operator', salt);
+
+      operator = new User({
+        userId: 1002,
+        name: 'System Operator',
+        username: 'operator',
+        passwordHash,
+        role: 'operator',
+        companyId: company._id,
+        isActive: true
+      });
+      await operator.save();
+      console.log('Seeded default operator user successfully (operator/operator).');
     }
 
     // 4. Seed Girvi Setup
@@ -139,6 +177,35 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ledgers', ledgerRoutes);
 app.use('/api/superadmin', superadminRoutes);
+
+// Banks API Route (maps bank ledger accounts)
+app.get('/api/banks', require('./middleware/auth'), async (req, res) => {
+  try {
+    const LedgerAccount = require('./models/LedgerAccount');
+    const bankAccounts = await LedgerAccount.find({
+      group: 'bank',
+      companyId: req.user.companyId
+    });
+    const formatted = bankAccounts.map(acc => ({
+      _id: acc._id,
+      bankName: acc.name
+    }));
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({ message: 'Error retrieving banks', error: err.message });
+  }
+});
+
+// Counters API Route (returns next sequence number)
+app.get('/api/counters/:id', require('./middleware/auth'), async (req, res) => {
+  try {
+    const Counter = require('./models/Counter');
+    const cnt = await Counter.findOne({ id: req.params.id });
+    res.json({ nextSeq: (cnt ? cnt.seq : 0) + 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

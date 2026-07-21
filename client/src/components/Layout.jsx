@@ -83,17 +83,83 @@ const Layout = ({ children }) => {
     }
   }, [selectedLedgerId, showLedgerModal]);
 
-  // Global Ctrl + L Listener
+  // Global Keyboard Shortcuts (F2 for New, ESC for Back/Cancel, Alt + L for Ledger, PageUp/PageDown/Enter navigation)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (currentUser?.role === 'admin' && e.ctrlKey && e.key.toLowerCase() === 'l') {
+      // 1. Alt + L or Ctrl + L: Toggle Ledger Modal
+      if ((e.altKey && e.key.toLowerCase() === 'l') || (e.ctrlKey && e.key.toLowerCase() === 'l')) {
         e.preventDefault();
         setShowLedgerModal(prev => !prev);
       }
+      
+      // 2. F2: Add new record
+      if (e.key === 'F2') {
+        e.preventDefault();
+        const addBtn = document.getElementById('toolbar-add-button');
+        if (addBtn) addBtn.click();
+      }
+
+      // 3. Escape: Back / Cancel
+      if (e.key === 'Escape') {
+        if (showLedgerModal) {
+          e.preventDefault();
+          setShowLedgerModal(false);
+        } else {
+          const cancelBtn = document.getElementById('toolbar-cancel-button');
+          if (cancelBtn) {
+            e.preventDefault();
+            cancelBtn.click();
+          }
+        }
+      }
+
+      // 4. PageUp: Previous Record
+      if (e.key === 'PageUp') {
+        const prevBtn = document.getElementById('toolbar-prev-button');
+        if (prevBtn) {
+          e.preventDefault();
+          prevBtn.click();
+        }
+      }
+
+      // 5. PageDown: Next Record
+      if (e.key === 'PageDown') {
+        const nextBtn = document.getElementById('toolbar-next-button');
+        if (nextBtn) {
+          e.preventDefault();
+          nextBtn.click();
+        }
+      }
+
+      // 6. Enter: Move focus to the next input field
+      if (e.key === 'Enter') {
+        const target = e.target;
+        if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) {
+          if (target.type === 'submit' || target.type === 'button') {
+            return;
+          }
+          e.preventDefault();
+          const form = target.form || document;
+          const selector = 'input:not([disabled]):not([readonly]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), button[type=submit]:not([disabled]), button.submit-btn:not([disabled])';
+          const focusables = Array.from(form.querySelectorAll(selector)).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0 && el.offsetHeight > 0;
+          });
+          const index = focusables.indexOf(target);
+          if (index > -1 && index < focusables.length - 1) {
+            focusables[index + 1].focus();
+          } else if (index === focusables.length - 1) {
+            const saveBtn = document.getElementById('toolbar-save-button') || document.querySelector('button[type=submit]');
+            if (saveBtn) {
+              saveBtn.focus();
+            }
+          }
+        }
+      }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentUser]);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [showLedgerModal]);
 
   const handleCreateAccount = async (e) => {
     e.preventDefault();

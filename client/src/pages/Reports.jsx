@@ -252,6 +252,7 @@ const Reports = () => {
         >
           Overdue Reminders
         </button>
+
         <button
           onClick={() => setActiveTab('stock')}
           className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
@@ -404,7 +405,7 @@ const Reports = () => {
           </div>
         )}
 
-        {/* REPORT 2: STOCK SUMMARY */}
+        {/* REPORT 3: STOCK SUMMARY */}
         {activeTab === 'stock' && (
           <div className="space-y-4">
             <div>
@@ -575,18 +576,18 @@ const Reports = () => {
                 <span className="text-xs text-slate-400 font-semibold">Select Accounting Group:</span>
                 <input
                   type="text"
+                  list="accounting-groups-list"
                   value={selectedGroup}
                   onChange={(e) => setSelectedGroup(e.target.value)}
-                  placeholder="Type any group name..."
-                  list="accounting-groups-list"
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-primary-500"
+                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
+                  placeholder="Select or type group..."
                 />
                 <datalist id="accounting-groups-list">
                   {Array.from(new Set([
                     'cash', 'bank', 'crediter', 'debiter',
                     ...ledgers.map(l => l.group).filter(Boolean)
                   ])).map(g => (
-                    <option key={g} value={g}>{g.toUpperCase()}</option>
+                    <option key={g} value={g} />
                   ))}
                 </datalist>
               </div>
@@ -656,12 +657,12 @@ const Reports = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850 text-xs text-slate-300">
-                  {ledgers.filter(l => l.group === selectedGroup).length === 0 ? (
+                  {ledgers.filter(l => String(l.group).toLowerCase() === String(selectedGroup).toLowerCase()).length === 0 ? (
                     <tr>
                       <td colSpan="6" className="py-4 text-center text-slate-500 italic">No ledger accounts in this group.</td>
                     </tr>
                   ) : (
-                    ledgers.filter(l => l.group === selectedGroup).map(l => (
+                    ledgers.filter(l => String(l.group).toLowerCase() === String(selectedGroup).toLowerCase()).map(l => (
                       <tr key={l._id} className="hover:bg-slate-955/20 text-slate-300">
                         <td className="py-3 px-4 font-semibold text-slate-200">{l.name}</td>
                         <td className="py-3 px-4 uppercase text-[10px] font-mono text-slate-400">{l.group}</td>

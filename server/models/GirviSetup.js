@@ -10,6 +10,10 @@ const GirviSetupSchema = new mongoose.Schema({
   openingBalance: { type: Number, default: 0 },
   dealPrintHeading: { type: String, default: 'Girvi Mortgage Loan Receipt' },
   logoFileUrl: String,
+  defaultArea: { type: String, default: '' },
+  defaultCity: { type: String, default: 'Mumbai' },
+  defaultState: { type: String, default: 'Maharashtra' },
+  defaultCountry: { type: String, default: 'India' },
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true }
 }, { timestamps: true });
 

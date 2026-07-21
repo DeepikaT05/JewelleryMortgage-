@@ -236,8 +236,8 @@ router.post('/', authMiddleware, async (req, res) => {
       ratePercentPerMonth: deal.interestRatePerMonth,
       noOfMonths: calc.calcDetails.noOfMonths,
       noOfDays: calc.calcDetails.noOfDays,
-      isSettlement: (pBalance === 0 && cBalance === 0),
-      closingDate: (pBalance === 0 && cBalance === 0) ? new Date().toISOString().split('T')[0] : undefined,
+      isSettlement: isSettlement || false,
+      closingDate: isSettlement ? (closingDate || tranDate) : undefined,
       payMode,
       bankId: bankId || undefined,
       chequeNo,
@@ -300,10 +300,10 @@ router.post('/', authMiddleware, async (req, res) => {
       deal.lastPaidUpto = new Date(tranDate);
     }
     
-    // 2. Update Deal status - auto-settle if all balances are zero
-    if (pBalance === 0 && cBalance === 0) {
+    // 2. Update Deal status
+    if (isSettlement && pBalance === 0 && cBalance === 0) {
       deal.status = 'settled';
-      deal.stopDate = new Date();
+      deal.stopDate = new Date(tranDate);
     } else {
       // Check if deal is overdue (past end date and not settled)
       const now = new Date();

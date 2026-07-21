@@ -5,6 +5,15 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
 import { Search, Upload, FileSpreadsheet, X, Save } from 'lucide-react';
 
+const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const baseUrl = axios.defaults.baseURL || '';
+  const base = baseUrl.replace(/\/$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
+
 const GeneralMasters = () => {
   const [activeSubTab, setActiveSubTab] = useState('customers');
   const [toast, setToast] = useState(null);
@@ -19,16 +28,6 @@ const GeneralMasters = () => {
   const [groups, setGroups] = useState([]);
   const [items, setItems] = useState([]);
   const [termsText, setTermsText] = useState('');
-
-  // Settings state
-  const [settingsForm, setSettingsForm] = useState({
-    defaultInterestRate: 2.0,
-    defaultInterestFrequency: 'monthly',
-    defaultReturnPeriod: 12,
-    compoundAfterMonths: 12,
-    defaultPayMode: 'cash',
-    dealPrintHeading: 'Girvi Mortgage Loan Receipt'
-  });
 
   // Active indices for navigation
   const [customerIndex, setCustomerIndex] = useState(-1);
@@ -61,11 +60,11 @@ const GeneralMasters = () => {
   // --- FORM DATA FIELDS STRUCTURES ---
 
   const [customerForm, setCustomerForm] = useState({
-    _id: '', customerCode: '', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
-    state: 'Maharashtra', country: 'India', pin: '', email: '', mobile: '',
+    _id: '', customerCode: 'Auto', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
+    state: 'Maharashtra', country: 'India', pin: '', email: '', phone1: '', phone2: '', phone3: '', mobile: '',
     idProofName: 'Aadhaar Card', idProofNumber: '', idProofImageUrl: '', interestType: 'simple',
-    interestRate: 2.0, interestFrequency: 'monthly',
-    minimumInterestPeriod: 'NA'
+    interestRate: 2.0, interestFrequency: 'monthly', compoundMonthDefault: true, compoundMonth: 1,
+    compoundDate: '', minimumInterestPeriod: 'NA'
   });
   const [idFile, setIdFile] = useState(null);
   const [idFilePreview, setIdFilePreview] = useState(null);
@@ -80,8 +79,32 @@ const GeneralMasters = () => {
 
 
 
+  const [companyForm, setCompanyForm] = useState({
+    name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '', financialYearStart: '', financialYearEnd: ''
+  });
+
+  const [defaultSettings, setDefaultSettings] = useState({
+    defaultArea: '',
+    defaultCity: 'Mumbai',
+    defaultState: 'Maharashtra',
+    defaultCountry: 'India'
+  });
+
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
+  };
+
+  const getDefaultFinancialYear = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0 is Jan, 2 is Mar
+    let fyStartYear = year;
+    if (month < 3) {
+      fyStartYear = year - 1;
+    }
+    const fyStart = `${fyStartYear}-04-01`;
+    const fyEnd = `${fyStartYear + 1}-03-31`;
+    return { fyStart, fyEnd };
   };
 
   // --- TIME & COMPANY METRICS LOADER ---
@@ -89,15 +112,82 @@ const GeneralMasters = () => {
     try {
       const userRes = await axios.get('/api/auth/me');
       const compListRes = await axios.get('/api/companies');
-      const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
+      let activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
+      if (!activeComp && compListRes.data.length > 0) {
+        activeComp = compListRes.data[0];
+      }
       setCompanyDetails(activeComp);
+      if (activeComp) {
+        const { fyStart, fyEnd } = getDefaultFinancialYear();
+        setCompanyForm({
+          name: activeComp.name || '',
+          address: activeComp.address || '',
+          city: activeComp.city || '',
+          area: activeComp.area || '',
+          pin: activeComp.pin || '',
+          gstin: activeComp.gstin || '',
+          phone: activeComp.phone || '',
+          email: activeComp.email || '',
+          financialYearStart: activeComp.financialYearStart ? activeComp.financialYearStart.split('T')[0] : fyStart,
+          financialYearEnd: activeComp.financialYearEnd ? activeComp.financialYearEnd.split('T')[0] : fyEnd
+        });
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
+  const fetchDefaultSettings = async () => {
+    try {
+      const res = await axios.get('/api/settings/girvi');
+      if (res.data) {
+        setDefaultSettings({
+          defaultArea: res.data.defaultArea || '',
+          defaultCity: res.data.defaultCity || 'Mumbai',
+          defaultState: res.data.defaultState || 'Maharashtra',
+          defaultCountry: res.data.defaultCountry || 'India'
+        });
+      }
+    } catch (err) {
+      console.error('Error loading default location settings:', err);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      let companyId = companyDetails?._id;
+      if (!companyId) {
+        const userRes = await axios.get('/api/auth/me');
+        companyId = userRes.data.companyId;
+      }
+      if (!companyId) {
+        triggerToast('No active company found. Please log in again.', 'error');
+        return;
+      }
+
+      // 1. Save Company location & info
+      const compRes = await axios.put(`/api/companies/${companyId}`, companyForm);
+      setCompanyDetails(compRes.data);
+
+      // 2. Save Address Defaults
+      await axios.put('/api/settings/girvi', {
+        defaultArea: defaultSettings.defaultArea,
+        defaultCity: defaultSettings.defaultCity,
+        defaultState: defaultSettings.defaultState,
+        defaultCountry: defaultSettings.defaultCountry
+      });
+
+      triggerToast('Store profile & customer defaults updated successfully');
+    } catch (err) {
+      console.error(err);
+      triggerToast('Error updating store settings', 'error');
+    }
+  };
+
   useEffect(() => {
     fetchActiveCompany();
+    fetchDefaultSettings();
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -133,7 +223,7 @@ const GeneralMasters = () => {
         idProofImageUrl: c.idProofImageUrl || '',
         compoundDate: c.compoundDate || ''
       });
-      setIdFilePreview(c.idProofImageUrl ? `${c.idProofImageUrl}` : null);
+      setIdFilePreview(c.idProofImageUrl ? getImageUrl(c.idProofImageUrl) : null);
       setIdFile(null);
       setIsEditMode(false);
       setIsNewRecord(false);
@@ -213,36 +303,6 @@ const GeneralMasters = () => {
     }
   };
 
-  const fetchSettings = async () => {
-    try {
-      const res = await axios.get('/api/settings/girvi');
-      if (res.data) {
-        setSettingsForm({
-          defaultInterestRate: res.data.defaultRateOfInterest || 2.0,
-          defaultInterestFrequency: 'monthly',
-          defaultReturnPeriod: 12,
-          compoundAfterMonths: 12,
-          defaultPayMode: 'cash',
-          dealPrintHeading: res.data.dealPrintHeading || 'Girvi Mortgage Loan Receipt'
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      await axios.put('/api/settings/girvi', {
-        defaultRateOfInterest: settingsForm.defaultInterestRate,
-        dealPrintHeading: settingsForm.dealPrintHeading
-      });
-      triggerToast('Settings updated successfully');
-    } catch (err) {
-      triggerToast('Error saving settings', 'error');
-    }
-  };
-
   // Switch Sub-Tabs
   useEffect(() => {
     setIsEditMode(false);
@@ -259,8 +319,6 @@ const GeneralMasters = () => {
       fetchItemsList();
     } else if (activeSubTab === 'terms') {
       fetchTermsConfig();
-    } else if (activeSubTab === 'settings') {
-      fetchSettings();
     }
   }, [activeSubTab]);
 
@@ -300,13 +358,26 @@ const GeneralMasters = () => {
 
   // --- ADD ACTIONS ---
 
-  const handleAddNewCustomer = () => {
+  const handleAddNewCustomer = async () => {
+    let nextCode = 'Auto';
+    try {
+      const res = await axios.get('/api/counters/customerCode');
+      if (res.data && res.data.nextSeq) {
+        nextCode = res.data.nextSeq;
+      }
+    } catch (err) {
+      console.error(err);
+    }
     setCustomerForm({
-      _id: '', customerCode: '', name: '', fatherHusbandName: '', address: '', area: '', city: 'Mumbai',
-      state: 'Maharashtra', country: 'India', pin: '', email: '', mobile: '',
+      _id: '', customerCode: nextCode, name: '', fatherHusbandName: '', address: '',
+      area: defaultSettings.defaultArea,
+      city: defaultSettings.defaultCity,
+      state: defaultSettings.defaultState,
+      country: defaultSettings.defaultCountry,
+      pin: '', email: '', phone1: '', phone2: '', phone3: '', mobile: '',
       idProofName: 'Aadhaar Card', idProofNumber: '', idProofImageUrl: '', interestType: 'simple',
-      interestRate: 2.0, interestFrequency: 'monthly',
-      minimumInterestPeriod: 'NA'
+      interestRate: 2.0, interestFrequency: 'monthly', compoundMonthDefault: true, compoundMonth: 1,
+      compoundDate: '', minimumInterestPeriod: 'NA'
     });
     setIdFile(null);
     setIdFilePreview(null);
@@ -314,14 +385,32 @@ const GeneralMasters = () => {
     setIsNewRecord(true);
   };
 
-  const handleAddNewGroup = () => {
-    setGroupForm({ _id: '', groupId: 'Auto', groupName: '', defaultRate: 0 });
+  const handleAddNewGroup = async () => {
+    let nextCode = 'Auto';
+    try {
+      const res = await axios.get('/api/counters/groupId');
+      if (res.data && res.data.nextSeq) {
+        nextCode = res.data.nextSeq;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setGroupForm({ _id: '', groupId: nextCode, groupName: '', defaultRate: 0 });
     setIsEditMode(true);
     setIsNewRecord(true);
   };
 
-  const handleAddNewItem = () => {
-    setItemForm({ _id: '', itemId: 'Auto', itemName: '', groupId: groups[0]?._id || '' });
+  const handleAddNewItem = async () => {
+    let nextCode = 'Auto';
+    try {
+      const res = await axios.get('/api/counters/itemId');
+      if (res.data && res.data.nextSeq) {
+        nextCode = res.data.nextSeq;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setItemForm({ _id: '', itemId: nextCode, itemName: '', groupId: groups[0]?._id || '' });
     setIsEditMode(true);
     setIsNewRecord(true);
   };
@@ -477,7 +566,7 @@ const GeneralMasters = () => {
       </div>
 
       {/* Unified Master Options Tab Selector */}
-      <div className="flex space-x-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-2xl no-print">
+      <div className="flex space-x-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-3xl no-print">
         <button
           onClick={() => setActiveSubTab('customers')}
           className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
@@ -511,13 +600,14 @@ const GeneralMasters = () => {
         >
           Terms & Conditions
         </button>
+
         <button
           onClick={() => setActiveSubTab('settings')}
           className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
             activeSubTab === 'settings' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Settings
+          Store Settings
         </button>
       </div>
 
@@ -551,7 +641,7 @@ const GeneralMasters = () => {
 
       {/* Dynamic Master Card forms */}
       <div className={`glass-panel p-8 rounded-2xl border border-slate-800 shadow-xl ${
-        activeSubTab === 'customers' ? 'max-w-5xl' : activeSubTab === 'settings' ? 'max-w-3xl' : 'max-w-2xl'
+        activeSubTab === 'customers' || activeSubTab === 'settings' ? 'max-w-5xl' : 'max-w-2xl'
       }`}>
         
         {/* VIEW 1: CUSTOMER MASTER FORM */}
@@ -691,15 +781,13 @@ const GeneralMasters = () => {
               {/* Right column inputs */}
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-slate-450 font-semibold mb-1">Client Code <span className="text-red-500 font-bold">*</span></label>
+                  <label className="block text-slate-450 font-semibold mb-1">Client Code</label>
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      disabled={!isEditMode || !isNewRecord}
+                      disabled
                       value={customerForm.customerCode}
-                      onChange={(e) => setCustomerForm({ ...customerForm, customerCode: e.target.value })}
-                      placeholder="Enter client code"
-                      className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono font-bold text-amber-500 focus:outline-none focus:border-primary-500 disabled:bg-slate-950 disabled:opacity-80"
+                      className="flex-1 px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-xs font-mono font-bold text-amber-500"
                     />
                     <button
                       type="button"
@@ -713,23 +801,14 @@ const GeneralMasters = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-455 font-semibold mb-1">City <span className="text-[10px] text-primary-400 ml-1">(F2 to add new)</span></label>
+                  <label className="block text-slate-455 font-semibold mb-1">City</label>
                   <input
                     type="text"
                     list="cities-list"
                     disabled={!isEditMode}
                     value={customerForm.city}
                     onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'F2' && isEditMode) {
-                        e.preventDefault();
-                        const newCity = prompt('Enter new city name:');
-                        if (newCity && newCity.trim()) {
-                          setCustomerForm({ ...customerForm, city: newCity.trim() });
-                        }
-                      }
-                    }}
-                    placeholder="Select or type City (F2 for new)"
+                    placeholder="Select or type City"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm focus:outline-none disabled:opacity-60 text-slate-100"
                   />
                   <datalist id="cities-list">
@@ -799,7 +878,7 @@ const GeneralMasters = () => {
             </div>
 
             {/* Calculations Rules */}
-            <div className="border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+            <div className="border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-4 gap-6 text-xs text-slate-300">
               {/* Radios for Calculation type */}
               <div>
                 <span className="block text-[11px] text-slate-400 font-semibold mb-2">Interest Type</span>
@@ -831,18 +910,19 @@ const GeneralMasters = () => {
                 </div>
               </div>
 
-              {/* Interest Rate (predefined from settings) */}
+              {/* Interest Rate & Frequency Radios */}
               <div className="space-y-3">
                 <div>
                   <label className="block text-[11px] text-slate-400 font-semibold mb-1">
-                    Interest Rate <span className="text-[10px] text-primary-400">(predefined)</span>
+                    Interest Rate <span className="text-red-500 font-bold">*</span>
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    disabled
+                    disabled={true}
                     value={customerForm.interestRate}
-                    className="w-24 px-2 py-1 bg-slate-950 border border-slate-850 rounded text-slate-400 font-mono"
+                    onChange={(e) => setCustomerForm({ ...customerForm, interestRate: e.target.value })}
+                    className="w-24 px-2 py-1 bg-slate-955 border border-slate-850 rounded text-slate-400 font-mono focus:outline-none"
                   />
                 </div>
 
@@ -864,13 +944,7 @@ const GeneralMasters = () => {
                 </div>
               </div>
 
-              {/* Info: Auto compound after 12 months */}
-              <div>
-                <span className="block text-[11px] text-slate-400 font-semibold mb-2">Compound Rule</span>
-                <p className="text-[10px] text-slate-500 bg-slate-950/40 border border-slate-850 rounded-lg p-2">
-                  Interest automatically compounds after 12 months if unpaid.
-                </p>
-              </div>
+              {/* Hidden Minimum Interest Section */}
             </div>
           </div>
         )}
@@ -1021,87 +1095,186 @@ const GeneralMasters = () => {
           </div>
         )}
 
-        {/* VIEW 6: SETTINGS MASTER */}
+        {/* VIEW 6: STORE SETTINGS & CUSTOMER DEFAULT FIELDS */}
         {activeSubTab === 'settings' && (
-          <div className="space-y-6">
+          <form onSubmit={handleSaveSettings} className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-850 pb-2">
-              <h3 className="text-lg font-bold text-slate-200">Settings</h3>
+              <h3 className="text-lg font-bold text-slate-200">Store & Address Defaults Settings</h3>
               <button
-                onClick={handleSaveSettings}
+                type="submit"
                 className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold shadow-lg flex items-center space-x-1.5"
               >
                 <Save className="h-4 w-4" />
                 <span>Save Settings</span>
               </button>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Default Interest Rate (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settingsForm.defaultInterestRate}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultInterestRate: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
-                />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs">
+              {/* Left Column: Store Profile Settings */}
+              <div className="space-y-4">
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-850/50 pb-1">Store / Company Details</span>
+                
+                <div>
+                  <label className="block text-slate-450 font-semibold mb-1">Company/Store Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={companyForm.name}
+                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-primary-500"
+                    placeholder="Rama Jewellers Store"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-455 font-semibold mb-1">Address</label>
+                  <input
+                    type="text"
+                    value={companyForm.address}
+                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-primary-500"
+                    placeholder="e.g. 45 Bazar Street"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">City</label>
+                    <input
+                      type="text"
+                      value={companyForm.city}
+                      onChange={(e) => setCompanyForm({ ...companyForm, city: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">Area</label>
+                    <input
+                      type="text"
+                      value={companyForm.area}
+                      onChange={(e) => setCompanyForm({ ...companyForm, area: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">PIN Code</label>
+                    <input
+                      type="text"
+                      value={companyForm.pin}
+                      onChange={(e) => setCompanyForm({ ...companyForm, pin: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">GSTIN</label>
+                    <input
+                      type="text"
+                      value={companyForm.gstin}
+                      onChange={(e) => setCompanyForm({ ...companyForm, gstin: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={companyForm.phone}
+                      onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={companyForm.email}
+                      onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">Financial Year Start</label>
+                    <input
+                      type="date"
+                      value={companyForm.financialYearStart}
+                      onChange={(e) => setCompanyForm({ ...companyForm, financialYearStart: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-455 font-semibold mb-1">Financial Year End</label>
+                    <input
+                      type="date"
+                      value={companyForm.financialYearEnd}
+                      onChange={(e) => setCompanyForm({ ...companyForm, financialYearEnd: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Interest Frequency</label>
-                <select
-                  value={settingsForm.defaultInterestFrequency}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultInterestFrequency: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="daily">Daily</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Default Return Period (Months)</label>
-                <input
-                  type="number"
-                  value={settingsForm.defaultReturnPeriod}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultReturnPeriod: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Compound After (Months)</label>
-                <input
-                  type="number"
-                  value={settingsForm.compoundAfterMonths}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, compoundAfterMonths: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 font-mono focus:outline-none"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Interest automatically compounds after this many months if unpaid.</p>
-              </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Default Pay Mode</label>
-                <select
-                  value={settingsForm.defaultPayMode}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, defaultPayMode: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
-                >
-                  <option value="cash">Cash</option>
-                  <option value="bank">Bank</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Deal Print Heading</label>
-                <input
-                  type="text"
-                  value={settingsForm.dealPrintHeading}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, dealPrintHeading: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-100 focus:outline-none"
-                />
+
+              {/* Right Column: Customer Default Fields Settings */}
+              <div className="space-y-4">
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-850/50 pb-1">Default Customer address details</span>
+                
+                <div>
+                  <label className="block text-slate-455 font-semibold mb-1">Default Country</label>
+                  <input
+                    type="text"
+                    value={defaultSettings.defaultCountry}
+                    onChange={(e) => setDefaultSettings({ ...defaultSettings, defaultCountry: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    placeholder="e.g. India"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-455 font-semibold mb-1">Default State</label>
+                  <input
+                    type="text"
+                    value={defaultSettings.defaultState}
+                    onChange={(e) => setDefaultSettings({ ...defaultSettings, defaultState: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    placeholder="e.g. Maharashtra"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-455 font-semibold mb-1">Default City</label>
+                  <input
+                    type="text"
+                    value={defaultSettings.defaultCity}
+                    onChange={(e) => setDefaultSettings({ ...defaultSettings, defaultCity: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    placeholder="e.g. Mumbai"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-455 font-semibold mb-1">Default Area</label>
+                  <input
+                    type="text"
+                    value={defaultSettings.defaultArea}
+                    onChange={(e) => setDefaultSettings({ ...defaultSettings, defaultArea: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
+                    placeholder="e.g. Bandra"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </form>
         )}
 
-        {/* FOOTER CLOCK CARD CARD (EXCEPT ON TERMS & CONDITIONS & SETTINGS) */}
+        {/* FOOTER CLOCK CARD CARD (EXCEPT ON TERMS & CONDITIONS) */}
         {activeSubTab !== 'terms' && activeSubTab !== 'settings' && (
           <div className="mt-8 border-t border-slate-850 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 font-sans">
             <div>
