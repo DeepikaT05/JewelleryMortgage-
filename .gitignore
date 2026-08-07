@@ -35,3 +35,8 @@ mobile-expo/build-*.apk
 
 # Scratch / temp files
 scratch/
+prompt.md
+prompt.txt
+deploy.sh
+deploy_script.txt
+
