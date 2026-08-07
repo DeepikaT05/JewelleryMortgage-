@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Girvi Manager",
+    "slug": "girvi-manager",
+    "version": "1.0.0",
+    "newArchEnabled": false,
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.girvimanager.expo"
+    },
+    "android": {
+      "package": "com.girvimanager.expo",
+      "adaptiveIcon": {
+        "backgroundColor": "#fffdfa",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "./plugins/withGradleMemory",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4aee161b-f9c1-4f02-9e9b-189e0781920e"
+      }
+    },
+    "owner": "bishnusahu"
+  }
+}

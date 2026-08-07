@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "81af4d34-0532-43da-95e5-f77f418e6942"
+      }
+    },
+    "android": {
+      "package": "com.deepika489ur93nfuwnsewfwn.girvimanagementsystem"
+    }
+  }
+}

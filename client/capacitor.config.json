@@ -1,0 +1,8 @@
+{
+  "appId": "com.girvimanager.app",
+  "appName": "Girvi Manager",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  }
+}

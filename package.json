@@ -1,0 +1,16 @@
+{
+  "name": "girvi-management-system",
+  "version": "1.0.0",
+  "description": "Girvi/Gold-Silver Mortgage Loan Management System",
+  "main": "server/server.js",
+  "scripts": {
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client --legacy-peer-deps && npm install --prefix superadmin --legacy-peer-deps",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "superadmin": "npm run dev --prefix superadmin",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run superadmin\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

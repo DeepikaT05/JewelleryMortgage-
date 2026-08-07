@@ -1,0 +1,229 @@
+================================================================================
+           GIRVI MORTGAGE LOAN MANAGEMENT SYSTEM - DEPLOYMENT SCRIPT & GUIDE
+================================================================================
+Target Server IP   : 192.168.1.36
+Domain Name        : jewellery.stafftrack.cloud
+Backend API Port   : 5000 (http://jewellery.stafftrack.cloud/api or http://192.168.1.36:5000)
+Client App Port    : 80 (http://jewellery.stafftrack.cloud or http://192.168.1.36)
+Superadmin App Port: 8080 (http://jewellery.stafftrack.cloud:8080 or http://192.168.1.36:8080)
+MongoDB Service    : mongodb://127.0.0.1:27017/girvi_management
+================================================================================
+
+--------------------------------------------------------------------------------
+PART 1: LINUX / UBUNTU SERVER AUTOMATED DEPLOYMENT SCRIPT (deploy.sh)
+--------------------------------------------------------------------------------
+Copy the code block below and save it as 'deploy.sh' on your server (192.168.1.36),
+then run: 
+  chmod +x deploy.sh
+  ./deploy.sh
+
+----------------------------- [ BEGIN deploy.sh ] -----------------------------
+#!/bin/bash
+
+# Stop script execution on error
+set -e
+
+echo "=================================================="
+echo " Starting Deployment on Server: 192.168.1.36"
+echo "=================================================="
+
+# 1. Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# 2. Install Node.js (v20 LTS), Nginx, Git, PM2
+if ! command -v node &> /dev/null; then
+    echo "[+] Installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt install -y nodejs
+fi
+
+if ! command -v nginx &> /dev/null; then
+    echo "[+] Installing Nginx..."
+    sudo apt install -y nginx
+fi
+
+if ! command -v pm2 &> /dev/null; then
+    echo "[+] Installing PM2 process manager..."
+    sudo npm install -g pm2
+fi
+
+# 3. Create Project Directory
+APP_DIR="/var/www/jeweller-mortgage"
+sudo mkdir -p $APP_DIR
+sudo chown -R $USER:$USER $APP_DIR
+
+echo "[+] Navigating to project directory: $APP_DIR"
+cd $APP_DIR
+
+# 4. Configure Backend Environment (.env)
+echo "[+] Creating server environment file..."
+cat <<EOT > server/.env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/girvi_management
+JWT_SECRET=girvi_mortgage_secret_key_2026_192_168_1_36
+SERVER_IP=192.168.1.36
+NODE_ENV=production
+EOT
+
+# 5. Install Dependencies & Build Frontend Apps
+echo "[+] Installing root & server dependencies..."
+npm install
+npm install --prefix server
+
+echo "[+] Building Client App with API URL (http://192.168.1.36:5000)..."
+cat <<EOT > client/.env
+VITE_API_URL=http://192.168.1.36:5000
+EOT
+npm install --prefix client --legacy-peer-deps
+npm run build --prefix client
+
+echo "[+] Building Superadmin App with API URL (http://192.168.1.36:5000)..."
+cat <<EOT > superadmin/.env
+VITE_API_URL=http://192.168.1.36:5000
+EOT
+npm install --prefix superadmin --legacy-peer-deps
+npm run build --prefix superadmin
+
+# 6. Start Node.js Backend Server via PM2
+echo "[+] Starting/Restarting Backend Server via PM2..."
+cd $APP_DIR/server
+pm2 stop girvi-backend || true
+pm2 start server.js --name "girvi-backend"
+pm2 save
+pm2 startup | tail -n 1 | bash || true
+cd $APP_DIR
+
+# 7. Configure Nginx Web Server for IP 192.168.1.36
+echo "[+] Configuring Nginx reverse proxy & static serving..."
+sudo cat <<EOT > /etc/nginx/sites-available/jeweller-mortgage
+server {
+    listen 80;
+    server_name 192.168.1.36;
+
+    # Client Web Application (Frontend)
+    location / {
+        root $APP_DIR/client/dist;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Backend API Proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+
+    # Uploads directory serving
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:5000/uploads/;
+    }
+}
+
+server {
+    listen 8080;
+    server_name 192.168.1.36;
+
+    # Superadmin Web Application
+    location / {
+        root $APP_DIR/superadmin/dist;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Backend API Proxy for Superadmin
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOT
+
+# Link Nginx site configuration
+sudo ln -sf /etc/nginx/sites-available/jeweller-mortgage /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test & Restart Nginx
+sudo nginx -t
+sudo systemctl restart nginx
+
+echo "=================================================="
+echo " DEPLOYMENT COMPLETED SUCCESSFULLY!"
+echo " Client Web App      : http://192.168.1.36"
+echo " Superadmin Web App  : http://192.168.1.36:8080"
+echo " Backend API Server  : http://192.168.1.36:5000"
+echo "=================================================="
+----------------------------- [ END deploy.sh ] -----------------------------
+
+
+--------------------------------------------------------------------------------
+PART 2: WINDOWS SERVER DEPLOYMENT COMMANDS (POWERSHELL / CMD)
+--------------------------------------------------------------------------------
+If server 192.168.1.36 is running Windows OS:
+
+1. Open PowerShell / Command Prompt as Administrator on 192.168.1.36.
+2. Install Node.js & PM2:
+   npm install -g pm2
+   npm install -g pm2-windows-startup
+   pm2-startup install
+
+3. Navigate to project root folder:
+   cd C:\jeweller-mortgage
+
+4. Create server/.env file with:
+   PORT=5000
+   MONGO_URI=mongodb://127.0.0.1:27017/girvi_management
+   JWT_SECRET=girvi_mortgage_secret_key_2026_192_168_1_36
+   SERVER_IP=192.168.1.36
+
+5. Install & Build:
+   npm run install-all
+   npm run build --prefix client
+   npm run build --prefix superadmin
+
+6. Start Server with PM2:
+   cd server
+   pm2 start server.js --name "girvi-backend"
+   pm2 save
+
+7. Serve Frontend Apps on Windows using PM2 serve / serve package:
+   npm install -g serve
+   pm2 serve C:\jeweller-mortgage\client\dist 80 --name "girvi-client" --single
+   pm2 serve C:\jeweller-mortgage\superadmin\dist 8080 --name "girvi-superadmin" --single
+   pm2 save
+
+
+--------------------------------------------------------------------------------
+PART 3: HOW TO TRANSFER CODE TO SERVER (192.168.1.36)
+--------------------------------------------------------------------------------
+From your local Machine (PowerShell or Terminal), run SCP to copy project files:
+
+  scp -r "C:\Users\DEEPIKA TANDULKAR\OneDrive\Desktop\vanikicrop\jeweller mortgage" root@192.168.1.36:/var/www/jeweller-mortgage
+
+Or use Git on server:
+  git clone <YOUR_GIT_REPOSITORY_URL> /var/www/jeweller-mortgage
+
+
+--------------------------------------------------------------------------------
+PART 4: MOBILE APP CONFIGURATION (EXPO / REACT NATIVE)
+--------------------------------------------------------------------------------
+In your mobile app (`mobile-expo/app.json` or API config):
+Set server API Base URL to:
+  http://192.168.1.36:5000
+
+Default Login Credentials on First Launch (Database Auto-Seeded):
+- Superadmin Portal (http://192.168.1.36:8080):
+  Username: superadmin
+  Password: superadmin123
+
+- Client Portal (http://192.168.1.36):
+  Username: admin
+  Password: admin
+================================================================================
