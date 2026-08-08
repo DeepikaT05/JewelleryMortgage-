@@ -587,6 +587,13 @@ const Transaction = () => {
                 className="w-36 py-0.5 px-2 h-7 bg-slate-955 border border-slate-850 rounded-md font-mono text-slate-400 text-xs text-right font-bold" />
             </div>
 
+            {/* Total Interest (Accrued interest for all months) */}
+            <div className="flex items-center space-x-2">
+              <label className="w-36 shrink-0 text-amber-400 font-semibold text-[11px] text-left">Total Interest:</label>
+              <input type="text" disabled value={`₹${formatIndianCurrency(form.compound?.toBePaid || 0)}`}
+                className="w-36 py-0.5 px-2 h-7 bg-slate-955 border border-amber-500/30 rounded-md font-mono text-amber-400 text-xs text-right font-bold" />
+            </div>
+
             {/* No. of Months */}
             <div className="flex items-center space-x-2">
               <label className="w-36 shrink-0 text-slate-400 font-semibold text-[11px] text-left">No. of Months:</label>
