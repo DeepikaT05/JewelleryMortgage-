@@ -38,6 +38,21 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Intercept responses to handle 401 Unauthorized (expired or missing session)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
