@@ -3,7 +3,7 @@ import axios from 'axios';
 import Toolbar from '../components/Toolbar';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { Search, Upload, FileSpreadsheet, X, Save } from 'lucide-react';
+import { Search, Upload, FileSpreadsheet, X, Save, Users } from 'lucide-react';
 
 const getImageUrl = (url) => {
   if (!url) return '';
@@ -88,6 +88,10 @@ const GeneralMasters = () => {
   const [selectedLedgerGroup, setSelectedLedgerGroup] = useState(null);
   const [ledgerGroupSearchText, setLedgerGroupSearchText] = useState('');
   const [ledgerGroupMembers, setLedgerGroupMembers] = useState([]);
+
+  // Save prompt modal state
+  const [showSaveGroupModal, setShowSaveGroupModal] = useState(false);
+  const [saveGroupInput, setSaveGroupInput] = useState('General');
 
 
 
@@ -521,6 +525,47 @@ const GeneralMasters = () => {
 
   // --- SAVE ACTIONS ---
 
+  const executeCustomerSave = async (groupNameToSave) => {
+    try {
+      const finalGroup = (groupNameToSave || customerForm.customerGroup || 'General').trim();
+      const matchedGroup = customerGroups.find(cg => cg.groupName.toLowerCase() === finalGroup.toLowerCase());
+      const groupIdToSave = matchedGroup ? matchedGroup._id : null;
+
+      const data = new FormData();
+      Object.keys(customerForm).forEach(key => {
+        if (key !== 'idProofImageUrl' && key !== 'customerGroup' && key !== 'customerGroupId') {
+          data.append(key, customerForm[key]);
+        }
+      });
+      data.append('customerGroup', finalGroup);
+      if (groupIdToSave) {
+        data.append('customerGroupId', groupIdToSave);
+      }
+
+      if (idFile) {
+        data.append('idProofImage', idFile);
+      }
+
+      if (isNewRecord) {
+        const res = await axios.post('/api/customers', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        triggerToast(`Customer created successfully in Group "${finalGroup}"`);
+        setShowSaveGroupModal(false);
+        fetchCustomersList(res.data._id);
+      } else {
+        const res = await axios.put(`/api/customers/${customerForm._id}`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        triggerToast(`Customer profile updated in Group "${finalGroup}"`);
+        setShowSaveGroupModal(false);
+        fetchCustomersList(res.data._id);
+      }
+    } catch (err) {
+      triggerToast(err.response?.data?.message || 'Error saving customer profile', 'error');
+    }
+  };
+
   const handleSave = async () => {
     try {
       if (activeSubTab === 'customers') {
@@ -528,31 +573,10 @@ const GeneralMasters = () => {
           triggerToast('Customer Name is required', 'error');
           return;
         }
-
-        const data = new FormData();
-        Object.keys(customerForm).forEach(key => {
-          if (key !== 'idProofImageUrl') {
-            data.append(key, customerForm[key]);
-          }
-        });
-
-        if (idFile) {
-          data.append('idProofImage', idFile);
-        }
-
-        if (isNewRecord) {
-          const res = await axios.post('/api/customers', data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          triggerToast('Customer created successfully');
-          fetchCustomersList(res.data._id);
-        } else {
-          const res = await axios.put(`/api/customers/${customerForm._id}`, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          triggerToast('Customer profile updated');
-          fetchCustomersList(res.data._id);
-        }
+        // Open group assignment modal prompt immediately on save
+        setSaveGroupInput(customerForm.customerGroup || 'General');
+        setShowSaveGroupModal(true);
+        return;
       } else if (activeSubTab === 'groups') {
         if (!groupForm.groupName) {
           triggerToast('Group name is required', 'error');
@@ -1773,6 +1797,106 @@ const GeneralMasters = () => {
                     </button>
                   ))
               }
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SAVE CUSTOMER GROUP PROMPT MODAL */}
+      {showSaveGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 font-sans animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-amber-400" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Customer Group</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSaveGroupModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <div className="bg-slate-955 p-3 rounded-xl border border-slate-850 flex justify-between items-center">
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Saving Customer</span>
+                  <span className="font-bold text-slate-100 text-sm">{customerForm.name}</span>
+                </div>
+                <span className="font-mono text-amber-400 font-bold bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded">
+                  #{customerForm.customerCode}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                  Select or Type Customer Group:
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  list="save-modal-groups-list"
+                  value={saveGroupInput}
+                  onChange={(e) => setSaveGroupInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      executeCustomerSave(saveGroupInput);
+                    }
+                  }}
+                  placeholder="e.g. General, VIP, Wholesale..."
+                  className="w-full h-9 px-3 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-semibold text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <datalist id="save-modal-groups-list">
+                  <option value="General" />
+                  {customerGroups.map(cg => <option key={cg._id} value={cg.groupName} />)}
+                </datalist>
+              </div>
+
+              {/* Quick Choice Chips */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Quick Choice:</span>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                  {['General', ...customerGroups.map(cg => cg.groupName).filter(g => g !== 'General')].map((gName) => (
+                    <button
+                      key={gName}
+                      type="button"
+                      onClick={() => {
+                        setSaveGroupInput(gName);
+                        executeCustomerSave(gName);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                        saveGroupInput.toLowerCase() === gName.toLowerCase()
+                          ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700'
+                      }`}
+                    >
+                      {gName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowSaveGroupModal(false)}
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeCustomerSave(saveGroupInput)}
+                className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg flex items-center space-x-1.5"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>Confirm &amp; Save</span>
+              </button>
             </div>
           </div>
         </div>
