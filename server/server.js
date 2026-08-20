@@ -162,6 +162,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const ledgerRoutes = require('./routes/ledgers');
 const superadminRoutes = require('./routes/superadmin');
 const operationsRoutes = require('./routes/operations');
+const customerGroupRoutes = require('./routes/customerGroups');
 
 // Mount API Routers
 app.use('/api/auth', authRoutes);
@@ -170,6 +171,7 @@ app.use('/api/groups', groupsRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/terms', termsRouter);
 app.use('/api/customers', customerRoutes);
+app.use('/api/customer-groups', customerGroupRoutes);
 app.use('/api/deals', dealRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/settings', settingsRoutes);

@@ -25,6 +25,8 @@ const CustomerSchema = new mongoose.Schema({
   compoundMonth: { type: Number, default: 1 }, // compounds every N months
   compoundDate: { type: String, default: '' },  // compound start date (calendar date string)
   minimumInterestPeriod: { type: String, enum: ['NA', '7D', '15D', '1M'], default: 'NA' },
+  customerGroup: { type: String, default: 'General' },
+  customerGroupId: { type: mongoose.Schema.Types.ObjectId, ref: 'CustomerGroup' },
   financialYear: { type: String, default: '' }, // e.g. "2024-25" — set from store's configured FY on create/edit
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true }
 }, { timestamps: true });

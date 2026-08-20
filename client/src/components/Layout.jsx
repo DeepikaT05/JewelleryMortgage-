@@ -22,7 +22,11 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
-  Layers
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -521,6 +525,18 @@ const Layout = ({ children }) => {
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const menuItems = role ? allMenuItems.filter(item => item.roles.includes(role)) : [];
 
   const [focusedMenuIdx, setFocusedMenuIdx] = useState(-1);
@@ -679,10 +695,26 @@ const Layout = ({ children }) => {
 
         {/* 2. SIDEBAR */}
         <aside className={`
-          fixed top-[56px] bottom-0 left-0 z-50 w-64 bg-slate-900 md:bg-slate-900/60 border-r border-slate-850 p-4 flex flex-col justify-between transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:flex no-print shrink-0
+          fixed top-[56px] bottom-0 left-0 z-50 bg-slate-900 md:bg-slate-900/60 border-r border-slate-850 p-3 flex flex-col justify-between transition-all duration-300 ease-in-out md:static md:translate-x-0 md:flex no-print shrink-0
+          ${isSidebarCollapsed ? 'w-20' : 'w-64'}
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}>
           <div className="space-y-1.5">
+            {/* Sidebar Desktop Collapse Toggle Header */}
+            <div className="hidden md:flex items-center justify-between pb-2 mb-1 border-b border-slate-800/60">
+              {!isSidebarCollapsed && (
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">Navigation</span>
+              )}
+              <button
+                type="button"
+                onClick={toggleSidebarCollapse}
+                className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-all mx-auto md:ml-auto"
+                title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              >
+                {isSidebarCollapsed ? <ChevronRight className="h-5 w-5 text-primary-400" /> : <ChevronLeft className="h-5 w-5" />}
+              </button>
+            </div>
+
             {/* Mobile Sidebar Close Header */}
             <div className="flex items-center justify-between md:hidden mb-4 pb-2 border-b border-slate-800">
               <span className="font-bold text-slate-100 text-sm">Navigation</span>
@@ -701,8 +733,11 @@ const Layout = ({ children }) => {
                 <Link
                   key={item.name}
                   to={item.path}
+                  title={isSidebarCollapsed ? item.name : undefined}
                   onClick={() => { setFocusedMenuIdx(idx); setIsMobileMenuOpen(false); }}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-3 rounded-xl text-sm font-medium transition-all ${
+                    isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                  } ${
                     isActive 
                       ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-bold' 
                       : isFocused
@@ -710,8 +745,8 @@ const Layout = ({ children }) => {
                       : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                   }`}
                 >
-                  {item.icon}
-                  <span>{item.name}</span>
+                  <div className="shrink-0">{item.icon}</div>
+                  {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
                 </Link>
               );
             })}
@@ -720,19 +755,24 @@ const Layout = ({ children }) => {
           <div className="mt-auto space-y-1.5 pt-4 border-t border-slate-850">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-950/20 hover:text-rose-300 transition-all text-left"
+              title={isSidebarCollapsed ? 'Logout' : undefined}
+              className={`w-full flex items-center space-x-3 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-950/20 hover:text-rose-300 transition-all text-left ${
+                isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+              }`}
             >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
+              <LogOut className="h-5 w-5 shrink-0" />
+              {!isSidebarCollapsed && <span>Logout</span>}
             </button>
-            <div className="text-center pt-2">
-              <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
-                {currentUser?.role === 'admin' ? 'Girvi Management' : 'Store Manager Panel'}
-              </span>
-              <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
-                v1.0.0 (Financial Apr26)
-              </span>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="text-center pt-2">
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
+                  {currentUser?.role === 'admin' ? 'Girvi Management' : 'Store Manager Panel'}
+                </span>
+                <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
+                  v1.0.0 (Financial Apr26)
+                </span>
+              </div>
+            )}
           </div>
         </aside>
 

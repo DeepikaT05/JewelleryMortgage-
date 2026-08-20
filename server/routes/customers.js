@@ -160,7 +160,8 @@ router.post('/', authMiddleware, upload.single('idProofImage'), async (req, res)
     idProofName, idProofNumber,
     interestType, interestRate, interestFrequency,
     compoundMonthDefault, compoundMonth, compoundDate,
-    minimumInterestPeriod
+    minimumInterestPeriod,
+    customerGroup, customerGroupId
   } = req.body;
 
   if (!name) {
@@ -204,6 +205,8 @@ router.post('/', authMiddleware, upload.single('idProofImage'), async (req, res)
       compoundMonth: compoundMonth ? Number(compoundMonth) : 1,
       compoundDate: compoundDate ? Number(compoundDate) : 1,
       minimumInterestPeriod: minimumInterestPeriod || 'NA',
+      customerGroup: customerGroup || 'General',
+      customerGroupId: customerGroupId || null,
       companyId: req.user.companyId
     });
 

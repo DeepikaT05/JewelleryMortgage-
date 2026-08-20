@@ -79,6 +79,16 @@ const GeneralMasters = () => {
     _id: '', itemId: 'Auto', itemName: '', groupId: ''
   });
 
+  // Customer Ledger Group state
+  const [customerGroups, setCustomerGroups] = useState([]);
+  const [customerGroupIndex, setCustomerGroupIndex] = useState(-1);
+  const [customerGroupForm, setCustomerGroupForm] = useState({
+    _id: '', groupName: '', groupCode: '', description: ''
+  });
+  const [selectedLedgerGroup, setSelectedLedgerGroup] = useState(null);
+  const [ledgerGroupSearchText, setLedgerGroupSearchText] = useState('');
+  const [ledgerGroupMembers, setLedgerGroupMembers] = useState([]);
+
 
 
   const [companyForm, setCompanyForm] = useState({
@@ -308,6 +318,46 @@ const GeneralMasters = () => {
 
 
 
+  const fetchCustomerGroupsList = async (selectId = null) => {
+    try {
+      const res = await axios.get('/api/customer-groups');
+      setCustomerGroups(res.data);
+      if (res.data.length > 0) {
+        let idx = selectId ? res.data.findIndex(cg => cg._id === selectId) : 0;
+        if (idx === -1) idx = 0;
+        setCustomerGroupIndex(idx);
+        loadCustomerGroupDetails(res.data[idx]);
+      } else {
+        handleAddNewCustomerGroup();
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast('Error fetching customer groups', 'error');
+    }
+  };
+
+  const loadCustomerGroupDetails = (cg) => {
+    setCustomerGroupForm({
+      _id: cg._id,
+      groupName: cg.groupName,
+      groupCode: cg.groupCode || '',
+      description: cg.description || ''
+    });
+    setSelectedLedgerGroup(cg);
+    fetchGroupMembers(cg._id);
+    setIsEditMode(false);
+    setIsNewRecord(false);
+  };
+
+  const fetchGroupMembers = async (groupId) => {
+    try {
+      const res = await axios.get(`/api/customer-groups/${groupId}/members`);
+      setLedgerGroupMembers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchTermsConfig = async () => {
     try {
       const res = await axios.get('/api/terms');
@@ -325,12 +375,16 @@ const GeneralMasters = () => {
     setFindSearchQuery('');
 
     if (activeSubTab === 'customers') {
+      fetchCustomerGroupsList(); // Needed for customer group dropdown
       fetchCustomersList();
     } else if (activeSubTab === 'groups') {
       fetchGroupsList();
     } else if (activeSubTab === 'items') {
       fetchGroupsList(); // Needed for item select dropdown
       fetchItemsList();
+    } else if (activeSubTab === 'ledger-groups') {
+      fetchCustomerGroupsList();
+      fetchCustomersList();
     } else if (activeSubTab === 'terms') {
       fetchTermsConfig();
     }
@@ -430,10 +484,19 @@ const GeneralMasters = () => {
     setIsNewRecord(true);
   };
 
+  const handleAddNewCustomerGroup = () => {
+    setCustomerGroupForm({ _id: '', groupName: '', groupCode: '', description: '' });
+    setSelectedLedgerGroup(null);
+    setLedgerGroupMembers([]);
+    setIsEditMode(true);
+    setIsNewRecord(true);
+  };
+
   const handleAdd = () => {
     if (activeSubTab === 'customers') handleAddNewCustomer();
     else if (activeSubTab === 'groups') handleAddNewGroup();
     else if (activeSubTab === 'items') handleAddNewItem();
+    else if (activeSubTab === 'ledger-groups') handleAddNewCustomerGroup();
   };
 
   // --- CANCEL ACTIONS ---
@@ -450,6 +513,9 @@ const GeneralMasters = () => {
     } else if (activeSubTab === 'items') {
       if (items.length > 0 && itemIndex !== -1) loadItemDetails(items[itemIndex]);
       else handleAddNewItem();
+    } else if (activeSubTab === 'ledger-groups') {
+      if (customerGroups.length > 0 && customerGroupIndex !== -1) loadCustomerGroupDetails(customerGroups[customerGroupIndex]);
+      else handleAddNewCustomerGroup();
     }
   };
 
@@ -515,6 +581,20 @@ const GeneralMasters = () => {
           triggerToast('Item updated successfully');
           fetchItemsList(res.data._id);
         }
+      } else if (activeSubTab === 'ledger-groups') {
+        if (!customerGroupForm.groupName) {
+          triggerToast('Ledger Group Name is required', 'error');
+          return;
+        }
+        if (isNewRecord) {
+          const res = await axios.post('/api/customer-groups', customerGroupForm);
+          triggerToast('Customer Ledger Group created successfully');
+          fetchCustomerGroupsList(res.data._id);
+        } else {
+          const res = await axios.put(`/api/customer-groups/${customerGroupForm._id}`, customerGroupForm);
+          triggerToast('Customer Ledger Group updated successfully');
+          fetchCustomerGroupsList(res.data._id);
+        }
       }
     } catch (err) {
       triggerToast(err.response?.data?.message || 'Error saving master record', 'error');
@@ -542,6 +622,10 @@ const GeneralMasters = () => {
         await axios.delete(`/api/items/${itemForm._id}`);
         triggerToast('Item deleted successfully');
         fetchItemsList();
+      } else if (activeSubTab === 'ledger-groups') {
+        await axios.delete(`/api/customer-groups/${customerGroupForm._id}`);
+        triggerToast('Customer Ledger Group deleted');
+        fetchCustomerGroupsList();
       }
     } catch (err) {
       triggerToast('Permission denied or record is referenced elsewhere', 'error');
@@ -605,6 +689,15 @@ const GeneralMasters = () => {
           }`}
         >
           Item Master
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('ledger-groups')}
+          className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
+            activeSubTab === 'ledger-groups' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Ledger Group
         </button>
 
         <button
@@ -761,6 +854,31 @@ const GeneralMasters = () => {
                 />
                 <datalist id="cities-list">
                   {uniqueCities.map(c => <option key={c} value={c} />)}
+                </datalist>
+              </div>
+
+              <div>
+                <label className="block text-amber-400 font-semibold mb-0.5 text-[11px]">Ledger Group</label>
+                <input
+                  type="text"
+                  list="customer-groups-list"
+                  disabled={!isEditMode}
+                  value={customerForm.customerGroup || 'General'}
+                  onChange={(e) => {
+                    const gName = e.target.value;
+                    const matched = customerGroups.find(cg => cg.groupName.toLowerCase() === gName.toLowerCase());
+                    setCustomerForm({
+                      ...customerForm,
+                      customerGroup: gName,
+                      customerGroupId: matched ? matched._id : ''
+                    });
+                  }}
+                  placeholder="Select or type Group"
+                  className="w-full h-7 py-0.5 px-2 bg-slate-900 border border-amber-500/40 rounded-md text-xs font-semibold text-amber-300 focus:outline-none focus:border-amber-500 disabled:opacity-60"
+                />
+                <datalist id="customer-groups-list">
+                  <option value="General" />
+                  {customerGroups.map(cg => <option key={cg._id} value={cg.groupName} />)}
                 </datalist>
               </div>
 
@@ -1088,6 +1206,170 @@ const GeneralMasters = () => {
                     <option key={g._id} value={g._id}>{g.groupName}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 4: LEDGER GROUP MASTER & MEMBERS PANEL */}
+        {activeSubTab === 'ledger-groups' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+              <div>
+                <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest">Customer Ledger Groups</h3>
+                <p className="text-[11px] text-slate-400">Manage customer categories, groups, and search assigned group members.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Left Column: Ledger Group Edit & Card List */}
+              <div className="space-y-3 lg:col-span-1 border-r border-slate-850 pr-3">
+                <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">Group Details</span>
+                  
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-0.5 text-[11px]">Group Name *</label>
+                    <input
+                      type="text"
+                      required
+                      disabled={!isEditMode}
+                      value={customerGroupForm.groupName}
+                      onChange={(e) => setCustomerGroupForm({ ...customerGroupForm, groupName: e.target.value })}
+                      placeholder="e.g. VIP, Wholesale, Regular"
+                      className="w-full h-7 py-0.5 px-2 bg-slate-950 border border-slate-800 rounded-md text-xs text-slate-100 focus:outline-none focus:border-primary-500 disabled:opacity-60 font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-0.5 text-[11px]">Group Code / ID</label>
+                    <input
+                      type="text"
+                      disabled={!isEditMode}
+                      value={customerGroupForm.groupCode}
+                      onChange={(e) => setCustomerGroupForm({ ...customerGroupForm, groupCode: e.target.value })}
+                      placeholder="e.g. GRP-01"
+                      className="w-full h-7 py-0.5 px-2 bg-slate-955 border border-slate-850 rounded-md text-xs text-slate-300 font-mono focus:outline-none disabled:opacity-60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-0.5 text-[11px]">Description</label>
+                    <input
+                      type="text"
+                      disabled={!isEditMode}
+                      value={customerGroupForm.description}
+                      onChange={(e) => setCustomerGroupForm({ ...customerGroupForm, description: e.target.value })}
+                      placeholder="Notes or description"
+                      className="w-full h-7 py-0.5 px-2 bg-slate-955 border border-slate-850 rounded-md text-xs text-slate-300 focus:outline-none disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+
+                {/* List of Created Customer Groups */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Available Customer Groups ({customerGroups.length})</span>
+                  <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
+                    {customerGroups.map((cg, idx) => {
+                      const count = customers.filter(c => c.customerGroup === cg.groupName || c.customerGroupId === cg._id).length;
+                      const isSelected = selectedLedgerGroup?._id === cg._id;
+                      return (
+                        <div
+                          key={cg._id}
+                          onClick={() => {
+                            setCustomerGroupIndex(idx);
+                            loadCustomerGroupDetails(cg);
+                          }}
+                          className={`p-2.5 rounded-lg border text-xs cursor-pointer flex justify-between items-center transition-all ${
+                            isSelected 
+                              ? 'bg-primary-600/30 border-primary-500/50 text-white font-bold' 
+                              : 'bg-slate-900/40 border-slate-800 text-slate-300 hover:bg-slate-850'
+                          }`}
+                        >
+                          <div>
+                            <span className="block font-semibold text-slate-100">{cg.groupName}</span>
+                            {cg.groupCode && <span className="text-[10px] text-amber-400/80 font-mono">#{cg.groupCode}</span>}
+                          </div>
+                          <span className="px-2 py-0.5 bg-slate-800 rounded-full text-[10px] font-mono text-slate-300 font-bold border border-slate-700">
+                            {count} Members
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Group Members Inspection & Live Search */}
+              <div className="space-y-3 lg:col-span-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                      Group Members: {selectedLedgerGroup ? selectedLedgerGroup.groupName : 'All'}
+                    </h4>
+                    <span className="text-[10px] text-slate-400">
+                      Showing customers assigned to this group
+                    </span>
+                  </div>
+
+                  {/* Member Search Bar */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-500" />
+                    <input
+                      type="text"
+                      value={ledgerGroupSearchText}
+                      onChange={(e) => setLedgerGroupSearchText(e.target.value)}
+                      placeholder="Search member name, code, mobile..."
+                      className="w-full pl-8 pr-3 py-1 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Customer Members Table */}
+                <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/30 max-h-96 overflow-y-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-900 border-b border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0">
+                      <tr>
+                        <th className="p-2.5">Code</th>
+                        <th className="p-2.5">Name</th>
+                        <th className="p-2.5">Mobile</th>
+                        <th className="p-2.5">Area / City</th>
+                        <th className="p-2.5">Group</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-850 font-sans">
+                      {ledgerGroupMembers
+                        .filter(c => {
+                          const q = ledgerGroupSearchText.toLowerCase();
+                          return !q || 
+                            (c.name && c.name.toLowerCase().includes(q)) ||
+                            (c.customerCode && String(c.customerCode).includes(q)) ||
+                            (c.mobile && c.mobile.includes(q)) ||
+                            (c.area && c.area.toLowerCase().includes(q)) ||
+                            (c.city && c.city.toLowerCase().includes(q));
+                        })
+                        .map(c => (
+                          <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="p-2.5 font-mono text-amber-500 font-bold">#{c.customerCode}</td>
+                            <td className="p-2.5 font-semibold text-slate-100">{c.name}</td>
+                            <td className="p-2.5 font-mono text-slate-400">{c.mobile || '-'}</td>
+                            <td className="p-2.5 text-slate-400">{c.area ? `${c.area}, ${c.city}` : c.city || '-'}</td>
+                            <td className="p-2.5">
+                              <span className="px-2 py-0.5 bg-primary-950/60 border border-primary-500/30 text-primary-300 rounded text-[10px] font-bold">
+                                {c.customerGroup || selectedLedgerGroup?.groupName || 'General'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      {ledgerGroupMembers.length === 0 && (
+                        <tr>
+                          <td colSpan="5" className="p-6 text-center text-slate-500 text-xs">
+                            No customers found in this group.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -1444,6 +1726,28 @@ const GeneralMasters = () => {
                         <span className="text-[10px] text-slate-500">Group: {it.groupId?.groupName || 'Unlinked'}</span>
                       </div>
                       <span className="font-mono text-amber-500 text-[10px]">#{it.itemId}</span>
+                    </button>
+                  ))
+              }
+
+              {/* LEDGER GROUPS FIND */}
+              {activeSubTab === 'ledger-groups' &&
+                customerGroups
+                  .filter(cg => cg.groupName.toLowerCase().includes(findSearchQuery.toLowerCase()))
+                  .map(cg => (
+                    <button
+                      key={cg._id}
+                      onClick={() => {
+                        const idx = customerGroups.findIndex(item => item._id === cg._id);
+                        setCustomerGroupIndex(idx);
+                        loadCustomerGroupDetails(cg);
+                        setShowFindModal(false);
+                        setFindSearchQuery('');
+                      }}
+                      className="w-full text-left p-2.5 hover:bg-slate-800/40 text-slate-300 hover:text-white rounded-lg text-xs flex justify-between items-center"
+                    >
+                      <span className="font-semibold">{cg.groupName}</span>
+                      <span className="font-mono text-amber-500 text-[10px]">#{cg.groupCode || 'GRP'}</span>
                     </button>
                   ))
               }
