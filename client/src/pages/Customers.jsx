@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { formatIndianCurrency } from "../utils/format";
-import { Search, Printer, Users, Coins, ArrowLeftRight, User, CalendarClock } from "lucide-react";
+import { Search, Printer, Users, Coins, ArrowLeftRight, User, CalendarClock, Trash2 } from "lucide-react";
+import ConfirmationModal from "../components/ConfirmationModal";
+import Toast from "../components/Toast";
 
 const fmtDate = (d) => {
   if (!d) return "";
@@ -28,6 +30,25 @@ const Customers = () => {
   const [statement, setStatement] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const handleDeleteCustomer = async () => {
+    if (!deleteTarget) return;
+    try {
+      await axios.delete(`/api/customers/${deleteTarget._id}`);
+      setToast({ message: `Customer "${deleteTarget.name}" deleted successfully!`, type: "success" });
+      if (selectedId === deleteTarget._id) {
+        setSelectedId("");
+        setStatement(null);
+      }
+      setDeleteTarget(null);
+      loadCustomers();
+    } catch (err) {
+      setToast({ message: err?.response?.data?.message || "Failed to delete customer", type: "error" });
+      setDeleteTarget(null);
+    }
+  };
 
   // Fetch the store's configured financial year from Company settings
   const loadStoreFY = async () => {
@@ -297,26 +318,39 @@ const Customers = () => {
               <div className="p-3 text-xs text-slate-500 italic">No customers found.</div>
             ) : (
               filtered.map((c) => (
-                <button
+                <div
                   key={c._id}
                   onClick={() => loadStatement(c._id)}
-                  className={`w-full text-left p-3 rounded-lg text-xs flex justify-between items-center transition-colors ${
-                    selectedId === c._id ? "bg-primary-600/20 text-white" : "hover:bg-slate-800/40 text-slate-300"
+                  className={`w-full text-left p-3 rounded-lg text-xs flex justify-between items-center transition-colors cursor-pointer group ${
+                    selectedId === c._id ? "bg-primary-600/20 text-white border border-primary-500/30" : "hover:bg-slate-800/40 text-slate-300"
                   }`}
                 >
-                  <div>
-                    <span className="font-semibold block text-slate-200">{c.name}</span>
+                  <div className="flex-1 min-w-0 pr-2">
+                    <span className="font-semibold block text-slate-200 truncate">{c.name}</span>
                     <span className="text-[10px] text-slate-500 font-mono">{c.mobile || "No mobile"}</span>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="font-mono text-amber-500 text-[10px] font-bold">#{c.customerCode}</span>
-                    {custFY(c) && (
-                      <span className="font-mono text-[9px] text-slate-500 bg-slate-900/60 border border-slate-800 rounded px-1.5 py-0.5">
-                        FY {custFY(c)}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-mono text-amber-500 text-[10px] font-bold">#{c.customerCode}</span>
+                      {custFY(c) && (
+                        <span className="font-mono text-[9px] text-slate-500 bg-slate-900/60 border border-slate-800 rounded px-1.5 py-0.5">
+                          FY {custFY(c)}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(c);
+                      }}
+                      title="Delete Customer"
+                      className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -344,14 +378,30 @@ const Customers = () => {
           {statement && !loading && (
             <>
               {/* Customer header */}
-              <div className="glass-panel p-5 rounded-2xl border border-slate-800">
-                <h2 className="text-lg font-bold text-slate-100">{statement.customer.name}</h2>
-                <div className="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono">
-                  <span>#{statement.customer.customerCode}</span>
-                  <span>{statement.customer.mobile || "-"}</span>
-                  <span>ID: {statement.customer.idProofNumber || "-"}</span>
-                  <span>{[statement.customer.area, statement.customer.city].filter(Boolean).join(", ")}</span>
+              <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex justify-between items-start">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-100">{statement.customer.name}</h2>
+                  <div className="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono">
+                    <span>#{statement.customer.customerCode}</span>
+                    <span>{statement.customer.mobile || "-"}</span>
+                    <span>ID: {statement.customer.idProofNumber || "-"}</span>
+                    <span>{[statement.customer.area, statement.customer.city].filter(Boolean).join(", ")}</span>
+                    {statement.customer.customerGroup && (
+                      <span className="text-amber-400 font-sans font-semibold bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded">
+                        Group: {statement.customer.customerGroup}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(statement.customer)}
+                  className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete Customer</span>
+                </button>
               </div>
 
               {/* Summary cards */}
@@ -501,6 +551,23 @@ const Customers = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Customer Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        title="Delete Customer Profile"
+        message={`Are you sure you want to permanently delete customer "${deleteTarget?.name}" (#${deleteTarget?.customerCode})? This action cannot be undone.`}
+        onConfirm={handleDeleteCustomer}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
