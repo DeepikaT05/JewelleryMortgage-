@@ -1894,6 +1894,11 @@ const GeneralMasters = () => {
                       return (
                         <div
                           key={gName}
+                          ref={(el) => {
+                            if (isActive && el) {
+                              el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                            }
+                          }}
                           onClick={() => executeCustomerSave(cleanName)}
                           onMouseEnter={() => setModalActiveIndex(idx)}
                           className={`p-3 rounded-xl text-xs cursor-pointer flex justify-between items-center transition-all ${
