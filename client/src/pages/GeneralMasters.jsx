@@ -91,7 +91,8 @@ const GeneralMasters = () => {
 
   // Save prompt modal state
   const [showSaveGroupModal, setShowSaveGroupModal] = useState(false);
-  const [saveGroupInput, setSaveGroupInput] = useState('General');
+  const [saveGroupInput, setSaveGroupInput] = useState('');
+  const [modalActiveIndex, setModalActiveIndex] = useState(0);
 
 
 
@@ -574,7 +575,8 @@ const GeneralMasters = () => {
           return;
         }
         // Open group assignment modal prompt immediately on save
-        setSaveGroupInput(customerForm.customerGroup || 'General');
+        setSaveGroupInput('');
+        setModalActiveIndex(0);
         setShowSaveGroupModal(true);
         return;
       } else if (activeSubTab === 'groups') {
@@ -1803,104 +1805,156 @@ const GeneralMasters = () => {
       )}
 
       {/* SAVE CUSTOMER GROUP PROMPT MODAL */}
-      {showSaveGroupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 font-sans animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-amber-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Customer Group</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSaveGroupModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+      {showSaveGroupModal && (() => {
+        const baseGroups = Array.from(new Set(['General', ...customerGroups.map(cg => cg.groupName).filter(Boolean)]));
+        const query = saveGroupInput.trim().toLowerCase();
+        let modalGroupList = baseGroups.filter(g => !query || g.toLowerCase().includes(query));
+        if (query && !baseGroups.some(g => g.toLowerCase() === query)) {
+          modalGroupList.push(`+ Create "${saveGroupInput.trim()}"`);
+        }
 
-            <div className="space-y-3 text-xs text-slate-300">
-              <div className="bg-slate-955 p-3 rounded-xl border border-slate-850 flex justify-between items-center">
+        const handleModalKeyDown = (e) => {
+          if (modalGroupList.length === 0) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setModalActiveIndex(prev => (prev + 1) % modalGroupList.length);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setModalActiveIndex(prev => (prev - 1 + modalGroupList.length) % modalGroupList.length);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const chosen = modalGroupList[modalActiveIndex] || saveGroupInput || 'General';
+            const cleanName = chosen.startsWith('+ Create "') ? chosen.replace('+ Create "', '').replace('"', '') : chosen;
+            executeCustomerSave(cleanName);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setShowSaveGroupModal(false);
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 font-sans animate-in fade-in zoom-in duration-200">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-amber-400" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Customer Group</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSaveGroupModal(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs text-slate-300">
+                <div className="bg-slate-955 p-3 rounded-xl border border-slate-850 flex justify-between items-center">
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Saving Customer</span>
+                    <span className="font-bold text-slate-100 text-sm">{customerForm.name}</span>
+                  </div>
+                  <span className="font-mono text-amber-400 font-bold bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded">
+                    #{customerForm.customerCode}
+                  </span>
+                </div>
+
                 <div>
-                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Saving Customer</span>
-                  <span className="font-bold text-slate-100 text-sm">{customerForm.name}</span>
+                  <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                    Filter / Type Group (Press ↓ ↑ to Navigate, Enter to Select):
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={saveGroupInput}
+                    onChange={(e) => {
+                      setSaveGroupInput(e.target.value);
+                      setModalActiveIndex(0);
+                    }}
+                    onKeyDown={handleModalKeyDown}
+                    placeholder="Search or type group name..."
+                    className="w-full h-9 px-3 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-semibold text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
                 </div>
-                <span className="font-mono text-amber-400 font-bold bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded">
-                  #{customerForm.customerCode}
-                </span>
-              </div>
 
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
-                  Select or Type Customer Group:
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  list="save-modal-groups-list"
-                  value={saveGroupInput}
-                  onChange={(e) => setSaveGroupInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      executeCustomerSave(saveGroupInput);
-                    }
-                  }}
-                  placeholder="e.g. General, VIP, Wholesale..."
-                  className="w-full h-9 px-3 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-semibold text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-                <datalist id="save-modal-groups-list">
-                  <option value="General" />
-                  {customerGroups.map(cg => <option key={cg._id} value={cg.groupName} />)}
-                </datalist>
-              </div>
+                {/* Vertical Group Options List with Keyboard Highlight */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block px-1">
+                    Group Options ({modalGroupList.length}):
+                  </span>
+                  
+                  <div className="max-h-60 overflow-y-auto space-y-1 p-1 bg-slate-955 rounded-xl border border-slate-850">
+                    {modalGroupList.map((gName, idx) => {
+                      const isActive = modalActiveIndex === idx;
+                      const isNewOption = gName.startsWith('+ Create "');
+                      const cleanName = isNewOption ? gName.replace('+ Create "', '').replace('"', '') : gName;
+                      const memberCount = customers.filter(c => c.customerGroup === cleanName).length;
 
-              {/* Quick Choice Chips */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] text-slate-500 uppercase font-bold block">Quick Choice:</span>
-                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                  {['General', ...customerGroups.map(cg => cg.groupName).filter(g => g !== 'General')].map((gName) => (
-                    <button
-                      key={gName}
-                      type="button"
-                      onClick={() => {
-                        setSaveGroupInput(gName);
-                        executeCustomerSave(gName);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                        saveGroupInput.toLowerCase() === gName.toLowerCase()
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700'
-                      }`}
-                    >
-                      {gName}
-                    </button>
-                  ))}
+                      return (
+                        <div
+                          key={gName}
+                          onClick={() => executeCustomerSave(cleanName)}
+                          onMouseEnter={() => setModalActiveIndex(idx)}
+                          className={`p-3 rounded-xl text-xs cursor-pointer flex justify-between items-center transition-all ${
+                            isActive
+                              ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg scale-[1.01]'
+                              : 'bg-slate-900/60 text-slate-200 hover:bg-slate-850 border border-slate-800/40'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2.5">
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-slate-950' : 'bg-amber-400'}`} />
+                            <span className="text-xs font-bold">{gName}</span>
+                          </div>
+
+                          {!isNewOption && (
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              isActive ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                            }`}>
+                              {memberCount} Members
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {modalGroupList.length === 0 && (
+                      <div className="p-4 text-center text-slate-500 text-xs italic">
+                        Press Enter to save customer in "General" group.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => setShowSaveGroupModal(false)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => executeCustomerSave(saveGroupInput)}
-                className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg flex items-center space-x-1.5"
-              >
-                <Save className="h-3.5 w-3.5" />
-                <span>Confirm &amp; Save</span>
-              </button>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <span className="text-[10px] font-mono text-slate-500">Press Esc to cancel</span>
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSaveGroupModal(false)}
+                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const chosen = modalGroupList[modalActiveIndex] || saveGroupInput || 'General';
+                      const cleanName = chosen.startsWith('+ Create "') ? chosen.replace('+ Create "', '').replace('"', '') : chosen;
+                      executeCustomerSave(cleanName);
+                    }}
+                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg flex items-center space-x-1.5"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    <span>Confirm &amp; Save</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Confirm modal delete */}
       <ConfirmationModal
