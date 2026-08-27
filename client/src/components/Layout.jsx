@@ -791,7 +791,7 @@ const Layout = ({ children }) => {
   const isOperator = role === 'operator' || role === 'staff';
 
   const [sidebarGroups, setSidebarGroups] = useState([]);
-  const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(true);
+  const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(false);
   const [showCreateSidebarGroupModal, setShowCreateSidebarGroupModal] = useState(false);
   const [newSidebarGroupName, setNewSidebarGroupName] = useState('');
 
@@ -1232,7 +1232,7 @@ const Layout = ({ children }) => {
                           className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-emerald-400 hover:bg-emerald-950/60 font-bold transition-all text-left border border-emerald-500/30 bg-emerald-950/20 shadow-sm"
                         >
                           <Plus className="h-3.5 w-3.5" />
-                          <span>+ Create New Group</span>
+                          <span>Create New Group</span>
                         </button>
 
                         <Link
@@ -1240,8 +1240,8 @@ const Layout = ({ children }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={`block py-1.5 px-2.5 rounded-lg transition-all font-bold ${
                             location.pathname === '/accounting-group' && !location.search
-                              ? 'bg-emerald-800 text-white'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              ? 'bg-primary-600 text-white'
+                              : 'text-slate-300 hover:bg-slate-800/60'
                           }`}
                         >
                           All Ledger Groups
@@ -1256,8 +1256,8 @@ const Layout = ({ children }) => {
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={`block py-1.5 px-2.5 rounded-lg transition-all truncate ${
                                 isGroupSelected
-                                  ? 'bg-emerald-900/90 text-emerald-300 font-extrabold border-l-2 border-emerald-400'
-                                  : 'text-slate-400 hover:bg-slate-800 hover:text-amber-300'
+                                  ? 'bg-primary-600 text-white font-bold'
+                                  : 'text-slate-300 hover:bg-slate-800/60'
                               }`}
                             >
                               {g}
