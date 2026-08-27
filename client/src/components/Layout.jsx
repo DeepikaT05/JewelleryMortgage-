@@ -91,6 +91,16 @@ const Layout = ({ children }) => {
   const [ctrlLActiveIndex, setCtrlLActiveIndex] = useState(0);
   const [allCombinedLedgers, setAllCombinedLedgers] = useState([]);
   const [ctrlLLoading, setCtrlLLoading] = useState(false);
+  const ctrlLSearchInputRef = useRef(null);
+
+  useEffect(() => {
+    if (showCtrlLLookup && ctrlLStep === 'list') {
+      const timer = setTimeout(() => {
+        ctrlLSearchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showCtrlLLookup, ctrlLStep]);
 
   // Active ledger item for statement
   const [selectedLedgerItem, setSelectedLedgerItem] = useState(null);
@@ -950,11 +960,8 @@ const Layout = ({ children }) => {
       }
       // Screen 1: List
       else if (ctrlLStep === 'list') {
-        if (['input', 'textarea', 'select'].includes(activeTag) && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter' && e.key !== 'Escape') {
-          return;
-        }
+        const q = ctrlLSearchQuery.trim().toLowerCase();
         const filteredList = allCombinedLedgers.filter(item => {
-          const q = ctrlLSearchQuery.trim().toLowerCase();
           if (!q) return true;
           return (
             (item.name && item.name.toLowerCase().includes(q)) ||
@@ -980,7 +987,16 @@ const Layout = ({ children }) => {
           }
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          setShowCtrlLLookup(false);
+          if (ctrlLSearchQuery) {
+            setCtrlLSearchQuery('');
+            setCtrlLActiveIndex(0);
+          } else {
+            setShowCtrlLLookup(false);
+          }
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          if (document.activeElement !== ctrlLSearchInputRef.current) {
+            ctrlLSearchInputRef.current?.focus();
+          }
         }
       }
     };
@@ -1721,6 +1737,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center space-x-3 shrink-0">
                     <Search className="h-4 w-4 text-emerald-400 shrink-0" />
                     <input
+                      ref={ctrlLSearchInputRef}
                       type="text"
                       autoFocus
                       value={ctrlLSearchQuery}
