@@ -507,11 +507,11 @@ const AccountingGroup = () => {
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
             </span>
           </div>
-          <div className="bg-slate-100 p-3.5 rounded-xl border-2 border-slate-400 shadow-sm">
-            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#0f172a' }}>
+          <div className="bg-slate-900 p-3.5 rounded-xl border-2 border-slate-800 shadow-sm" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#cbd5e1' }}>
               NET GROUP BALANCE
             </span>
-            <span className="text-2xl font-black block mt-0.5" style={{ color: '#000000' }}>
+            <span className="text-2xl font-black block mt-0.5" style={{ color: '#ffffff' }}>
               ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
             </span>
           </div>
