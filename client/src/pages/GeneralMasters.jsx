@@ -698,7 +698,7 @@ const GeneralMasters = () => {
             activeSubTab === 'customers' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Customer Master
+          Ledger Master
         </button>
         <button
           onClick={() => setActiveSubTab('groups')}

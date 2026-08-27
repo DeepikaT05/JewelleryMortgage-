@@ -299,13 +299,24 @@ const DealMaster = () => {
     try {
       const res = await axios.get(`/api/deals/${id}`);
       const d = res.data;
+      const custObj = typeof d.customerId === 'object' ? d.customerId : customers.find(c => c._id === d.customerId);
+
+      if (custObj) {
+        setCustNameText(custObj.name || '');
+        setCustMobileText(custObj.mobile || '');
+        setCustIdText(custObj.idProofNumber || (custObj.customerCode ? String(custObj.customerCode) : ''));
+      }
+
+      const fullAddr = custObj ? [custObj.address, custObj.area, custObj.city, custObj.state].filter(Boolean).join(', ') : '';
+
       setForm({
         ...d,
         dealDate: d.dealDate ? d.dealDate.split('T')[0] : '',
         chequeDate: d.chequeDate ? d.chequeDate.split('T')[0] : '',
         stopDate: d.stopDate ? d.stopDate.split('T')[0] : '',
         customerId: d.customerId?._id || d.customerId,
-        bankId: d.bankId?._id || d.bankId || ''
+        bankId: d.bankId?._id || d.bankId || '',
+        location: d.location || fullAddr
       });
       setIsEditMode(false);
       setIsNewRecord(false);
@@ -788,7 +799,7 @@ const DealMaster = () => {
                     onKeyDown={(e) => handleCustKeyDown(e, 'name')}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary-500"
                   />
-                  {isEditMode && custFocusField === 'name' && (() => {
+                  {custFocusField === 'name' && (() => {
                     const list = getFilteredCustomers('name');
                     if (!list.length) return <div className="absolute left-0 right-0 mt-1 bg-slate-955 border border-slate-800 rounded-xl shadow-2xl z-50 p-3 text-xs text-slate-500 italic">No matching customers</div>;
                     return (
@@ -831,7 +842,7 @@ const DealMaster = () => {
                   onKeyDown={(e) => handleCustKeyDown(e, 'mobile')}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary-500 font-mono"
                 />
-                {isEditMode && custFocusField === 'mobile' && (() => {
+                {custFocusField === 'mobile' && (() => {
                   const list = getFilteredCustomers('mobile');
                   if (!list.length) return null;
                   return (
@@ -873,7 +884,7 @@ const DealMaster = () => {
                   onKeyDown={(e) => handleCustKeyDown(e, 'id')}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary-500 font-mono"
                 />
-                {isEditMode && custFocusField === 'id' && (() => {
+                {custFocusField === 'id' && (() => {
                   const list = getFilteredCustomers('id');
                   if (!list.length) return null;
                   return (
