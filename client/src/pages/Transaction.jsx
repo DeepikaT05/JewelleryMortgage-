@@ -154,7 +154,7 @@ const Transaction = () => {
       setIsEditMode(true);
     };
     initializeTransaction();
-  }, [location.state]);
+  }, [location.key, location.state]);
 
   const triggerAutoCalc = async (dealId, dateStr) => {
     if (!dealId || !dateStr) return;

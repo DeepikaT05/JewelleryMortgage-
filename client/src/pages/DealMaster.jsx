@@ -171,11 +171,18 @@ const DealMaster = () => {
 
   useEffect(() => {
     if (form.customerId) {
-      const selected = customers.find(c => c._id === form.customerId);
-      if (selected) {
-        setCustNameText(selected.name || '');
-        setCustMobileText(selected.mobile || '');
-        setCustIdText(selected.idProofNumber || (selected.customerCode ? String(selected.customerCode) : ''));
+      const custObj = (typeof form.customerId === 'object' && form.customerId.name)
+        ? form.customerId
+        : customers.find(c => String(c._id) === String(form.customerId));
+
+      if (custObj) {
+        setCustNameText(custObj.name || '');
+        setCustMobileText(custObj.mobile || '');
+        setCustIdText(custObj.idProofNumber || (custObj.customerCode ? String(custObj.customerCode) : ''));
+        const fullAddr = [custObj.address, custObj.area, custObj.city, custObj.state].filter(Boolean).join(', ');
+        if (fullAddr && !form.location) {
+          setForm(prev => ({ ...prev, location: fullAddr }));
+        }
       }
     } else {
       setCustNameText('');
@@ -259,13 +266,13 @@ const DealMaster = () => {
 
   const location = useLocation();
 
-  const loadDealsList = async () => {
+  const loadDealsList = async (targetDealParam) => {
     try {
       const res = await axios.get('/api/deals?limit=1000');
       const list = res.data.deals || [];
       setDeals(list);
 
-      const targetDeal = location.state?.dealNo || location.state?.dealId;
+      const targetDeal = targetDealParam || location.state?.dealNo || location.state?.dealId;
       if (targetDeal) {
         const found = list.find(d => 
           String(d.dealNo).toLowerCase() === String(targetDeal).toLowerCase() ||
@@ -290,16 +297,18 @@ const DealMaster = () => {
   useEffect(() => {
     const init = async () => {
       await loadMasters();
-      await loadDealsList();
+      await loadDealsList(location.state?.dealNo || location.state?.dealId);
     };
     init();
-  }, []);
+  }, [location.key, location.state]);
 
   const fetchDealDetails = async (id) => {
     try {
       const res = await axios.get(`/api/deals/${id}`);
       const d = res.data;
-      const custObj = typeof d.customerId === 'object' ? d.customerId : customers.find(c => c._id === d.customerId);
+      const custObj = (d.customerId && typeof d.customerId === 'object' && d.customerId.name)
+        ? d.customerId
+        : customers.find(c => String(c._id) === String(d.customerId?._id || d.customerId));
 
       if (custObj) {
         setCustNameText(custObj.name || '');
@@ -314,7 +323,7 @@ const DealMaster = () => {
         dealDate: d.dealDate ? d.dealDate.split('T')[0] : '',
         chequeDate: d.chequeDate ? d.chequeDate.split('T')[0] : '',
         stopDate: d.stopDate ? d.stopDate.split('T')[0] : '',
-        customerId: d.customerId?._id || d.customerId,
+        customerId: custObj?._id || d.customerId?._id || d.customerId,
         bankId: d.bankId?._id || d.bankId || '',
         location: d.location || fullAddr
       });
@@ -337,6 +346,99 @@ const DealMaster = () => {
         }
       ]
     }));
+  };
+
+  const handleItemChange = (index, field, value) => {
+    setForm(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      
+      const gw = parseFloat(updatedItems[index].grossWeight) || 0;
+      const lw = parseFloat(updatedItems[index].lessWeight) || 0;
+      const nw = Math.max(0, gw - lw);
+      updatedItems[index].netWeight = parseFloat(nw.toFixed(3));
+
+      const purity = parseFloat(updatedItems[index].purityPercent) || 0;
+      const pureWeight = nw * (purity / 100);
+      updatedItems[index].pureWeight = parseFloat(pureWeight.toFixed(3));
+
+      const rate = parseFloat(updatedItems[index].rate) || 0;
+      const estimatedValue = nw * rate;
+      updatedItems[index].estimatedValue = parseFloat(estimatedValue.toFixed(2));
+
+      // Calculate totals
+      let sumValue = 0;
+      const groupTotals = {};
+      
+      updatedItems.forEach(item => {
+        sumValue += item.estimatedValue || 0;
+        const g = groups.find(grp => grp._id === item.groupId);
+        const gName = g ? g.name : 'Unknown';
+        if (!groupTotals[gName]) {
+          groupTotals[gName] = { pcs: 0, grossWeight: 0, netWeight: 0, value: 0 };
+        }
+        groupTotals[gName].pcs += parseInt(item.pcs, 10) || 0;
+        groupTotals[gName].grossWeight += parseFloat(item.grossWeight) || 0;
+        groupTotals[gName].netWeight += item.netWeight || 0;
+        groupTotals[gName].value += item.estimatedValue || 0;
+      });
+
+      const next = {
+        ...prev,
+        items: updatedItems,
+        groupTotals,
+        totalValue: parseFloat(sumValue.toFixed(2)),
+        dealAmount: parseFloat(sumValue.toFixed(2))
+      };
+      const pct = Number(prev.paidPercent || 100);
+      next.paidAmount = parseFloat((next.dealAmount * (pct / 100)).toFixed(2));
+      next.interestAmountPerMonth = parseFloat((next.dealAmount * (prev.interestRatePerMonth / 100)).toFixed(2));
+      return next;
+    });
+  };
+
+  const handleFinancialChange = (field, val) => {
+    setForm(prev => {
+      const next = { ...prev, [field]: val };
+      if (field === 'dealAmount' || field === 'paidPercent') {
+        const amt = Number(next.dealAmount || 0);
+        const pct = Number(next.paidPercent || 100);
+        next.paidAmount = parseFloat((amt * (pct / 100)).toFixed(2));
+      }
+      if (field === 'paidAmount' && Number(next.dealAmount || 0) > 0) {
+        const amt = Number(next.dealAmount || 0);
+        const paid = Number(next.paidAmount || 0);
+        next.paidPercent = parseFloat(((paid / amt) * 100).toFixed(2));
+      }
+      if (field === 'dealAmount' || field === 'interestRatePerMonth') {
+        const amt = Number(next.dealAmount || 0);
+        const rate = Number(next.interestRatePerMonth || 2.0);
+        next.interestAmountPerMonth = parseFloat((amt * (rate / 100)).toFixed(2));
+      }
+      return next;
+    });
+  };
+
+  const handleCustomerChange = (customerId) => {
+    const cust = customers.find(c => String(c._id) === String(customerId));
+    if (cust) {
+      setCustNameText(cust.name || '');
+      setCustMobileText(cust.mobile || '');
+      setCustIdText(cust.idProofNumber || (cust.customerCode ? String(cust.customerCode) : ''));
+      const fullAddr = [cust.address, cust.area, cust.city, cust.state].filter(Boolean).join(', ');
+      setForm(prev => ({
+        ...prev,
+        customerId: cust._id,
+        location: fullAddr || prev.location,
+        interestRatePerMonth: cust.interestRate ?? prev.interestRatePerMonth
+      }));
+      handleFinancialChange('interestRatePerMonth', cust.interestRate ?? form.interestRatePerMonth);
+    } else {
+      setForm(prev => ({
+        ...prev,
+        customerId
+      }));
+    }
   };
 
   const handleRemoveItemRow = (idx) => {
@@ -405,41 +507,8 @@ const DealMaster = () => {
       };
       const pct = Number(prev.paidPercent || 100);
       next.paidAmount = parseFloat((next.dealAmount * (pct / 100)).toFixed(2));
-      next.interestAmountPerMonth = parseFloat((next.dealAmount * (prev.interestRatePerMonth / 100)).toFixed(2));
       return next;
     });
-  };
-
-  const handleFinancialChange = (field, val) => {
-    setForm(prev => {
-      const next = { ...prev, [field]: val };
-      if (field === 'dealAmount' || field === 'paidPercent') {
-        const amt = Number(next.dealAmount || 0);
-        const pct = Number(next.paidPercent || 100);
-        next.paidAmount = parseFloat((amt * (pct / 100)).toFixed(2));
-      }
-      if (field === 'paidAmount' && Number(next.dealAmount || 0) > 0) {
-        const amt = Number(next.dealAmount || 0);
-        const paid = Number(next.paidAmount || 0);
-        next.paidPercent = parseFloat(((paid / amt) * 100).toFixed(2));
-      }
-      if (field === 'dealAmount' || field === 'interestRatePerMonth') {
-        const amt = Number(next.dealAmount || 0);
-        const rate = Number(next.interestRatePerMonth || 2.0);
-        next.interestAmountPerMonth = parseFloat((amt * (rate / 100)).toFixed(2));
-      }
-      return next;
-    });
-  };
-
-  const handleCustomerChange = (customerId) => {
-    const cust = customers.find(c => c._id === customerId);
-    setForm(prev => ({
-      ...prev,
-      customerId,
-      interestRatePerMonth: cust ? cust.interestRate : prev.interestRatePerMonth
-    }));
-    handleFinancialChange('interestRatePerMonth', cust ? cust.interestRate : form.interestRatePerMonth);
   };
 
   const handleAddNewDeal = async () => {
