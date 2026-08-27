@@ -356,31 +356,31 @@ const AccountingGroup = () => {
       </div>
 
       {/* GROUP CUSTOMER LEDGER MEMBERS SECTION */}
-      <div className="bg-slate-955 border-2 border-emerald-500/60 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4 no-print">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <div className="bg-slate-955 border-2 border-slate-700/60 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4 no-print">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700 pb-3">
           <div>
             <div className="flex items-center space-x-3">
-              <span className="bg-emerald-950 text-emerald-400 border border-emerald-500/50 px-2.5 py-1 rounded-lg text-xs font-black uppercase font-mono">
+              <span className="bg-slate-900 text-white border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-black uppercase font-mono">
                 Group Section
               </span>
-              <h2 className="text-lg font-black text-white uppercase tracking-wide">
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-wide">
                 {activeGroupName ? `LEDGER GROUP: ${activeGroupName}` : 'ALL LEDGER GROUPS & CUSTOMERS'}
               </h2>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-700 font-semibold mt-1">
               Select any customer below using your mouse to inspect their debit, credit, and net balance statement.
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-2.5 text-emerald-400" />
+              <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-700" />
               <input
                 type="text"
                 value={groupSearchQuery}
                 onChange={(e) => setGroupSearchQuery(e.target.value)}
                 placeholder="Filter customers by name / mobile / station..."
-                className="pl-9 pr-3 py-1.5 bg-slate-900 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
+                className="pl-9 pr-3 py-1.5 bg-white border border-slate-400 rounded-lg text-xs text-slate-900 font-bold placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-800 w-64"
               />
             </div>
           </div>
@@ -388,35 +388,35 @@ const AccountingGroup = () => {
 
         {/* Group Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block uppercase font-bold">TOTAL CUSTOMERS</span>
-            <span className="text-white text-base font-black">{displayGroupCustomers.length}</span>
+          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-slate-600 font-sans block uppercase font-black">TOTAL CUSTOMERS</span>
+            <span className="text-slate-950 text-base font-black">{displayGroupCustomers.length}</span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-emerald-400 font-sans block uppercase font-bold">TOTAL DEBIT (Dr)</span>
-            <span className="text-emerald-400 text-base font-black">
+          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-emerald-800 font-sans block uppercase font-black">TOTAL DEBIT (Dr)</span>
+            <span className="text-emerald-800 text-base font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalDebit, 0))}
             </span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-rose-400 font-sans block uppercase font-bold">TOTAL CREDIT (Cr)</span>
-            <span className="text-rose-400 text-base font-black">
+          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-rose-800 font-sans block uppercase font-black">TOTAL CREDIT (Cr)</span>
+            <span className="text-rose-800 text-base font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
             </span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-amber-300 font-sans block uppercase font-bold">NET GROUP BALANCE</span>
-            <span className="text-amber-300 text-base font-black">
+          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">NET GROUP BALANCE</span>
+            <span className="text-slate-950 text-base font-black">
               ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
             </span>
           </div>
         </div>
 
         {/* Customers Table View */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 max-h-96 overflow-y-auto">
+        <div className="overflow-x-auto rounded-xl border border-slate-400 bg-white max-h-96 overflow-y-auto shadow-inner">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-black text-emerald-400 uppercase tracking-wider sticky top-0 z-10">
+              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-black text-white uppercase tracking-wider sticky top-0 z-10">
                 <th className="py-2.5 px-3">Customer Name</th>
                 <th className="py-2.5 px-3">Code / ID</th>
                 <th className="py-2.5 px-3">Mobile No.</th>
@@ -426,10 +426,10 @@ const AccountingGroup = () => {
                 <th className="py-2.5 px-3 text-right">Net Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-955">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {displayGroupCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-400 font-bold italic">
+                  <td colSpan="7" className="p-8 text-center text-slate-700 font-black italic">
                     No customers found in this group.
                   </td>
                 </tr>
@@ -443,20 +443,20 @@ const AccountingGroup = () => {
                         setSelectedCustomerId(c._id);
                         setCustSearchText(`${c.name} (${c.customerCode})`);
                       }}
-                      className={`cursor-pointer transition-all hover:bg-slate-850 ${
-                        isSelected ? 'bg-emerald-950 text-white font-extrabold border-l-4 border-emerald-400 shadow-lg' : 'bg-slate-955 text-slate-100'
+                      className={`cursor-pointer transition-all hover:bg-slate-100 ${
+                        isSelected ? 'bg-emerald-100 text-slate-950 font-black border-l-4 border-emerald-700 shadow-md' : 'bg-white text-slate-950'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-extrabold text-amber-300 flex items-center space-x-2">
+                      <td className="py-2.5 px-3 font-black text-slate-950 flex items-center space-x-2">
                         <span>{c.name}</span>
                       </td>
-                      <td className="py-2.5 px-3 font-bold text-slate-300">{c.customerCode || c.idProofNumber || '-'}</td>
-                      <td className="py-2.5 px-3 text-slate-200 font-mono font-bold">{c.mobile || '-'}</td>
-                      <td className="py-2.5 px-3 font-bold text-emerald-400">{c.area || c.city || c.group || '-'}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-emerald-400">₹{c.totalDebit.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-rose-400">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-bold text-slate-900">{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 text-slate-900 font-mono font-bold">{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 font-bold text-slate-800">{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-emerald-800">₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-rose-800">₹{c.totalCredit.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-black">
-                        <span className={`px-2.5 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-900 text-emerald-300 border border-emerald-500/50' : 'bg-rose-900 text-rose-300 border border-rose-500/50'}`}>
+                        <span className={`px-2.5 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-100 text-emerald-950 border border-emerald-600' : 'bg-rose-100 text-rose-950 border border-rose-600'}`}>
                           ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}
                         </span>
                       </td>

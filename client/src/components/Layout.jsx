@@ -1080,12 +1080,12 @@ const Layout = ({ children }) => {
 
           <div className="flex items-center space-x-2">
             <Coins className="h-5 w-5 md:h-6 md:w-6 text-primary-500" />
-            <span className="text-sm md:text-lg font-bold tracking-wide bg-gradient-to-r from-primary-400 to-amber-300 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-xs md:max-w-none">
+            <span className="text-sm md:text-lg font-black tracking-wide text-white truncate max-w-[150px] sm:max-w-xs md:max-w-none">
               {companyDetails ? companyDetails.name : 'Girvi Management'}
             </span>
           </div>
 
-          <div className="hidden md:flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-semibold text-amber-400">
+          <div className="hidden md:flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-bold text-emerald-400">
             <span>Financial Period:</span>
             <span>
               {companyDetails?.financialYearStart && companyDetails?.financialYearEnd
@@ -1100,7 +1100,7 @@ const Layout = ({ children }) => {
           {/* Live Clock */}
           <div className="hidden lg:flex flex-col items-end text-xs text-slate-400">
             <span className="font-semibold text-slate-300">{formatDate(time)}</span>
-            <span className="font-mono text-amber-500/80">{formatTime(time)}</span>
+            <span className="font-mono text-emerald-400 font-bold">{formatTime(time)}</span>
           </div>
 
           {/* Switch Company (Admin Only Dropdown) */}
