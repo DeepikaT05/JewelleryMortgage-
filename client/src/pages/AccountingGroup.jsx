@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, Printer, Calendar, Users, Briefcase, Plus, Download, X } from 'lucide-react';
@@ -19,6 +19,7 @@ const AccountingGroup = () => {
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [selectedCustomerModal, setSelectedCustomerModal] = useState(null);
   const [activeCustIndex, setActiveCustIndex] = useState(0);
+  const groupSearchInputRef = useRef(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -154,42 +155,48 @@ const AccountingGroup = () => {
     loadGroups();
   }, []);
 
-  const displayGroupCustomers = customers.filter(c => {
-    if (!activeGroupName && !activeGroupId) return true;
-    const gName = (activeGroupName || '').toLowerCase();
-    const gId = activeGroupId || '';
-    const matchesGroup = (
-      (gId && String(c.customerGroupId) === String(gId)) ||
-      (gName && c.area && c.area.toLowerCase().includes(gName)) ||
-      (gName && c.group && c.group.toLowerCase().includes(gName)) ||
-      (gName && c.city && c.city.toLowerCase().includes(gName))
-    );
-    if (!matchesGroup) return false;
+  const displayGroupCustomers = useMemo(() => {
+    return customers.filter(c => {
+      if (activeGroupName || activeGroupId) {
+        const gName = (activeGroupName || '').toLowerCase();
+        const gId = activeGroupId || '';
+        const matchesGroup = (
+          (gId && String(c.customerGroupId) === String(gId)) ||
+          (gName && c.area && c.area.toLowerCase().includes(gName)) ||
+          (gName && c.group && c.group.toLowerCase().includes(gName)) ||
+          (gName && c.city && c.city.toLowerCase().includes(gName))
+        );
+        if (!matchesGroup) return false;
+      }
 
-    if (!groupSearchQuery.trim()) return true;
-    const q = groupSearchQuery.trim().toLowerCase();
-    return (
-      (c.name && c.name.toLowerCase().includes(q)) ||
-      (c.mobile && c.mobile.includes(q)) ||
-      (c.customerCode && String(c.customerCode).includes(q)) ||
-      (c.area && c.area.toLowerCase().includes(q))
-    );
-  }).map(c => {
-    const custDeals = deals.filter(d => (d.customerId?._id || d.customerId) === c._id);
-    const custTxs = transactions.filter(t => (t.customerId?._id || t.customerId) === c._id);
+      if (!groupSearchQuery.trim()) return true;
+      const q = groupSearchQuery.trim().toLowerCase();
+      return (
+        (c.name && c.name.toLowerCase().includes(q)) ||
+        (c.mobile && c.mobile.includes(q)) ||
+        (c.customerCode && String(c.customerCode).includes(q)) ||
+        (c.idProofNumber && String(c.idProofNumber).toLowerCase().includes(q)) ||
+        (c.area && c.area.toLowerCase().includes(q)) ||
+        (c.group && c.group.toLowerCase().includes(q)) ||
+        (c.city && c.city.toLowerCase().includes(q))
+      );
+    }).map(c => {
+      const custDeals = deals.filter(d => (d.customerId?._id || d.customerId) === c._id);
+      const custTxs = transactions.filter(t => (t.customerId?._id || t.customerId) === c._id);
 
-    const totalDebit = custDeals.reduce((sum, d) => sum + (d.dealAmount || 0), 0);
-    const totalCredit = custTxs.reduce((sum, t) => sum + (t.totalPaid || 0), 0);
-    const opening = Number(c.openingBalance || 0);
-    const netBalance = opening + totalDebit - totalCredit;
+      const totalDebit = custDeals.reduce((sum, d) => sum + (d.dealAmount || 0), 0);
+      const totalCredit = custTxs.reduce((sum, t) => sum + (t.totalPaid || 0), 0);
+      const opening = Number(c.openingBalance || 0);
+      const netBalance = opening + totalDebit - totalCredit;
 
-    return {
-      ...c,
-      totalDebit,
-      totalCredit,
-      netBalance
-    };
-  });
+      return {
+        ...c,
+        totalDebit,
+        totalCredit,
+        netBalance
+      };
+    });
+  }, [customers, deals, transactions, activeGroupName, activeGroupId, groupSearchQuery]);
 
   const getCustomerStatement = (cust) => {
     if (!cust) return { list: [], summary: { opening: 0, debit: 0, credit: 0, closing: 0 } };
@@ -249,7 +256,12 @@ const AccountingGroup = () => {
     };
   };
 
-  // Keyboard navigation for group customers table
+  // Reset active row index whenever filter or search query changes
+  useEffect(() => {
+    setActiveCustIndex(0);
+  }, [groupSearchQuery, activeGroupName, activeGroupId]);
+
+  // Global Keyboard listener for instant typing search & table navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (selectedCustomerModal) {
@@ -260,29 +272,60 @@ const AccountingGroup = () => {
         return;
       }
 
-      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-      if (['input', 'textarea', 'select'].includes(activeTag) && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') {
-        return;
+      if (e.key === 'Escape') {
+        if (groupSearchQuery) {
+          e.preventDefault();
+          setGroupSearchQuery('');
+          setActiveCustIndex(0);
+          return;
+        }
       }
+
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl && ['input', 'textarea', 'select'].includes(activeEl.tagName.toLowerCase());
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setActiveCustIndex(prev => (displayGroupCustomers.length ? (prev + 1) % displayGroupCustomers.length : 0));
+        return;
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveCustIndex(prev => (displayGroupCustomers.length ? (prev - 1 + displayGroupCustomers.length) % displayGroupCustomers.length : 0));
+        return;
       } else if (e.key === 'Enter') {
         e.preventDefault();
         const activeCust = displayGroupCustomers[activeCustIndex] || displayGroupCustomers[0];
         if (activeCust) {
           setSelectedCustomerModal(activeCust);
         }
+        return;
+      }
+
+      // If user is already typing in another input (e.g. modals), let them type normally
+      if (isInputActive && activeEl !== groupSearchInputRef.current) {
+        return;
+      }
+
+      // Instant Typing Search Shortcut: letters, numbers, spaces
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+        if (activeEl !== groupSearchInputRef.current) {
+          e.preventDefault();
+          if (groupSearchInputRef.current) {
+            groupSearchInputRef.current.focus();
+          }
+          setGroupSearchQuery(prev => prev + e.key);
+          setActiveCustIndex(0);
+        }
+      } else if (e.key === 'Backspace' && !isInputActive && groupSearchQuery.length > 0) {
+        e.preventDefault();
+        setGroupSearchQuery(prev => prev.slice(0, -1));
+        setActiveCustIndex(0);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCustomerModal, displayGroupCustomers, activeCustIndex]);
+  }, [selectedCustomerModal, displayGroupCustomers, activeCustIndex, groupSearchQuery]);
 
   const handleFyPresetChange = (preset) => {
     setFyPreset(preset);
@@ -469,14 +512,28 @@ const AccountingGroup = () => {
 
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-2.5 text-emerald-400" />
+              <Search className="h-4 w-4 absolute left-3 top-2.5" style={{ color: '#047857' }} />
               <input
+                ref={groupSearchInputRef}
                 type="text"
                 value={groupSearchQuery}
                 onChange={(e) => setGroupSearchQuery(e.target.value)}
-                placeholder="Filter customers by name / mobile / station..."
-                className="pl-9 pr-3 py-1.5 bg-slate-900 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
+                placeholder="Type to search name / mobile / station / ID..."
+                style={{ backgroundColor: '#ffffff', color: '#000000' }}
+                className="pl-9 pr-8 py-2 bg-white border-2 border-emerald-500 rounded-xl text-xs font-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-72 shadow-sm"
               />
+              {groupSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGroupSearchQuery('');
+                    if (groupSearchInputRef.current) groupSearchInputRef.current.focus();
+                  }}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-900 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
