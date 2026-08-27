@@ -432,23 +432,23 @@ const Dashboard = () => {
       )}
       {/* EDIT OPENING BALANCE MODAL */}
       {showOpeningModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="border-b border-slate-850 pb-3">
-              <h3 className="text-base font-bold text-white">Set Opening Balance & Source</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Define initial opening capital amount and where it opened from (Cash/Bank/Other).</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in font-sans">
+          <div className="w-full max-w-md bg-white border-2 border-slate-300 rounded-2xl p-6 shadow-2xl space-y-4" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+            <div className="border-b border-slate-200 pb-3">
+              <h3 className="text-base font-black" style={{ color: '#000000' }}>Set Opening Balance &amp; Source</h3>
+              <p className="text-xs mt-0.5" style={{ color: '#475569' }}>Define initial opening capital amount and where it opened from (Cash/Bank/Other).</p>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-slate-400 font-semibold block mb-1.5">Opening Source (बैलेंस माध्यम):</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label className="text-xs font-black block mb-1.5" style={{ color: '#0f172a' }}>Opening Source (बैलेंस माध्यम):</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
                   <button
                     type="button"
                     onClick={() => setOpeningMode('cash')}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
                       openingMode === 'cash'
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                        ? 'bg-emerald-100 text-emerald-900 border-emerald-500 shadow-sm font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     Cash
@@ -456,10 +456,10 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setOpeningMode('bank')}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
                       openingMode === 'bank'
-                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                        ? 'bg-blue-100 text-blue-900 border-blue-500 shadow-sm font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     Bank
@@ -467,10 +467,10 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setOpeningMode('both')}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
                       openingMode === 'both'
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                        ? 'bg-amber-100 text-amber-900 border-amber-500 shadow-sm font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     Cash + Bank
@@ -478,10 +478,10 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setOpeningMode('other')}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
                       openingMode === 'other'
-                        ? 'bg-purple-500/20 text-purple-400 border-purple-500/50'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                        ? 'bg-purple-100 text-purple-900 border-purple-500 shadow-sm font-black'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     Other
@@ -490,10 +490,10 @@ const Dashboard = () => {
               </div>
 
               {openingMode === 'both' ? (
-                <div className="space-y-3 pt-1 border-t border-slate-800">
+                <div className="space-y-3 pt-1 border-t border-slate-200">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-emerald-400 font-semibold block mb-1">Cash Opening (₹):</label>
+                      <label className="text-xs font-black block mb-1" style={{ color: '#065f46' }}>Cash Opening (₹):</label>
                       <input
                         type="number"
                         placeholder="e.g. 1000"
@@ -503,11 +503,12 @@ const Dashboard = () => {
                           setOpeningCashAmount(cash);
                           setNewOpeningBalance(cash + Number(openingBankAmount || 0));
                         }}
-                        className="w-full px-3 py-2 bg-slate-900 border border-emerald-500/40 rounded-xl text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
+                        style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                        className="w-full px-3 py-2 bg-white border-2 border-emerald-500 rounded-xl text-sm font-mono font-black focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-blue-400 font-semibold block mb-1">Bank Opening (₹):</label>
+                      <label className="text-xs font-black block mb-1" style={{ color: '#1e40af' }}>Bank Opening (₹):</label>
                       <input
                         type="number"
                         placeholder="e.g. 2000"
@@ -517,45 +518,49 @@ const Dashboard = () => {
                           setOpeningBankAmount(bank);
                           setNewOpeningBalance(Number(openingCashAmount || 0) + bank);
                         }}
-                        className="w-full px-3 py-2 bg-slate-900 border border-blue-500/40 rounded-xl text-sm font-mono text-white focus:outline-none focus:border-blue-500"
+                        style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                        className="w-full px-3 py-2 bg-white border-2 border-blue-500 rounded-xl text-sm font-mono font-black focus:outline-none"
                       />
                     </div>
                   </div>
-                  <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex justify-between items-center text-xs font-mono text-amber-300">
-                    <span>Total Opening Balance (Cash + Bank):</span>
-                    <span className="font-bold text-sm text-amber-400">
+                  <div className="p-2.5 bg-amber-50 border-2 border-amber-300 rounded-xl flex justify-between items-center text-xs font-mono text-amber-950">
+                    <span className="font-bold">Total Opening Balance (Cash + Bank):</span>
+                    <span className="font-black text-sm" style={{ color: '#000000' }}>
                       ₹{formatIndianCurrency((Number(openingCashAmount || 0)) + (Number(openingBankAmount || 0)))}
                     </span>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <label className="text-xs text-slate-400 font-semibold block mb-1">Opening Balance Amount (₹):</label>
+                  <label className="text-xs font-black block mb-1" style={{ color: '#0f172a' }}>Opening Balance Amount (₹):</label>
                   <input
                     type="number"
                     placeholder="e.g. 1500000"
                     value={newOpeningBalance}
                     onChange={(e) => setNewOpeningBalance(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-mono text-white focus:outline-none focus:border-sky-500"
+                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                    className="w-full px-4 py-2.5 bg-white border-2 border-sky-500 rounded-xl text-base font-mono font-black focus:outline-none shadow-sm"
                   />
                 </div>
               )}
 
               {openingMode === 'other' && (
                 <div className="animate-fade-in">
-                  <label className="text-xs text-purple-400 font-semibold block mb-1">Custom Source Name (अन्य नाम):</label>
+                  <label className="text-xs font-black block mb-1" style={{ color: '#581c87' }}>Custom Source Name (अन्य नाम):</label>
                   <input
                     type="text"
                     placeholder="e.g. Owner Capital, Personal Account..."
                     value={openingCustomSource}
                     onChange={(e) => setOpeningCustomSource(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-900 border border-purple-500/40 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500"
+                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
+                    className="w-full px-4 py-2 bg-white border-2 border-purple-500 rounded-xl text-sm font-bold focus:outline-none"
                   />
                 </div>
               )}
             </div>
             <div className="flex justify-end space-x-3 pt-2">
               <button
+                type="button"
                 onClick={async () => {
                   try {
                     await axios.post('/api/dashboard/opening-balance', { 
@@ -569,13 +574,14 @@ const Dashboard = () => {
                     fetchData();
                   } catch (err) { console.error(err); }
                 }}
-                className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl text-xs transition shadow-lg shadow-sky-600/20"
+                className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-xl text-xs transition shadow-md cursor-pointer"
               >
                 Save Opening Balance
               </button>
               <button
+                type="button"
                 onClick={() => setShowOpeningModal(false)}
-                className="px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-300 font-semibold rounded-xl text-xs hover:bg-slate-800 transition"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-900 font-bold rounded-xl text-xs transition cursor-pointer"
               >
                 Cancel
               </button>
