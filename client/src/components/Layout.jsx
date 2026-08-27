@@ -1931,8 +1931,8 @@ const Layout = ({ children }) => {
                   {/* Header info */}
                   <div className="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center text-xs shrink-0">
                     <div className="flex items-center space-x-2">
-                      <span className="text-slate-400 uppercase font-bold">LEDGER STATEMENT: </span>
-                      <span className="text-amber-300 font-extrabold text-sm uppercase bg-slate-950 px-2.5 py-1 rounded-lg border border-emerald-500/40 tracking-wide shadow-inner">
+                      <span className="text-slate-300 uppercase font-bold">LEDGER STATEMENT: </span>
+                      <span className="text-emerald-300 font-black text-sm uppercase bg-slate-950 px-3 py-1 rounded-lg border border-emerald-500/60 tracking-wider shadow-md">
                         {selectedLedgerItem?.name}
                       </span>
                       <span className="text-emerald-400 font-mono text-xs font-bold">({selectedLedgerItem?.type})</span>
@@ -2016,8 +2016,8 @@ const Layout = ({ children }) => {
                       <span className="text-rose-400 font-bold">{ctrlLSummary.totalPayment.toFixed(2)}</span>
                     </div>
                     <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[10px] text-amber-400 font-sans block uppercase">Closing Balance</span>
-                      <span className="text-amber-400 font-extrabold">{Math.abs(ctrlLSummary.closing).toFixed(2)} {ctrlLSummary.closing >= 0 ? 'Dr' : 'Cr'}</span>
+                      <span className="text-[10px] text-emerald-400 font-sans block uppercase">Closing Balance</span>
+                      <span className="text-emerald-300 font-black">{Math.abs(ctrlLSummary.closing).toFixed(2)} {ctrlLSummary.closing >= 0 ? 'Dr' : 'Cr'}</span>
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
@@ -256,12 +257,30 @@ const DealMaster = () => {
     }
   };
 
+  const location = useLocation();
+
   const loadDealsList = async () => {
     try {
       const res = await axios.get('/api/deals?limit=1000');
-      const list = res.data.deals;
+      const list = res.data.deals || [];
       setDeals(list);
-      // Always keep form ready for new record entry
+
+      const targetDeal = location.state?.dealNo || location.state?.dealId;
+      if (targetDeal) {
+        const found = list.find(d => 
+          String(d.dealNo).toLowerCase() === String(targetDeal).toLowerCase() ||
+          String(d.refNo).toLowerCase() === String(targetDeal).toLowerCase() ||
+          String(d._id) === String(targetDeal)
+        );
+        if (found) {
+          await fetchDealDetails(found._id);
+          const idx = list.findIndex(d => d._id === found._id);
+          if (idx !== -1) setDealIndex(idx);
+          return;
+        }
+      }
+
+      // Otherwise keep form ready for new record entry
       await handleAddNewDeal();
     } catch (err) {
       console.error(err);

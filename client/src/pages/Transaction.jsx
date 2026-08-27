@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Toast from '../components/Toast';
 import { formatIndianCurrency } from '../utils/format';
 
 const Transaction = () => {
+  const location = useLocation();
   const [toast, setToast] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const calcReqId = React.useRef(0); // tracks latest calculate request to avoid race condition
@@ -128,12 +130,31 @@ const Transaction = () => {
   useEffect(() => {
     const initializeTransaction = async () => {
       await loadMasters();
-      // Always start with a completely blank form — no pre-filled deal
+      const targetTx = location.state?.transactionNo || location.state?.transactionId;
+      if (targetTx) {
+        try {
+          const res = await axios.get(`/api/transactions/${targetTx}`);
+          if (res.data) {
+            const t = res.data;
+            setForm({
+              ...t,
+              dealId: t.dealId?._id || t.dealId,
+              customerId: t.customerId?._id || t.customerId,
+              bankId: t.bankId?._id || t.bankId || ''
+            });
+            setIsEditMode(true);
+            return;
+          }
+        } catch (e) {
+          console.error('Could not load target transaction', e);
+        }
+      }
+      // Always start with a completely blank form if no target transaction
       setForm({ ...blankForm, tranDate: new Date().toISOString().split('T')[0] });
       setIsEditMode(true);
     };
     initializeTransaction();
-  }, []);
+  }, [location.state]);
 
   const triggerAutoCalc = async (dealId, dateStr) => {
     if (!dealId || !dateStr) return;
