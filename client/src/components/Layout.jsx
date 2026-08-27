@@ -1690,66 +1690,6 @@ const Layout = ({ children }) => {
         const companyName = companyDetails?.name || 'TAMRAKAR AGROTECH-DURG';
         const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        const handleListKeyDown = (e) => {
-          if (filteredList.length === 0) return;
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setCtrlLActiveIndex(prev => (prev + 1) % filteredList.length);
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setCtrlLActiveIndex(prev => (prev - 1 + filteredList.length) % filteredList.length);
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (activeLedger.id) {
-              handleSelectCombinedLedger(activeLedger);
-            }
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            setShowCtrlLLookup(false);
-          }
-        };
-
-        const handleDatePromptKeyDown = (e) => {
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-            e.preventDefault();
-            setDatePromptActiveBtn(prev => (prev + 1) % 4);
-          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            setDatePromptActiveBtn(prev => (prev - 1 + 4) % 4);
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (datePromptActiveBtn === 0 || datePromptActiveBtn === 1 || datePromptActiveBtn === 2) {
-              fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
-              setCtrlLStep('statement');
-            } else if (datePromptActiveBtn === 3) {
-              setCtrlLStep('list');
-            }
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            setCtrlLStep('list');
-          }
-        };
-
-        const handleStatementKeyDown = (e) => {
-          if (ctrlLStatement.length === 0) return;
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setCtrlLStatementIndex(prev => (prev + 1) % ctrlLStatement.length);
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setCtrlLStatementIndex(prev => (prev - 1 + ctrlLStatement.length) % ctrlLStatement.length);
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            const txRow = ctrlLStatement[ctrlLStatementIndex];
-            if (txRow) {
-              handleAlterTransaction(txRow);
-            }
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            setCtrlLStep('datePrompt');
-          }
-        };
-
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 md:p-4 no-print font-mono">
             <div className="bg-slate-950 border-2 border-emerald-600/70 rounded-xl max-w-6xl w-full shadow-2xl overflow-hidden text-slate-200 flex flex-col max-h-[92vh] text-xs">
@@ -1788,7 +1728,6 @@ const Layout = ({ children }) => {
                         setCtrlLSearchQuery(e.target.value);
                         setCtrlLActiveIndex(0);
                       }}
-                      onKeyDown={handleListKeyDown}
                       placeholder="Type any alphabet / name / station / code (Use ↓ ↑ & Enter)..."
                       className="w-full bg-slate-955 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
@@ -1916,7 +1855,6 @@ const Layout = ({ children }) => {
                           autoFocus
                           value={ctrlLFromDate}
                           onChange={(e) => setCtrlLFromDate(e.target.value)}
-                          onKeyDown={handleDatePromptKeyDown}
                           className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
                         />
                         <span className="font-bold text-slate-300 uppercase">TO</span>
@@ -1924,7 +1862,6 @@ const Layout = ({ children }) => {
                           type="date"
                           value={ctrlLToDate}
                           onChange={(e) => setCtrlLToDate(e.target.value)}
-                          onKeyDown={handleDatePromptKeyDown}
                           className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
                         />
                       </div>
