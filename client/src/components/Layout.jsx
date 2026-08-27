@@ -1229,7 +1229,7 @@ const Layout = ({ children }) => {
                         <button
                           type="button"
                           onClick={() => setShowCreateSidebarGroupModal(true)}
-                          className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-emerald-400 hover:bg-emerald-950/60 font-bold transition-all text-left border border-emerald-500/30 bg-emerald-950/20 shadow-sm"
+                          className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-slate-900 bg-slate-200 hover:bg-slate-300 font-black transition-all text-left border border-slate-400 shadow-sm"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>+ Create New Group</span>
@@ -1238,10 +1238,10 @@ const Layout = ({ children }) => {
                         <Link
                           to="/accounting-group"
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className={`block py-1.5 px-2.5 rounded-lg transition-all font-bold ${
+                          className={`block py-1.5 px-2.5 rounded-lg transition-all font-black ${
                             location.pathname === '/accounting-group' && !location.search
-                              ? 'bg-emerald-800 text-white'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              ? 'bg-slate-900 text-white font-black'
+                              : 'text-slate-900 hover:bg-slate-200'
                           }`}
                         >
                           All Ledger Groups
@@ -1254,10 +1254,10 @@ const Layout = ({ children }) => {
                               key={g}
                               to={`/accounting-group?groupName=${encodeURIComponent(g)}`}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className={`block py-1.5 px-2.5 rounded-lg transition-all truncate ${
+                              className={`block py-1.5 px-2.5 rounded-lg transition-all truncate font-black ${
                                 isGroupSelected
-                                  ? 'bg-emerald-900/90 text-emerald-300 font-extrabold border-l-2 border-emerald-400'
-                                  : 'text-slate-400 hover:bg-slate-800 hover:text-amber-300'
+                                  ? 'bg-slate-900 text-white font-black rounded-lg shadow-sm'
+                                  : 'text-slate-900 hover:bg-slate-200'
                               }`}
                             >
                               {g}
@@ -1276,14 +1276,14 @@ const Layout = ({ children }) => {
                   to={item.path}
                   title={isSidebarCollapsed ? item.name : undefined}
                   onClick={() => { setFocusedMenuIdx(idx); setIsMobileMenuOpen(false); }}
-                  className={`flex items-center space-x-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-3 rounded-xl text-sm font-bold transition-all ${
                     isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
                   } ${
                     isActive 
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-bold' 
+                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-black' 
                       : isFocused
                       ? 'bg-slate-800 text-white ring-2 ring-primary-500 font-bold'
-                      : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                      : 'text-slate-800 hover:bg-slate-200/80 hover:text-black'
                   }`}
                 >
                   <div className="shrink-0">{item.icon}</div>

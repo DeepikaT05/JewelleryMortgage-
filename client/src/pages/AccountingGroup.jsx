@@ -189,6 +189,95 @@ const AccountingGroup = () => {
     };
   });
 
+  const [activeCustomerIndex, setActiveCustomerIndex] = useState(0);
+  const [selectedCustomerModal, setSelectedCustomerModal] = useState(null);
+
+  const getCustomerStatement = (c) => {
+    if (!c) return { summary: { opening: 0, debit: 0, credit: 0, closing: 0 }, list: [] };
+    const custDeals = deals.filter(d => (d.customerId?._id || d.customerId) === c._id);
+    const custTxs = transactions.filter(t => (t.customerId?._id || t.customerId) === c._id);
+
+    const chronological = [];
+    custDeals.forEach(d => {
+      chronological.push({
+        date: d.dealDate ? d.dealDate.split('T')[0] : '',
+        type: 'Loan / Deal Issued',
+        refNo: d.dealNo,
+        narration: `Pledged collateral (Deal #${d.dealNo})`,
+        debit: d.dealAmount || 0,
+        credit: 0
+      });
+    });
+
+    custTxs.forEach(t => {
+      chronological.push({
+        date: t.tranDate ? t.tranDate.split('T')[0] : '',
+        type: 'Payment / Receipt',
+        refNo: t.transactionNo,
+        narration: `Receipt #${t.transactionNo} (Mode: ${t.payMode || 'Cash'})`,
+        debit: 0,
+        credit: t.totalPaid || 0
+      });
+    });
+
+    chronological.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let running = Number(c.openingBalance || 0);
+    const list = chronological.map(row => {
+      running += (row.debit - row.credit);
+      return {
+        ...row,
+        balance: running
+      };
+    });
+
+    const totalDebit = custDeals.reduce((s, d) => s + (d.dealAmount || 0), 0);
+    const totalCredit = custTxs.reduce((s, t) => s + (t.totalPaid || 0), 0);
+    const opening = Number(c.openingBalance || 0);
+    const closing = opening + totalDebit - totalCredit;
+
+    return {
+      summary: { opening, debit: totalDebit, credit: totalCredit, closing },
+      list
+    };
+  };
+
+  useEffect(() => {
+    const handleAccountingGroupKeyDown = (e) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (['input', 'textarea', 'select'].includes(activeTag) && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter' && e.key !== 'Escape') {
+        return;
+      }
+
+      if (selectedCustomerModal) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setSelectedCustomerModal(null);
+        }
+        return;
+      }
+
+      if (!displayGroupCustomers || displayGroupCustomers.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveCustomerIndex(prev => (prev + 1) % displayGroupCustomers.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveCustomerIndex(prev => (prev - 1 + displayGroupCustomers.length) % displayGroupCustomers.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeCust = displayGroupCustomers[activeCustomerIndex] || displayGroupCustomers[0];
+        if (activeCust) {
+          setSelectedCustomerModal(activeCust);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleAccountingGroupKeyDown);
+    return () => window.removeEventListener('keydown', handleAccountingGroupKeyDown);
+  }, [displayGroupCustomers, activeCustomerIndex, selectedCustomerModal]);
+
   const handleFyPresetChange = (preset) => {
     setFyPreset(preset);
     if (preset === 'store' && storeFY) {
@@ -434,17 +523,25 @@ const AccountingGroup = () => {
                   </td>
                 </tr>
               ) : (
-                displayGroupCustomers.map((c) => {
-                  const isSelected = selectedCustomerId === c._id;
+                displayGroupCustomers.map((c, idx) => {
+                  const isActive = idx === activeCustomerIndex;
                   return (
                     <tr
                       key={c._id}
-                      onClick={() => {
-                        setSelectedCustomerId(c._id);
-                        setCustSearchText(`${c.name} (${c.customerCode})`);
+                      ref={(el) => {
+                        if (isActive && el) {
+                          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }
                       }}
-                      className={`cursor-pointer transition-all hover:bg-slate-100 ${
-                        isSelected ? 'bg-emerald-100 text-slate-950 font-black border-l-4 border-emerald-700 shadow-md' : 'bg-white text-slate-950'
+                      onClick={() => {
+                        setActiveCustomerIndex(idx);
+                        setSelectedCustomerModal(c);
+                      }}
+                      onMouseEnter={() => setActiveCustomerIndex(idx)}
+                      className={`cursor-pointer transition-all ${
+                        isActive
+                          ? 'bg-emerald-200 text-slate-950 font-black border-l-4 border-emerald-800 shadow-md ring-2 ring-emerald-600/50'
+                          : 'bg-white text-slate-950 hover:bg-slate-100'
                       }`}
                     >
                       <td className="py-2.5 px-3 font-black text-slate-950 flex items-center space-x-2">
@@ -467,7 +564,142 @@ const AccountingGroup = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Footer Shortcut Hint */}
+        <div className="bg-slate-900 px-4 py-2 rounded-xl flex justify-between items-center text-[11px] text-white font-mono shrink-0">
+          <span>Use <kbd className="bg-slate-800 text-emerald-300 px-1.5 py-0.5 rounded border border-slate-700 font-black">↑</kbd> <kbd className="bg-slate-800 text-emerald-300 px-1.5 py-0.5 rounded border border-slate-700 font-black">↓</kbd> Arrow keys &amp; <kbd className="bg-emerald-600 text-slate-950 px-2 py-0.5 rounded font-black">Enter</kbd> (or Click) to View Customer Details &amp; Full Statement Popup</span>
+          <span className="text-slate-300">Press <kbd className="bg-slate-800 text-white px-1.5 py-0.5 rounded border border-slate-700">Esc</kbd> to Close Popup</span>
+        </div>
       </div>
+
+      {/* CUSTOMER DETAILS & STATEMENT POPUP MODAL */}
+      {selectedCustomerModal && (() => {
+        const c = selectedCustomerModal;
+        const stmt = getCustomerStatement(c);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 md:p-6 no-print font-sans">
+            <div className="bg-white border-2 border-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-950">
+              
+              {/* Modal Header */}
+              <div className="bg-slate-900 px-5 py-3.5 flex justify-between items-center text-white shrink-0">
+                <div className="flex items-center space-x-3">
+                  <span className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded font-black text-xs uppercase font-mono">
+                    Customer Statement
+                  </span>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wide">
+                    {c.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedCustomerModal(null)}
+                  className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                  title="Close (Esc)"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Customer Master Details Bar */}
+              <div className="p-4 bg-slate-100 border-b border-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-950 shrink-0">
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Customer ID / Code</span>
+                  <span className="font-black text-slate-950 text-sm">{c.customerCode || c.idProofNumber || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Mobile No.</span>
+                  <span className="font-black text-slate-950 text-sm">{c.mobile || 'No Mobile'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Station / Area</span>
+                  <span className="font-black text-slate-950 text-sm">{c.area || c.city || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Group / City</span>
+                  <span className="font-black text-slate-950 text-sm">{c.group || c.city || '-'}</span>
+                </div>
+              </div>
+
+              {/* Financial Metrics Summary */}
+              <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono bg-white shrink-0">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-300 shadow-sm">
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-black">Opening Balance</span>
+                  <span className="text-slate-950 text-base font-black">₹{stmt.summary.opening.toFixed(2)}</span>
+                </div>
+                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300 shadow-sm">
+                  <span className="text-[10px] text-emerald-900 font-sans block uppercase font-black">Total Loans Issued (Dr)</span>
+                  <span className="text-emerald-900 text-base font-black">₹{stmt.summary.debit.toFixed(2)}</span>
+                </div>
+                <div className="bg-rose-50 p-3 rounded-xl border border-rose-300 shadow-sm">
+                  <span className="text-[10px] text-rose-900 font-sans block uppercase font-black">Total Received (Cr)</span>
+                  <span className="text-rose-900 text-base font-black">₹{stmt.summary.credit.toFixed(2)}</span>
+                </div>
+                <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
+                  <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">Net Closing Balance</span>
+                  <span className="text-slate-950 text-base font-black">
+                    ₹{Math.abs(stmt.summary.closing).toFixed(2)} {stmt.summary.closing >= 0 ? 'Dr' : 'Cr'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Chronological Statement Table */}
+              <div className="flex-1 overflow-y-auto p-4 bg-slate-50 border-t border-slate-300">
+                <table className="w-full text-left text-xs border-collapse font-mono">
+                  <thead>
+                    <tr className="bg-slate-900 text-white font-black uppercase text-[11px] sticky top-0 z-10">
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Narration / Particulars</th>
+                      <th className="py-2.5 px-3 text-right">Debit (Dr)</th>
+                      <th className="py-2.5 px-3 text-right">Credit (Cr)</th>
+                      <th className="py-2.5 px-3 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {stmt.list.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-slate-600 font-black italic">
+                          No transactions or deals registered for this customer yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      stmt.list.map((row, rIdx) => (
+                        <tr key={rIdx} className="hover:bg-slate-100 text-slate-950">
+                          <td className="py-2.5 px-3 font-bold">{row.date}</td>
+                          <td className="py-2.5 px-3 font-black text-slate-900">{row.type}</td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">{row.narration}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-emerald-800">
+                            {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-rose-800">
+                            {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-950">
+                            ₹{Math.abs(row.balance).toFixed(2)} {row.balance >= 0 ? 'Dr' : 'Cr'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-100 px-5 py-3 border-t border-slate-300 flex justify-between items-center shrink-0">
+                <span className="text-xs text-slate-600 font-mono font-bold">
+                  Showing all {stmt.list.length} transaction entries
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCustomerModal(null)}
+                  className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-xs shadow-md"
+                >
+                  Close (Esc)
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Create New Accounting Group Modal */}
       {showCreateGroupForm && (
