@@ -84,32 +84,73 @@ const Layout = ({ children }) => {
 
   // --- CTRL + L GLOBAL MARG-STYLE LEDGER LOOKUP SYSTEM STATES ---
   const [showCtrlLLookup, setShowCtrlLLookup] = useState(false);
+  const [ctrlLStep, setCtrlLStep] = useState('list'); // 'list' | 'datePrompt' | 'statement'
   const [ctrlLSearchQuery, setCtrlLSearchQuery] = useState('');
   const [ctrlLActiveIndex, setCtrlLActiveIndex] = useState(0);
   const [allCombinedLedgers, setAllCombinedLedgers] = useState([]);
   const [ctrlLLoading, setCtrlLLoading] = useState(false);
 
+  // Active ledger item for statement
+  const [selectedLedgerItem, setSelectedLedgerItem] = useState(null);
+
+  // Date Range Prompt States (Screen 2)
+  const getFYStart = () => {
+    const now = new Date();
+    const year = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
+    return `${year}-04-01`;
+  };
+  const [ctrlLFromDate, setCtrlLFromDate] = useState(getFYStart);
+  const [ctrlLToDate, setCtrlLToDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // Statement Data States (Screen 3)
+  const [ctrlLStatement, setCtrlLStatement] = useState([]);
+  const [ctrlLSummary, setCtrlLSummary] = useState({ opening: 0, totalReceipt: 0, totalPayment: 0, closing: 0 });
+  const [ctrlLStatementIndex, setCtrlLStatementIndex] = useState(0);
+  const [ctrlLStatementLoading, setCtrlLStatementLoading] = useState(false);
+
   const fetchCombinedLedgersList = async () => {
     setCtrlLLoading(true);
     try {
-      const [custRes, groupRes, bankRes, suppRes] = await Promise.all([
+      const [custRes, groupRes, bankRes, suppRes, dealsRes, txsRes] = await Promise.all([
         axios.get('/api/customers?limit=1000').catch(() => ({ data: { customers: [] } })),
         axios.get('/api/customer-groups').catch(() => ({ data: [] })),
         axios.get('/api/ledgers').catch(() => ({ data: [] })),
-        axios.get('/api/suppliers').catch(() => ({ data: [] }))
+        axios.get('/api/suppliers').catch(() => ({ data: [] })),
+        axios.get('/api/deals?limit=2000').catch(() => ({ data: { deals: [] } })),
+        axios.get('/api/transactions?limit=2000').catch(() => ({ data: { transactions: [] } }))
       ]);
 
-      const custItems = (custRes.data.customers || []).map(c => ({
-        id: c._id,
-        rawId: c._id,
-        name: c.name,
-        code: c.customerCode ? `#${c.customerCode}` : '',
-        type: 'Customer',
-        group: c.customerGroup || 'General',
-        mobile: c.mobile || '',
-        area: c.area ? `${c.area}, ${c.city || ''}` : c.city || '',
-        target: 'customer'
-      }));
+      const allDeals = dealsRes.data.deals || dealsRes.data || [];
+      const allTxs = txsRes.data.transactions || txsRes.data || [];
+
+      const custItems = (custRes.data.customers || []).map(c => {
+        const custDeals = allDeals.filter(d => (d.customerId?._id || d.customerId) === c._id);
+        const custReceipts = allTxs.filter(t => (t.customerId?._id || t.customerId) === c._id);
+
+        const totalDebit = custDeals.reduce((sum, d) => sum + (d.dealAmount || 0), 0);
+        const totalCredit = custReceipts.reduce((sum, t) => sum + (t.totalPaid || 0), 0);
+        const netBal = totalDebit - totalCredit;
+
+        return {
+          id: c._id,
+          rawId: c._id,
+          name: c.name,
+          code: c.customerCode ? `#${c.customerCode}` : '',
+          type: 'Customer',
+          group: c.customerGroup || 'General',
+          mobile: c.mobile || '',
+          address: c.address || '',
+          area: c.area ? `${c.area}, ${c.city || ''}` : c.city || '',
+          state: c.state || '22-CHHATTISGARH',
+          gstin: c.gstin || '',
+          opening: 0,
+          debit: totalDebit,
+          credit: totalCredit,
+          balance: Math.abs(netBal),
+          balanceType: netBal >= 0 ? 'Dr' : 'Cr',
+          target: 'customer'
+        };
+      });
 
       const groupItems = (groupRes.data || []).map(cg => ({
         id: cg._id,
@@ -119,21 +160,42 @@ const Layout = ({ children }) => {
         type: 'Customer Group',
         group: 'Ledger Group',
         mobile: '',
+        address: '',
         area: cg.description || '',
+        state: '22-CHHATTISGARH',
+        gstin: '',
+        opening: 0,
+        debit: 0,
+        credit: 0,
+        balance: 0,
+        balanceType: 'Dr',
         target: 'customerGroup'
       }));
 
-      const bankItems = (bankRes.data || []).map(l => ({
-        id: l._id,
-        rawId: l._id,
-        name: l.name,
-        code: l.group ? l.group.toUpperCase() : '',
-        type: 'Bank / Cash Ledger',
-        group: l.group || 'general',
-        mobile: '',
-        area: l.closingBalance !== undefined ? `Bal: ₹${l.closingBalance.toFixed(2)}` : '',
-        target: 'bankLedger'
-      }));
+      const bankItems = (bankRes.data || []).map(l => {
+        const debit = l.totalAdd || 0;
+        const credit = l.totalDeduct || 0;
+        const bal = l.closingBalance || (l.openingBalance + debit - credit);
+        return {
+          id: l._id,
+          rawId: l._id,
+          name: l.name,
+          code: l.group ? l.group.toUpperCase() : '',
+          type: 'Bank / Cash Ledger',
+          group: l.group || 'general',
+          mobile: '',
+          address: '',
+          area: l.group ? l.group.toUpperCase() : '',
+          state: '22-CHHATTISGARH',
+          gstin: '',
+          opening: l.openingBalance || 0,
+          debit: debit,
+          credit: credit,
+          balance: Math.abs(bal),
+          balanceType: bal >= 0 ? 'Dr' : 'Cr',
+          target: 'bankLedger'
+        };
+      });
 
       const suppItems = (suppRes.data || []).map(s => ({
         id: s._id,
@@ -143,7 +205,15 @@ const Layout = ({ children }) => {
         type: 'Supplier Account',
         group: 'Supplier',
         mobile: s.phone || s.mobile || '',
+        address: s.address || '',
         area: s.city || '',
+        state: '22-CHHATTISGARH',
+        gstin: s.gstin || '',
+        opening: 0,
+        debit: 0,
+        credit: 0,
+        balance: 0,
+        balanceType: 'Dr',
         target: 'supplier'
       }));
 
@@ -157,19 +227,121 @@ const Layout = ({ children }) => {
     }
   };
 
-  const handleSelectCombinedLedger = (item) => {
-    setShowCtrlLLookup(false);
+  const fetchLedgerStatement = async (item, fromD, toD) => {
     if (!item) return;
+    setCtrlLStatementLoading(true);
+    try {
+      if (item.target === 'customer') {
+        const res = await axios.get(`/api/reports/accounting-group-ledger?customerId=${item.rawId}&startDate=${fromD}&endDate=${toD}`);
+        const rawLedger = res.data.ledger || [];
+        const opening = res.data.openingPrincipal || 0;
+        
+        let runningBal = opening;
+        let totalReceipt = 0;
+        let totalPayment = 0;
 
-    if (item.target === 'customer') {
-      navigate('/customers', { state: { selectedCustomerId: item.rawId } });
-    } else if (item.target === 'customerGroup') {
-      navigate('/general-masters');
-    } else if (item.target === 'bankLedger') {
-      setSelectedLedgerId(item.rawId);
+        const formatted = rawLedger.map(row => {
+          const dateStr = row.date ? new Date(row.date).toLocaleDateString('en-IN', { month: 'short', day: '2-digit' }) : '';
+          const isDeal = row.type === 'Deal';
+          const isReceipt = row.type === 'Receipt';
+
+          const debit = isDeal ? row.amount : 0;
+          const credit = isReceipt ? row.amount : 0;
+
+          totalReceipt += debit;
+          totalPayment += credit;
+          runningBal += (debit - credit);
+
+          return {
+            raw: row,
+            date: dateStr,
+            fullDate: row.date,
+            type: isDeal ? 'Sale' : 'Rcpt',
+            narration: row.particulars || `Bill / Receipt #${row.no}`,
+            receipt: debit,
+            payment: credit,
+            balance: runningBal,
+            balanceType: runningBal >= 0 ? 'Dr' : 'Cr',
+            target: isDeal ? 'deal' : 'transaction',
+            refNo: row.no
+          };
+        });
+
+        setCtrlLStatement(formatted);
+        setCtrlLSummary({
+          opening,
+          totalReceipt,
+          totalPayment,
+          closing: runningBal
+        });
+      } else if (item.target === 'bankLedger') {
+        const res = await axios.get(`/api/ledgers/transactions/${item.rawId}`);
+        const txs = res.data.transactions || [];
+        const acc = res.data.account || {};
+
+        let runningBal = acc.openingBalance || 0;
+        let totalAdd = 0;
+        let totalDeduct = 0;
+
+        const formatted = txs.map(tx => {
+          const dateStr = tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { month: 'short', day: '2-digit' }) : '';
+          const debit = tx.type === 'add' ? tx.amount : 0;
+          const credit = tx.type === 'deduct' ? tx.amount : 0;
+
+          totalAdd += debit;
+          totalDeduct += credit;
+          runningBal += (debit - credit);
+
+          return {
+            raw: tx,
+            date: dateStr,
+            fullDate: tx.date,
+            type: tx.type === 'add' ? 'Rcpt' : 'Pymt',
+            narration: tx.remarks || `Ledger Tx #${tx._id.slice(-6)}`,
+            receipt: debit,
+            payment: credit,
+            balance: runningBal,
+            balanceType: runningBal >= 0 ? 'Dr' : 'Cr',
+            target: 'ledgerTx',
+            refNo: tx._id
+          };
+        });
+
+        setCtrlLStatement(formatted);
+        setCtrlLSummary({
+          opening: acc.openingBalance || 0,
+          totalReceipt: totalAdd,
+          totalPayment: totalDeduct,
+          closing: runningBal
+        });
+      } else {
+        setCtrlLStatement([]);
+        setCtrlLSummary({ opening: 0, totalReceipt: 0, totalPayment: 0, closing: 0 });
+      }
+    } catch (err) {
+      console.error('Error loading ledger statement:', err);
+    } finally {
+      setCtrlLStatementLoading(false);
+    }
+  };
+
+  const handleSelectCombinedLedger = (item) => {
+    if (!item) return;
+    setSelectedLedgerItem(item);
+    setCtrlLStep('datePrompt');
+  };
+
+  const handleAlterTransaction = (txRow) => {
+    setShowCtrlLLookup(false);
+    if (!txRow) return;
+
+    if (txRow.target === 'deal') {
+      navigate('/deal-master', { state: { dealNo: txRow.refNo } });
+    } else if (txRow.target === 'transaction') {
+      navigate('/transaction', { state: { transactionNo: txRow.refNo } });
+    } else if (txRow.target === 'ledgerTx') {
+      setSelectedLedgerId(selectedLedgerItem?.rawId);
       setShowLedgerModal(true);
-    } else if (item.target === 'supplier') {
-      navigate('/accounting-group');
     }
   };
 
@@ -674,8 +846,10 @@ const Layout = ({ children }) => {
         setShowCtrlLLookup(prev => {
           const next = !prev;
           if (next) {
+            setCtrlLStep('list');
             setCtrlLSearchQuery('');
             setCtrlLActiveIndex(0);
+            setCtrlLStatementIndex(0);
             fetchCombinedLedgersList();
           }
           return next;
@@ -1345,7 +1519,7 @@ const Layout = ({ children }) => {
         </div>
       )}
 
-      {/* CTRL + L GLOBAL MARG-STYLE CONSOLIDATED LEDGER LOOKUP MODAL */}
+      {/* CTRL + L GLOBAL MARG ERP STYLE 4-SCREEN LEDGER SYSTEM */}
       {showCtrlLLookup && (() => {
         const q = ctrlLSearchQuery.trim().toLowerCase();
         const filteredList = allCombinedLedgers.filter(item => {
@@ -1360,7 +1534,11 @@ const Layout = ({ children }) => {
           );
         });
 
-        const handleModalKeyDown = (e) => {
+        const activeLedger = filteredList[ctrlLActiveIndex] || filteredList[0] || {};
+        const companyName = companyDetails?.name || 'TAMRAKAR AGROTECH-DURG';
+        const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        const handleListKeyDown = (e) => {
           if (filteredList.length === 0) return;
           if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -1370,134 +1548,362 @@ const Layout = ({ children }) => {
             setCtrlLActiveIndex(prev => (prev - 1 + filteredList.length) % filteredList.length);
           } else if (e.key === 'Enter') {
             e.preventDefault();
-            const activeItem = filteredList[ctrlLActiveIndex] || filteredList[0];
-            handleSelectCombinedLedger(activeItem);
+            if (activeLedger.id) {
+              handleSelectCombinedLedger(activeLedger);
+            }
           } else if (e.key === 'Escape') {
             e.preventDefault();
             setShowCtrlLLookup(false);
           }
         };
 
+        const handleStatementKeyDown = (e) => {
+          if (ctrlLStatement.length === 0) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setCtrlLStatementIndex(prev => (prev + 1) % ctrlLStatement.length);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setCtrlLStatementIndex(prev => (prev - 1 + ctrlLStatement.length) % ctrlLStatement.length);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const txRow = ctrlLStatement[ctrlLStatementIndex];
+            if (txRow) {
+              handleAlterTransaction(txRow);
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setCtrlLStep('datePrompt');
+          }
+        };
+
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 no-print">
-            <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-4 font-sans animate-in fade-in zoom-in duration-150">
-              {/* Header */}
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                <div className="flex items-center space-x-2.5">
-                  <BookOpen className="h-5 w-5 text-amber-400" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <span>Global Ledgers List</span>
-                      <span className="bg-amber-950/80 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-[10px] font-mono">Ctrl + L</span>
-                    </h3>
-                    <p className="text-[10px] text-slate-400">Marg ERP / Tally Quick Ledger Search (Customers + Groups + Banks + Suppliers)</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCtrlLLookup(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Search input with live alphabet jump */}
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-400" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={ctrlLSearchQuery}
-                  onChange={(e) => {
-                    setCtrlLSearchQuery(e.target.value);
-                    setCtrlLActiveIndex(0);
-                  }}
-                  onKeyDown={handleModalKeyDown}
-                  placeholder="Type any alphabet / name / code / mobile (e.g. M, Mohit, 368)..."
-                  className="w-full pl-9 pr-4 py-2 bg-slate-955 border border-amber-500/50 rounded-xl text-xs font-semibold text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              {/* Consolidated Alphabetical Ledgers Table/List */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    All Ledgers (A-Z) — {ctrlLLoading ? 'Loading...' : `${filteredList.length} Accounts Found`}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 md:p-4 no-print font-mono">
+            <div className="bg-slate-950 border-2 border-emerald-600/70 rounded-xl max-w-6xl w-full shadow-2xl overflow-hidden text-slate-200 flex flex-col max-h-[92vh] text-xs">
+              
+              {/* TOP MARG ERP GREEN BANNER */}
+              <div className="bg-emerald-950/90 border-b border-emerald-600/60 px-4 py-2 flex justify-between items-center text-emerald-300 font-bold shrink-0">
+                <div className="flex items-center space-x-3">
+                  <span className="bg-emerald-800 text-slate-950 px-2 py-0.5 rounded font-extrabold uppercase text-[11px]">
+                    {ctrlLStep === 'list' ? 'LEDGER ACCOUNTS' : ctrlLStep === 'datePrompt' ? 'LEDGER DISPLAY' : 'STATEMENT OF ACCOUNT'}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">Use ↑ ↓ to Navigate &amp; Enter to Open</span>
+                  <span className="text-emerald-100 text-sm tracking-wide">{companyName}</span>
                 </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-[11px] text-emerald-400 font-semibold">Upto : {todayStr}</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCtrlLLookup(false)}
+                    className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  >
+                    <X className="h-4 w-4 text-emerald-400" />
+                  </button>
+                </div>
+              </div>
 
-                <div className="max-h-80 overflow-y-auto space-y-1 p-1 bg-slate-955 rounded-xl border border-slate-850">
-                  {filteredList.map((item, idx) => {
-                    const isActive = ctrlLActiveIndex === idx;
-                    return (
-                      <div
-                        key={`${item.type}-${item.id}-${idx}`}
-                        ref={(el) => {
-                          if (isActive && el) {
-                            el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                          }
-                        }}
-                        onClick={() => handleSelectCombinedLedger(item)}
-                        onMouseEnter={() => setCtrlLActiveIndex(idx)}
-                        className={`p-2.5 rounded-xl text-xs cursor-pointer flex justify-between items-center transition-all ${
-                          isActive
-                            ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg scale-[1.005]'
-                            : 'bg-slate-900/60 text-slate-200 hover:bg-slate-850 border border-slate-800/40'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${
-                            item.target === 'customer' ? 'bg-emerald-400' :
-                            item.target === 'customerGroup' ? 'bg-amber-400' :
-                            item.target === 'bankLedger' ? 'bg-cyan-400' : 'bg-rose-400'
-                          }`} />
-                          <div className="min-w-0 flex-1">
-                            <span className="font-bold text-xs block truncate">{item.name}</span>
-                            <span className={`text-[10px] font-mono block truncate ${isActive ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>
-                              {[item.group, item.area, item.mobile].filter(Boolean).join(' • ')}
-                            </span>
+              {/* SCREEN 1: LEDGER ACCOUNTS TABLE VIEW */}
+              {ctrlLStep === 'list' && (
+                <div className="flex flex-col flex-1 overflow-hidden">
+                  {/* Filter Search Input */}
+                  <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center space-x-3 shrink-0">
+                    <Search className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <input
+                      type="text"
+                      autoFocus
+                      value={ctrlLSearchQuery}
+                      onChange={(e) => {
+                        setCtrlLSearchQuery(e.target.value);
+                        setCtrlLActiveIndex(0);
+                      }}
+                      onKeyDown={handleListKeyDown}
+                      placeholder="Type any alphabet / name / station / code (Use ↓ ↑ & Enter)..."
+                      className="w-full bg-slate-955 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <span className="text-[10px] text-slate-400 shrink-0 font-bold">
+                      {ctrlLLoading ? 'Loading...' : `${filteredList.length} Ledgers`}
+                    </span>
+                  </div>
+
+                  {/* Split Table View */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
+                    {/* Left: Ledgers Table (8 Cols) */}
+                    <div className="lg:col-span-8 border-r border-slate-800 flex flex-col overflow-hidden bg-slate-955">
+                      <div className="grid grid-cols-12 bg-slate-900 border-b border-slate-800 p-2 text-[11px] font-bold text-emerald-400 tracking-wider shrink-0">
+                        <span className="col-span-5">LEDGER NAME</span>
+                        <span className="col-span-3 text-center">STATION / AREA</span>
+                        <span className="col-span-2 text-right">DEBIT (Dr)</span>
+                        <span className="col-span-2 text-right">CREDIT (Cr)</span>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+                        {filteredList.map((item, idx) => {
+                          const isActive = ctrlLActiveIndex === idx;
+                          return (
+                            <div
+                              key={`${item.type}-${item.id}-${idx}`}
+                              ref={(el) => {
+                                if (isActive && el) {
+                                  el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                                }
+                              }}
+                              onClick={() => handleSelectCombinedLedger(item)}
+                              onMouseEnter={() => setCtrlLActiveIndex(idx)}
+                              className={`grid grid-cols-12 p-2 rounded text-xs cursor-pointer items-center transition-all ${
+                                isActive
+                                  ? 'bg-emerald-600 text-slate-950 font-extrabold shadow-md scale-[1.002]'
+                                  : 'hover:bg-slate-900 text-slate-200 border-b border-slate-900/60'
+                              }`}
+                            >
+                              <div className="col-span-5 truncate flex items-center space-x-2">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-slate-950' : 'bg-emerald-400'}`} />
+                                <span className="truncate uppercase font-bold">{item.name}</span>
+                              </div>
+                              <span className={`col-span-3 text-center truncate ${isActive ? 'text-slate-900' : 'text-rose-300 font-semibold'}`}>
+                                {item.area || '-'}
+                              </span>
+                              <span className="col-span-2 text-right font-mono font-bold">
+                                {item.debit > 0 ? item.debit.toFixed(2) : ''}
+                              </span>
+                              <span className="col-span-2 text-right font-mono font-bold">
+                                {item.credit > 0 ? item.credit.toFixed(2) : ''}
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                        {!ctrlLLoading && filteredList.length === 0 && (
+                          <div className="p-8 text-center text-slate-500 italic">No matching ledgers found.</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Marg ERP Status Panel (4 Cols) */}
+                    <div className="lg:col-span-4 bg-slate-900 p-4 flex flex-col justify-between overflow-y-auto space-y-4 text-xs border-l border-slate-800">
+                      <div className="space-y-4">
+                        <div className="border-b border-slate-800 pb-2">
+                          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Current Status</span>
+                          <span className="text-sm font-bold text-white uppercase block mt-1">{activeLedger.name || 'CASH'}</span>
+                          <span className="text-[10px] text-slate-400 font-mono block">{activeLedger.type} • {activeLedger.code}</span>
+                        </div>
+
+                        <div className="space-y-2 font-mono text-xs">
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                            <span className="text-slate-400">Opening :</span>
+                            <span className="text-slate-200 font-bold">{(activeLedger.opening || 0).toFixed(2)} Dr</span>
+                          </div>
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                            <span className="text-slate-400">Debit :</span>
+                            <span className="text-emerald-400 font-bold">{(activeLedger.debit || 0).toFixed(2)} Dr</span>
+                          </div>
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                            <span className="text-slate-400">Credit :</span>
+                            <span className="text-rose-400 font-bold">{(activeLedger.credit || 0).toFixed(2)} Cr</span>
+                          </div>
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                            <span className="text-slate-400">Balance :</span>
+                            <span className="text-amber-400 font-extrabold font-mono">{(activeLedger.balance || 0).toFixed(2)} {activeLedger.balanceType || 'Dr'}</span>
+                          </div>
+                          <div className="flex justify-between pt-1 font-bold">
+                            <span className="text-emerald-300">Net :</span>
+                            <span className="text-emerald-300 font-mono font-extrabold">{(activeLedger.balance || 0).toFixed(2)} {activeLedger.balanceType || 'Dr'}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 shrink-0">
-                          {item.code && (
-                            <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
-                              isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-amber-400 border border-slate-700'
-                            }`}>
-                              {item.code}
-                            </span>
-                          )}
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                            isActive ? 'bg-slate-955 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
-                          }`}>
-                            {item.type}
-                          </span>
+                        <div className="border-t border-slate-800 pt-3 space-y-1.5 text-[11px]">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase block">Master Details</span>
+                          <div><span className="text-slate-500">Address:</span> <span className="text-slate-300">{activeLedger.address || activeLedger.area || '-'}</span></div>
+                          <div><span className="text-slate-500">Phone:</span> <span className="text-slate-300">{activeLedger.mobile || '-'}</span></div>
+                          <div><span className="text-slate-500">GSTN:</span> <span className="text-slate-300">{activeLedger.gstin || '-'}</span></div>
+                          <div><span className="text-slate-500">State:</span> <span className="text-slate-300">{activeLedger.state || '22-CHHATTISGARH'}</span></div>
                         </div>
                       </div>
-                    );
-                  })}
 
-                  {!ctrlLLoading && filteredList.length === 0 && (
-                    <div className="p-8 text-center text-slate-500 text-xs italic">
-                      No ledgers matching "{ctrlLSearchQuery}"
+                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[10px] text-slate-400 font-mono text-center">
+                        Press <kbd className="bg-emerald-950 text-emerald-400 px-1 py-0.5 rounded font-bold">Enter</kbd> to view statement
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
+              )}
+
+              {/* SCREEN 2: LEDGER DISPLAY DATE RANGE PROMPT MODAL */}
+              {ctrlLStep === 'datePrompt' && (
+                <div className="flex-1 flex items-center justify-center p-6 bg-slate-950/90 relative">
+                  <div className="bg-slate-900 border-2 border-emerald-500 rounded-xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+                    <div className="border-b border-emerald-600/50 pb-2 flex justify-between items-center">
+                      <h3 className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">LEDGER DISPLAY</h3>
+                      <span className="text-xs font-bold text-white uppercase">{selectedLedgerItem?.name}</span>
+                    </div>
+
+                    <div className="bg-slate-955 p-4 rounded-xl border border-slate-800 space-y-4">
+                      <div className="flex items-center justify-center space-x-3 text-xs">
+                        <span className="font-bold text-slate-300 uppercase">FROM</span>
+                        <input
+                          type="date"
+                          autoFocus
+                          value={ctrlLFromDate}
+                          onChange={(e) => setCtrlLFromDate(e.target.value)}
+                          className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
+                        />
+                        <span className="font-bold text-slate-300 uppercase">TO</span>
+                        <input
+                          type="date"
+                          value={ctrlLToDate}
+                          onChange={(e) => setCtrlLToDate(e.target.value)}
+                          className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+                            setCtrlLStep('statement');
+                          }}
+                          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-extrabold rounded-lg text-xs shadow-lg uppercase transition-all"
+                        >
+                          Ledger
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+                            setCtrlLStep('statement');
+                          }}
+                          className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-lg text-xs border border-slate-700 uppercase"
+                        >
+                          Monthly
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+                            setCtrlLStep('statement');
+                          }}
+                          className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-lg text-xs border border-slate-700 uppercase"
+                        >
+                          Daily
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCtrlLStep('list')}
+                          className="px-3 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-lg text-xs border border-rose-800/50 uppercase"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 font-mono text-center">
+                      Press <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Enter</kbd> to open Detailed Bills &amp; Statement
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SCREEN 3: STATEMENT OF ACCOUNT TRANSACTIONS LIST */}
+              {ctrlLStep === 'statement' && (
+                <div className="flex flex-col flex-1 overflow-hidden bg-slate-955">
+                  {/* Header info */}
+                  <div className="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center text-xs shrink-0">
+                    <div>
+                      <span className="text-slate-400 uppercase font-bold">LEDGER STATEMENT: </span>
+                      <span className="text-white font-extrabold text-sm uppercase">{selectedLedgerItem?.name}</span>
+                      <span className="text-slate-500 font-mono ml-2">({selectedLedgerItem?.type})</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-emerald-400 font-mono font-bold">Period: {ctrlLFromDate} to {ctrlLToDate}</span>
+                      <button
+                        onClick={() => setCtrlLStep('datePrompt')}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold"
+                      >
+                        Change Period
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Transactions Table */}
+                  <div className="flex-1 overflow-y-auto p-2">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-bold text-emerald-400 uppercase">
+                          <th className="py-2.5 px-3">Date</th>
+                          <th className="py-2.5 px-3">Type</th>
+                          <th className="py-2.5 px-3">Narration / Particulars</th>
+                          <th className="py-2.5 px-3 text-right">Receipt (Dr)</th>
+                          <th className="py-2.5 px-3 text-right">Payment (Cr)</th>
+                          <th className="py-2.5 px-3 text-right">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900/60 font-mono">
+                        {ctrlLStatementLoading ? (
+                          <tr><td colSpan="6" className="p-8 text-center text-emerald-400 font-bold">Loading statement...</td></tr>
+                        ) : ctrlLStatement.map((row, idx) => {
+                          const isActive = ctrlLStatementIndex === idx;
+                          return (
+                            <tr
+                              key={idx}
+                              ref={(el) => {
+                                if (isActive && el) {
+                                  el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                                }
+                              }}
+                              onClick={() => handleAlterTransaction(row)}
+                              onMouseEnter={() => setCtrlLStatementIndex(idx)}
+                              className={`cursor-pointer transition-all ${
+                                isActive
+                                  ? 'bg-emerald-600 text-slate-950 font-extrabold shadow-md'
+                                  : 'hover:bg-slate-900 text-slate-200'
+                              }`}
+                            >
+                              <td className="py-2 px-3 font-bold whitespace-nowrap">{row.date}</td>
+                              <td className="py-2 px-3 font-bold">{row.type}</td>
+                              <td className="py-2 px-3 text-xs max-w-xs truncate" title={row.narration}>{row.narration}</td>
+                              <td className="py-2 px-3 text-right font-bold">{row.receipt > 0 ? row.receipt.toFixed(2) : '-'}</td>
+                              <td className="py-2 px-3 text-right font-bold">{row.payment > 0 ? row.payment.toFixed(2) : '-'}</td>
+                              <td className="py-2 px-3 text-right font-bold whitespace-nowrap">
+                                {Math.abs(row.balance).toFixed(2)} {row.balanceType}
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                        {!ctrlLStatementLoading && ctrlLStatement.length === 0 && (
+                          <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No bills or transactions in this period.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary Footer */}
+                  <div className="p-3 bg-slate-900 border-t border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono shrink-0">
+                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
+                      <span className="text-[10px] text-slate-500 font-sans block uppercase">Opening</span>
+                      <span className="text-slate-200 font-bold">{ctrlLSummary.opening.toFixed(2)} Dr</span>
+                    </div>
+                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
+                      <span className="text-[10px] text-emerald-400 font-sans block uppercase">Total Receipt</span>
+                      <span className="text-emerald-400 font-bold">{ctrlLSummary.totalReceipt.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
+                      <span className="text-[10px] text-rose-400 font-sans block uppercase">Total Payment</span>
+                      <span className="text-rose-400 font-bold">{ctrlLSummary.totalPayment.toFixed(2)}</span>
+                    </div>
+                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
+                      <span className="text-[10px] text-amber-400 font-sans block uppercase">Closing Balance</span>
+                      <span className="text-amber-400 font-extrabold">{Math.abs(ctrlLSummary.closing).toFixed(2)} {ctrlLSummary.closing >= 0 ? 'Dr' : 'Cr'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* FOOTER SHORTCUT HINT */}
+              <div className="bg-slate-955 px-4 py-2 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-400 font-mono shrink-0">
+                <span>Use <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↑</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↓</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">Enter</kbd> to Select / Edit Bill</span>
+                <span>Press <kbd className="bg-slate-800 text-slate-300 px-1 py-0.5 rounded">Esc</kbd> to Go Back / Close</span>
               </div>
 
-              {/* Footer navigation info */}
-              <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px] text-slate-400">
-                <span className="text-[10px] font-mono text-slate-500">Press Esc or Ctrl+L to close</span>
-                <button
-                  type="button"
-                  onClick={() => setShowCtrlLLookup(false)}
-                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         );
