@@ -600,21 +600,23 @@ const AccountingGroup = () => {
         const stmt = getCustomerStatement(c);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 md:p-6 no-print font-sans">
-            <div className="bg-white border-2 border-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-950">
+            <div className="bg-white border-2 border-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ color: '#000000' }}>
               
               {/* Modal Header */}
-              <div className="bg-slate-900 px-5 py-3.5 flex justify-between items-center text-white shrink-0">
+              <div className="bg-slate-900 px-5 py-3.5 flex justify-between items-center text-white shrink-0" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
                 <div className="flex items-center space-x-3">
-                  <span className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded font-black text-xs uppercase font-mono">
+                  <span className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded font-black text-xs uppercase font-mono" style={{ backgroundColor: '#10b981', color: '#000000' }}>
                     Customer Statement
                   </span>
-                  <h3 className="text-lg font-black text-white uppercase tracking-wide">
+                  <h3 className="text-lg font-black uppercase tracking-wide text-white" style={{ color: '#ffffff' }}>
                     {c.name}
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedCustomerModal(null)}
-                  className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                  className="p-1.5 text-white hover:bg-slate-800 rounded-lg transition-all"
+                  style={{ color: '#ffffff' }}
                   title="Close (Esc)"
                 >
                   <X className="h-5 w-5" />
@@ -622,80 +624,80 @@ const AccountingGroup = () => {
               </div>
 
               {/* Customer Master Details Bar */}
-              <div className="p-4 bg-slate-100 border-b border-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-950 shrink-0">
+              <div className="p-4 bg-slate-900 border-b border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono shrink-0" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
                 <div>
-                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Customer ID / Code</span>
-                  <span className="font-black text-slate-950 text-sm">{c.customerCode || c.idProofNumber || '-'}</span>
+                  <span className="text-[10px] font-sans block uppercase font-bold text-slate-400" style={{ color: '#94a3b8' }}>Customer ID / Code</span>
+                  <span className="font-black text-sm text-white" style={{ color: '#ffffff' }}>{c.customerCode || c.idProofNumber || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Mobile No.</span>
-                  <span className="font-black text-slate-950 text-sm">{c.mobile || 'No Mobile'}</span>
+                  <span className="text-[10px] font-sans block uppercase font-bold text-slate-400" style={{ color: '#94a3b8' }}>Mobile No.</span>
+                  <span className="font-black text-sm text-white" style={{ color: '#ffffff' }}>{c.mobile || 'No Mobile'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Station / Area</span>
-                  <span className="font-black text-slate-950 text-sm">{c.area || c.city || '-'}</span>
+                  <span className="text-[10px] font-sans block uppercase font-bold text-slate-400" style={{ color: '#94a3b8' }}>Station / Area</span>
+                  <span className="font-black text-sm text-white" style={{ color: '#ffffff' }}>{c.area || c.city || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Group / City</span>
-                  <span className="font-black text-slate-950 text-sm">{c.group || c.city || '-'}</span>
+                  <span className="text-[10px] font-sans block uppercase font-bold text-slate-400" style={{ color: '#94a3b8' }}>Group / City</span>
+                  <span className="font-black text-sm text-white" style={{ color: '#ffffff' }}>{c.group || c.city || '-'}</span>
                 </div>
               </div>
 
               {/* Financial Metrics Summary */}
-              <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono bg-white shrink-0">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-300 shadow-sm">
-                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-black">Opening Balance</span>
-                  <span className="text-slate-950 text-base font-black">₹{stmt.summary.opening.toFixed(2)}</span>
+              <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono bg-white shrink-0" style={{ backgroundColor: '#ffffff' }}>
+                <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-sm" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                  <span className="text-[10px] font-sans block uppercase font-black text-slate-400" style={{ color: '#94a3b8' }}>Opening Balance</span>
+                  <span className="text-base font-black text-white" style={{ color: '#ffffff' }}>₹{stmt.summary.opening.toFixed(2)}</span>
                 </div>
-                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300 shadow-sm">
-                  <span className="text-[10px] text-emerald-900 font-sans block uppercase font-black">Total Loans Issued (Dr)</span>
-                  <span className="text-emerald-900 text-base font-black">₹{stmt.summary.debit.toFixed(2)}</span>
+                <div className="bg-emerald-50 p-3 rounded-xl border-2 border-emerald-300 shadow-sm" style={{ backgroundColor: '#ecfdf5', color: '#064e3b' }}>
+                  <span className="text-[10px] font-sans block uppercase font-black" style={{ color: '#064e3b' }}>Total Loans Issued (Dr)</span>
+                  <span className="text-base font-black" style={{ color: '#065f46' }}>₹{stmt.summary.debit.toFixed(2)}</span>
                 </div>
-                <div className="bg-rose-50 p-3 rounded-xl border border-rose-300 shadow-sm">
-                  <span className="text-[10px] text-rose-900 font-sans block uppercase font-black">Total Received (Cr)</span>
-                  <span className="text-rose-900 text-base font-black">₹{stmt.summary.credit.toFixed(2)}</span>
+                <div className="bg-rose-50 p-3 rounded-xl border-2 border-rose-300 shadow-sm" style={{ backgroundColor: '#fff1f2', color: '#4c0519' }}>
+                  <span className="text-[10px] font-sans block uppercase font-black" style={{ color: '#4c0519' }}>Total Received (Cr)</span>
+                  <span className="text-base font-black" style={{ color: '#9f1239' }}>₹{stmt.summary.credit.toFixed(2)}</span>
                 </div>
-                <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
-                  <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">Net Closing Balance</span>
-                  <span className="text-slate-950 text-base font-black">
+                <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-sm" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                  <span className="text-[10px] font-sans block uppercase font-black text-slate-400" style={{ color: '#94a3b8' }}>Net Closing Balance</span>
+                  <span className="text-base font-black text-white" style={{ color: '#ffffff' }}>
                     ₹{Math.abs(stmt.summary.closing).toFixed(2)} {stmt.summary.closing >= 0 ? 'Dr' : 'Cr'}
                   </span>
                 </div>
               </div>
 
               {/* Chronological Statement Table */}
-              <div className="flex-1 overflow-y-auto p-4 bg-slate-50 border-t border-slate-300">
-                <table className="w-full text-left text-xs border-collapse font-mono">
+              <div className="flex-1 overflow-y-auto p-4 bg-white border-t-2 border-slate-200" style={{ backgroundColor: '#ffffff' }}>
+                <table className="w-full text-left text-xs border-collapse font-mono" style={{ color: '#000000' }}>
                   <thead>
-                    <tr className="bg-slate-900 text-white font-black uppercase text-[11px] sticky top-0 z-10">
-                      <th className="py-2.5 px-3">Date</th>
-                      <th className="py-2.5 px-3">Type</th>
-                      <th className="py-2.5 px-3">Narration / Particulars</th>
-                      <th className="py-2.5 px-3 text-right">Debit (Dr)</th>
-                      <th className="py-2.5 px-3 text-right">Credit (Cr)</th>
-                      <th className="py-2.5 px-3 text-right">Balance</th>
+                    <tr className="bg-slate-100 border-b-2 border-slate-300 text-[11px] font-black uppercase tracking-wider sticky top-0 z-10 shadow-sm" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
+                      <th className="py-2.5 px-3 font-black" style={{ color: '#000000' }}>Date</th>
+                      <th className="py-2.5 px-3 font-black" style={{ color: '#000000' }}>Type</th>
+                      <th className="py-2.5 px-3 font-black" style={{ color: '#000000' }}>Narration / Particulars</th>
+                      <th className="py-2.5 px-3 font-black text-right" style={{ color: '#000000' }}>Debit (Dr)</th>
+                      <th className="py-2.5 px-3 font-black text-right" style={{ color: '#000000' }}>Credit (Cr)</th>
+                      <th className="py-2.5 px-3 font-black text-right" style={{ color: '#000000' }}>Balance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
                     {stmt.list.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="p-8 text-center text-slate-600 font-black italic">
+                        <td colSpan="6" className="p-8 text-center font-black italic" style={{ color: '#475569' }}>
                           No transactions or deals registered for this customer yet.
                         </td>
                       </tr>
                     ) : (
                       stmt.list.map((row, rIdx) => (
-                        <tr key={rIdx} className="hover:bg-slate-100 text-slate-950">
-                          <td className="py-2.5 px-3 font-bold">{row.date}</td>
-                          <td className="py-2.5 px-3 font-black text-slate-900">{row.type}</td>
-                          <td className="py-2.5 px-3 font-semibold text-slate-800">{row.narration}</td>
-                          <td className="py-2.5 px-3 text-right font-black text-emerald-800">
+                        <tr key={rIdx} className="hover:bg-slate-50 transition-colors" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                          <td className="py-2.5 px-3 font-black" style={{ color: '#000000' }}>{row.date}</td>
+                          <td className="py-2.5 px-3 font-black" style={{ color: '#0f172a' }}>{row.type}</td>
+                          <td className="py-2.5 px-3 font-bold" style={{ color: '#1e293b' }}>{row.narration}</td>
+                          <td className="py-2.5 px-3 text-right font-black" style={{ color: '#047857' }}>
                             {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-rose-800">
+                          <td className="py-2.5 px-3 text-right font-black" style={{ color: '#be123c' }}>
                             {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-950">
+                          <td className="py-2.5 px-3 text-right font-black" style={{ color: '#000000' }}>
                             ₹{Math.abs(row.balance).toFixed(2)} {row.balance >= 0 ? 'Dr' : 'Cr'}
                           </td>
                         </tr>
@@ -706,14 +708,15 @@ const AccountingGroup = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="bg-slate-100 px-5 py-3 border-t border-slate-300 flex justify-between items-center shrink-0">
-                <span className="text-xs text-slate-600 font-mono font-bold">
+              <div className="bg-slate-100 px-5 py-3.5 border-t-2 border-slate-200 flex justify-between items-center shrink-0" style={{ backgroundColor: '#f1f5f9' }}>
+                <span className="text-xs font-mono font-bold" style={{ color: '#334155' }}>
                   Showing all {stmt.list.length} transaction entries
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedCustomerModal(null)}
-                  className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-xs shadow-md"
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-xs shadow-lg transition-all cursor-pointer"
+                  style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
                 >
                   Close (Esc)
                 </button>
