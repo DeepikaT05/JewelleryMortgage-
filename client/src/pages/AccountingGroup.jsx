@@ -17,6 +17,8 @@ const AccountingGroup = () => {
   const [deals, setDeals] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [groupSearchQuery, setGroupSearchQuery] = useState('');
+  const [selectedCustomerModal, setSelectedCustomerModal] = useState(null);
+  const [activeCustIndex, setActiveCustIndex] = useState(0);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -188,6 +190,99 @@ const AccountingGroup = () => {
       netBalance
     };
   });
+
+  const getCustomerStatement = (cust) => {
+    if (!cust) return { list: [], summary: { opening: 0, debit: 0, credit: 0, closing: 0 } };
+    const custId = cust._id;
+    const custDeals = deals.filter(d => (d.customerId?._id || d.customerId) === custId);
+    const custTxs = transactions.filter(t => (t.customerId?._id || t.customerId) === custId);
+
+    const rows = [];
+    custDeals.forEach(d => {
+      rows.push({
+        date: d.dealDate ? d.dealDate.split('T')[0] : '',
+        type: 'Deal',
+        narration: `Pledged Collateral (Deal #${d.dealNo})`,
+        debit: d.dealAmount || 0,
+        credit: 0,
+        refNo: d.dealNo,
+        target: 'deal'
+      });
+    });
+
+    custTxs.forEach(t => {
+      rows.push({
+        date: t.tranDate ? t.tranDate.split('T')[0] : '',
+        type: 'Receipt',
+        narration: `Payment Receipt #${t.transactionNo} (${t.payMode || 'Cash'})`,
+        debit: 0,
+        credit: t.totalPaid || 0,
+        refNo: t.transactionNo || t._id,
+        target: 'transaction'
+      });
+    });
+
+    rows.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let running = Number(cust.openingBalance || 0);
+    const list = rows.map(r => {
+      running += (r.debit - r.credit);
+      return {
+        ...r,
+        balance: running
+      };
+    });
+
+    const totalDebit = custDeals.reduce((sum, d) => sum + (d.dealAmount || 0), 0);
+    const totalCredit = custTxs.reduce((sum, t) => sum + (t.totalPaid || 0), 0);
+    const opening = Number(cust.openingBalance || 0);
+    const closing = opening + totalDebit - totalCredit;
+
+    return {
+      list,
+      summary: {
+        opening,
+        debit: totalDebit,
+        credit: totalCredit,
+        closing
+      }
+    };
+  };
+
+  // Keyboard navigation for group customers table
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (selectedCustomerModal) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setSelectedCustomerModal(null);
+        }
+        return;
+      }
+
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (['input', 'textarea', 'select'].includes(activeTag) && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') {
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveCustIndex(prev => (displayGroupCustomers.length ? (prev + 1) % displayGroupCustomers.length : 0));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveCustIndex(prev => (displayGroupCustomers.length ? (prev - 1 + displayGroupCustomers.length) % displayGroupCustomers.length : 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeCust = displayGroupCustomers[activeCustIndex] || displayGroupCustomers[0];
+        if (activeCust) {
+          setSelectedCustomerModal(activeCust);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCustomerModal, displayGroupCustomers, activeCustIndex]);
 
   const handleFyPresetChange = (preset) => {
     setFyPreset(preset);
@@ -388,35 +483,35 @@ const AccountingGroup = () => {
 
         {/* Group Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block uppercase font-bold">TOTAL CUSTOMERS</span>
-            <span className="text-white text-base font-black">{displayGroupCustomers.length}</span>
+          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-slate-700 font-sans block uppercase font-black">TOTAL CUSTOMERS</span>
+            <span className="text-slate-950 text-xl font-black">{displayGroupCustomers.length}</span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-emerald-400 font-sans block uppercase font-bold">TOTAL DEBIT (Dr)</span>
-            <span className="text-emerald-400 text-base font-black">
+          <div className="bg-emerald-50/80 p-3 rounded-xl border border-emerald-300 shadow-sm">
+            <span className="text-[10px] text-emerald-950 font-sans block uppercase font-black">TOTAL DEBIT (Dr)</span>
+            <span className="text-emerald-900 text-xl font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalDebit, 0))}
             </span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-rose-400 font-sans block uppercase font-bold">TOTAL CREDIT (Cr)</span>
-            <span className="text-rose-400 text-base font-black">
+          <div className="bg-rose-50/80 p-3 rounded-xl border border-rose-300 shadow-sm">
+            <span className="text-[10px] text-rose-950 font-sans block uppercase font-black">TOTAL CREDIT (Cr)</span>
+            <span className="text-rose-900 text-xl font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
             </span>
           </div>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-amber-300 font-sans block uppercase font-bold">NET GROUP BALANCE</span>
-            <span className="text-amber-300 text-base font-black">
+          <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
+            <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">NET GROUP BALANCE</span>
+            <span className="text-slate-950 text-xl font-black">
               ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
             </span>
           </div>
         </div>
 
         {/* Customers Table View */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 max-h-96 overflow-y-auto">
-          <table className="w-full text-left text-xs border-collapse font-mono">
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-white max-h-96 overflow-y-auto">
+          <table className="w-full text-left text-xs border-collapse font-mono text-slate-950">
             <thead>
-              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider sticky top-0 z-10">
+              <tr className="bg-slate-900 text-white border-b border-slate-800 text-[11px] font-black uppercase tracking-wider sticky top-0 z-10">
                 <th className="py-2.5 px-3">Customer Name</th>
                 <th className="py-2.5 px-3">Code / ID</th>
                 <th className="py-2.5 px-3">Mobile No.</th>
@@ -426,37 +521,45 @@ const AccountingGroup = () => {
                 <th className="py-2.5 px-3 text-right">Net Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-850">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {displayGroupCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-500 italic">
+                  <td colSpan="7" className="p-8 text-center text-slate-500 font-bold italic">
                     No customers found in this group.
                   </td>
                 </tr>
               ) : (
-                displayGroupCustomers.map((c) => {
-                  const isSelected = selectedCustomerId === c._id;
+                displayGroupCustomers.map((c, idx) => {
+                  const isActive = activeCustIndex === idx;
                   return (
                     <tr
                       key={c._id}
-                      onClick={() => {
-                        setSelectedCustomerId(c._id);
-                        setCustSearchText(`${c.name} (${c.customerCode})`);
+                      ref={(el) => {
+                        if (isActive && el) {
+                          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }
                       }}
-                      className={`cursor-pointer transition-all hover:bg-slate-800/80 ${
-                        isSelected ? 'bg-emerald-950/80 text-white border-l-4 border-emerald-400 font-bold shadow-md' : 'text-slate-200'
+                      onClick={() => {
+                        setActiveCustIndex(idx);
+                        setSelectedCustomerModal(c);
+                      }}
+                      onMouseEnter={() => setActiveCustIndex(idx)}
+                      className={`cursor-pointer transition-all ${
+                        isActive
+                          ? 'bg-emerald-100 text-slate-950 font-black border-l-4 border-emerald-600 shadow-sm'
+                          : 'hover:bg-slate-100 text-slate-950'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-bold text-white flex items-center space-x-2">
-                        <span>{c.name}</span>
+                      <td className="py-2.5 px-3 font-black text-slate-950">
+                        {c.name}
                       </td>
-                      <td className="py-2.5 px-3 text-slate-400">{c.customerCode || c.idProofNumber || '-'}</td>
-                      <td className="py-2.5 px-3 text-slate-300 font-mono">{c.mobile || '-'}</td>
-                      <td className="py-2.5 px-3 text-emerald-400/90">{c.area || c.city || c.group || '-'}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-emerald-400">₹{c.totalDebit.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-rose-400">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-slate-800 font-bold">{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 text-slate-800 font-mono font-bold">{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 text-emerald-800 font-bold">{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-emerald-700">₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-rose-700">₹{c.totalCredit.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-black">
-                        <span className={`px-2 py-0.5 rounded text-[11px] ${c.netBalance >= 0 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'}`}>
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-700 text-white' : 'bg-rose-700 text-white'}`}>
                           ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}
                         </span>
                       </td>
@@ -467,7 +570,141 @@ const AccountingGroup = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Shortcut hint */}
+        <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono pt-1">
+          <span>Use <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↑</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↓</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">Enter</kbd> or Click to View Customer Details Popup</span>
+        </div>
       </div>
+
+      {/* CUSTOMER DETAILS & STATEMENT POPUP MODAL */}
+      {selectedCustomerModal && (() => {
+        const c = selectedCustomerModal;
+        const stmt = getCustomerStatement(c);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 md:p-6 no-print font-sans">
+            <div className="bg-white border-2 border-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-950">
+              
+              {/* Modal Header */}
+              <div className="bg-slate-900 px-5 py-3.5 flex justify-between items-center text-white shrink-0">
+                <div className="flex items-center space-x-3">
+                  <span className="bg-emerald-500 text-slate-950 px-2.5 py-1 rounded font-black text-xs uppercase font-mono">
+                    Customer Statement
+                  </span>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wide">
+                    {c.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedCustomerModal(null)}
+                  className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                  title="Close (Esc)"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Customer Master Details Bar */}
+              <div className="p-4 bg-slate-100 border-b border-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-950 shrink-0">
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Customer ID / Code</span>
+                  <span className="font-black text-slate-950 text-sm">{c.customerCode || c.idProofNumber || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Mobile No.</span>
+                  <span className="font-black text-slate-950 text-sm">{c.mobile || 'No Mobile'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Station / Area</span>
+                  <span className="font-black text-slate-950 text-sm">{c.area || c.city || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-bold">Group / City</span>
+                  <span className="font-black text-slate-950 text-sm">{c.group || c.city || '-'}</span>
+                </div>
+              </div>
+
+              {/* Financial Metrics Summary */}
+              <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono bg-white shrink-0">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-300 shadow-sm">
+                  <span className="text-[10px] text-slate-600 font-sans block uppercase font-black">Opening Balance</span>
+                  <span className="text-slate-950 text-base font-black">₹{stmt.summary.opening.toFixed(2)}</span>
+                </div>
+                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300 shadow-sm">
+                  <span className="text-[10px] text-emerald-900 font-sans block uppercase font-black">Total Loans Issued (Dr)</span>
+                  <span className="text-emerald-900 text-base font-black">₹{stmt.summary.debit.toFixed(2)}</span>
+                </div>
+                <div className="bg-rose-50 p-3 rounded-xl border border-rose-300 shadow-sm">
+                  <span className="text-[10px] text-rose-900 font-sans block uppercase font-black">Total Received (Cr)</span>
+                  <span className="text-rose-900 text-base font-black">₹{stmt.summary.credit.toFixed(2)}</span>
+                </div>
+                <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
+                  <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">Net Closing Balance</span>
+                  <span className="text-slate-950 text-base font-black">
+                    ₹{Math.abs(stmt.summary.closing).toFixed(2)} {stmt.summary.closing >= 0 ? 'Dr' : 'Cr'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Chronological Statement Table */}
+              <div className="flex-1 overflow-y-auto p-4 bg-slate-50 border-t border-slate-300">
+                <table className="w-full text-left text-xs border-collapse font-mono">
+                  <thead>
+                    <tr className="bg-slate-900 text-white font-black uppercase text-[11px] sticky top-0 z-10">
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Narration / Particulars</th>
+                      <th className="py-2.5 px-3 text-right">Debit (Dr)</th>
+                      <th className="py-2.5 px-3 text-right">Credit (Cr)</th>
+                      <th className="py-2.5 px-3 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {stmt.list.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-slate-600 font-black italic">
+                          No transactions or deals registered for this customer yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      stmt.list.map((row, rIdx) => (
+                        <tr key={rIdx} className="hover:bg-slate-100 text-slate-950">
+                          <td className="py-2.5 px-3 font-bold">{row.date}</td>
+                          <td className="py-2.5 px-3 font-black text-slate-900">{row.type}</td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">{row.narration}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-emerald-800">
+                            {row.debit > 0 ? `₹${row.debit.toFixed(2)}` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-rose-800">
+                            {row.credit > 0 ? `₹${row.credit.toFixed(2)}` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-950">
+                            ₹{Math.abs(row.balance).toFixed(2)} {row.balance >= 0 ? 'Dr' : 'Cr'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-100 px-5 py-3 border-t border-slate-300 flex justify-between items-center shrink-0">
+                <span className="text-xs text-slate-600 font-mono font-bold">
+                  Showing all {stmt.list.length} transaction entries
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCustomerModal(null)}
+                  className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-black rounded-xl text-xs shadow-md"
+                >
+                  Close (Esc)
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Create New Accounting Group Modal */}
       {showCreateGroupForm && (
