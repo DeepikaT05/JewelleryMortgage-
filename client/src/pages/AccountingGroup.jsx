@@ -407,21 +407,21 @@ const AccountingGroup = () => {
     : ledgerData.ledger.filter(item => item.group?.toLowerCase() === selectedGroup.toLowerCase());
 
   return (
-    <div className="space-y-5 font-sans">
+    <div className="space-y-5 font-sans text-slate-950">
       {/* Page Header */}
-      <div className="flex justify-between items-center border-b border-slate-800 pb-4 no-print">
+      <div className="flex justify-between items-center border-b border-slate-300 pb-4 no-print">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">
+          <h1 className="text-2xl font-black text-slate-950">
             {activeGroupName ? `Ledger Group: ${activeGroupName}` : 'Accounting Group Ledger Master'}
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-700 font-bold mt-1">
             Customizable customer statements, transaction ledgers, and consolidated lending audits by group & station.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreateGroupForm(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-black transition-all shadow-md"
           >
             <Plus className="h-4 w-4" />
             <span>Create New Accounting Group</span>
@@ -429,14 +429,14 @@ const AccountingGroup = () => {
           <button
             onClick={handleDownloadPDF}
             disabled={downloadingPDF}
-            className="flex items-center space-x-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-700 rounded-xl text-xs font-black transition-all shadow-md disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             <span>{downloadingPDF ? 'Generating...' : 'Download PDF'}</span>
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center space-x-2 px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-750 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md"
+            className="flex items-center space-x-2 px-4 py-2 bg-white hover:bg-slate-100 text-slate-950 border border-slate-400 rounded-xl text-xs font-black transition-all shadow-md"
           >
             <Printer className="h-4 w-4" />
             <span>Print Statement</span>
@@ -445,19 +445,19 @@ const AccountingGroup = () => {
       </div>
 
       {/* GROUP CUSTOMER LEDGER MEMBERS SECTION */}
-      <div className="bg-slate-955 border-2 border-slate-700/60 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4 no-print">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-700 pb-3">
+      <div className="bg-white border-2 border-slate-400 rounded-2xl p-4 md:p-5 shadow-lg space-y-4 no-print text-slate-950">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-300 pb-3">
           <div>
             <div className="flex items-center space-x-3">
-              <span className="bg-slate-900 text-white border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-black uppercase font-mono">
+              <span className="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-xs font-black uppercase font-mono">
                 Group Section
               </span>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-wide">
+              <h2 className="text-lg font-black text-slate-950 uppercase tracking-wide">
                 {activeGroupName ? `LEDGER GROUP: ${activeGroupName}` : 'ALL LEDGER GROUPS & CUSTOMERS'}
               </h2>
             </div>
-            <p className="text-xs text-slate-700 font-semibold mt-1">
-              Select any customer below using your mouse to inspect their debit, credit, and net balance statement.
+            <p className="text-xs text-slate-700 font-bold mt-1">
+              Select any customer below using your mouse or arrow keys to inspect their debit, credit, and net balance statement.
             </p>
           </div>
 
@@ -469,7 +469,7 @@ const AccountingGroup = () => {
                 value={groupSearchQuery}
                 onChange={(e) => setGroupSearchQuery(e.target.value)}
                 placeholder="Filter customers by name / mobile / station..."
-                className="pl-9 pr-3 py-1.5 bg-white border border-slate-400 rounded-lg text-xs text-slate-900 font-bold placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-800 w-64"
+                className="pl-9 pr-3 py-1.5 bg-white border border-slate-400 rounded-lg text-xs text-slate-950 font-bold placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-800 w-64"
               />
             </div>
           </div>
@@ -477,33 +477,33 @@ const AccountingGroup = () => {
 
         {/* Group Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
-            <span className="text-[10px] text-slate-600 font-sans block uppercase font-black">TOTAL CUSTOMERS</span>
-            <span className="text-slate-950 text-base font-black">{displayGroupCustomers.length}</span>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-300 shadow-sm">
+            <span className="text-[10px] text-slate-700 font-sans block uppercase font-black">TOTAL CUSTOMERS</span>
+            <span className="text-slate-950 text-xl font-black">{displayGroupCustomers.length}</span>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
-            <span className="text-[10px] text-emerald-800 font-sans block uppercase font-black">TOTAL DEBIT (Dr)</span>
-            <span className="text-emerald-800 text-base font-black">
+          <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300 shadow-sm">
+            <span className="text-[10px] text-emerald-900 font-sans block uppercase font-black">TOTAL DEBIT (Dr)</span>
+            <span className="text-emerald-950 text-xl font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalDebit, 0))}
             </span>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
-            <span className="text-[10px] text-rose-800 font-sans block uppercase font-black">TOTAL CREDIT (Cr)</span>
-            <span className="text-rose-800 text-base font-black">
+          <div className="bg-rose-50 p-3 rounded-xl border border-rose-300 shadow-sm">
+            <span className="text-[10px] text-rose-900 font-sans block uppercase font-black">TOTAL CREDIT (Cr)</span>
+            <span className="text-rose-950 text-xl font-black">
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
             </span>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
+          <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
             <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">NET GROUP BALANCE</span>
-            <span className="text-slate-950 text-base font-black">
+            <span className="text-slate-950 text-xl font-black">
               ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
             </span>
           </div>
         </div>
 
         {/* Customers Table View */}
-        <div className="overflow-x-auto rounded-xl border border-slate-400 bg-white max-h-96 overflow-y-auto shadow-inner">
-          <table className="w-full text-left text-xs border-collapse font-mono">
+        <div className="overflow-x-auto rounded-xl border-2 border-slate-400 bg-white max-h-96 overflow-y-auto shadow-sm">
+          <table className="w-full text-left text-xs border-collapse font-mono text-slate-950">
             <thead>
               <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-black text-white uppercase tracking-wider sticky top-0 z-10">
                 <th className="py-2.5 px-3">Customer Name</th>
@@ -515,7 +515,7 @@ const AccountingGroup = () => {
                 <th className="py-2.5 px-3 text-right">Net Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-slate-200 bg-white text-slate-950">
               {displayGroupCustomers.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="p-8 text-center text-slate-700 font-black italic">
@@ -540,18 +540,18 @@ const AccountingGroup = () => {
                       onMouseEnter={() => setActiveCustomerIndex(idx)}
                       className={`cursor-pointer transition-all ${
                         isActive
-                          ? 'bg-emerald-200 text-slate-950 font-black border-l-4 border-emerald-800 shadow-md ring-2 ring-emerald-600/50'
+                          ? 'bg-emerald-200 text-slate-950 font-black border-l-4 border-emerald-800 shadow-md'
                           : 'bg-white text-slate-950 hover:bg-slate-100'
                       }`}
                     >
                       <td className="py-2.5 px-3 font-black text-slate-950 flex items-center space-x-2">
-                        <span>{c.name}</span>
+                        <span className="text-slate-950 font-black">{c.name}</span>
                       </td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900">{c.customerCode || c.idProofNumber || '-'}</td>
-                      <td className="py-2.5 px-3 text-slate-900 font-mono font-bold">{c.mobile || '-'}</td>
-                      <td className="py-2.5 px-3 font-bold text-slate-800">{c.area || c.city || c.group || '-'}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-emerald-800">₹{c.totalDebit.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-rose-800">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-black text-slate-950">{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 text-slate-950 font-mono font-black">{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 font-black text-slate-900">{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-emerald-900">₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-rose-900">₹{c.totalCredit.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-black">
                         <span className={`px-2.5 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-100 text-emerald-950 border border-emerald-600' : 'bg-rose-100 text-rose-950 border border-rose-600'}`}>
                           ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}

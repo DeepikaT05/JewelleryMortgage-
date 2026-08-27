@@ -1080,14 +1080,14 @@ const Layout = ({ children }) => {
 
           <div className="flex items-center space-x-2">
             <Coins className="h-5 w-5 md:h-6 md:w-6 text-primary-500" />
-            <span className="text-sm md:text-lg font-black tracking-wide text-white truncate max-w-[150px] sm:max-w-xs md:max-w-none">
+            <span className="text-sm md:text-lg font-black tracking-wide text-slate-950 truncate max-w-[150px] sm:max-w-xs md:max-w-none">
               {companyDetails ? companyDetails.name : 'Girvi Management'}
             </span>
           </div>
 
-          <div className="hidden md:flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-xs font-bold text-emerald-400">
+          <div className="hidden md:flex items-center space-x-2 bg-slate-100 border border-slate-300 px-3 py-1 rounded-full text-xs font-black text-slate-900">
             <span>Financial Period:</span>
-            <span>
+            <span className="text-emerald-800">
               {companyDetails?.financialYearStart && companyDetails?.financialYearEnd
                 ? `${new Date(companyDetails.financialYearStart).getFullYear()} - ${String(new Date(companyDetails.financialYearEnd).getFullYear() % 100).padStart(2, '0')}`
                 : '2026 - 27'}
@@ -1098,22 +1098,22 @@ const Layout = ({ children }) => {
         {/* Right Side: Live Clock, Switcher, User Dropdown */}
         <div className="flex items-center space-x-6">
           {/* Live Clock */}
-          <div className="hidden lg:flex flex-col items-end text-xs text-slate-400">
-            <span className="font-semibold text-slate-300">{formatDate(time)}</span>
-            <span className="font-mono text-emerald-400 font-bold">{formatTime(time)}</span>
+          <div className="hidden lg:flex flex-col items-end text-xs text-slate-600 font-bold">
+            <span className="font-bold text-slate-900">{formatDate(time)}</span>
+            <span className="font-mono text-slate-950 font-black">{formatTime(time)}</span>
           </div>
 
           {/* Switch Company (Admin Only Dropdown) */}
           {companies.length > 1 && currentUser?.role === 'admin' && (
-            <div className="flex items-center space-x-1.5 text-sm bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
-              <Building className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center space-x-1.5 text-sm bg-white border border-slate-300 px-3 py-1.5 rounded-lg shadow-sm">
+              <Building className="h-4 w-4 text-slate-700" />
               <select
                 value={currentUser.companyId || ''}
                 onChange={(e) => handleCompanySwitch(e.target.value)}
-                className="bg-transparent focus:outline-none text-slate-300 font-medium cursor-pointer"
+                className="bg-transparent focus:outline-none text-slate-950 font-bold cursor-pointer"
               >
                 {companies.map(c => (
-                  <option key={c._id} value={c._id} className="bg-slate-900 text-slate-200">
+                  <option key={c._id} value={c._id} className="bg-white text-slate-950">
                     {c.name}
                   </option>
                 ))}
@@ -1125,23 +1125,23 @@ const Layout = ({ children }) => {
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setShowUserDropdown(!showUserDropdown)}
-              className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-850 text-slate-200 text-sm font-semibold transition-all"
+              className="flex items-center space-x-2 bg-white hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-950 text-sm font-black transition-all shadow-sm"
             >
               <div className="h-6 w-6 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white uppercase">
                 {currentUser?.name?.slice(0, 2) || 'ST'}
               </div>
-              <span className="hidden sm:inline">{currentUser?.name || 'Staff User'}</span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
+              <span className="hidden sm:inline text-slate-950 font-bold">{currentUser?.name || 'Staff User'}</span>
+              <ChevronDown className="h-4 w-4 text-slate-700" />
             </button>
 
             {showUserDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1 text-slate-200 animate-slide-in">
-                <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400">
-                  Logged in as <span className="font-semibold text-slate-300">{currentUser?.username}</span> ({currentUser?.role})
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-300 rounded-xl shadow-2xl py-1 text-slate-950 animate-slide-in">
+                <div className="px-4 py-2 border-b border-slate-200 text-xs text-slate-700 font-bold">
+                  Logged in as <span className="font-black text-slate-950">{currentUser?.username}</span> ({currentUser?.role})
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left flex items-center space-x-2 px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-950/20 hover:text-rose-300 transition-colors"
+                  className="w-full text-left flex items-center space-x-2 px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50 font-black transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
@@ -1164,32 +1164,32 @@ const Layout = ({ children }) => {
 
         {/* 2. SIDEBAR */}
         <aside className={`
-          fixed top-[56px] bottom-0 left-0 z-50 bg-slate-900 md:bg-slate-900/60 border-r border-slate-850 p-3 flex flex-col justify-between transition-all duration-300 ease-in-out md:static md:translate-x-0 md:flex no-print shrink-0
+          fixed top-[56px] bottom-0 left-0 z-50 bg-white border-r border-slate-300 p-3 flex flex-col justify-between transition-all duration-300 ease-in-out md:static md:translate-x-0 md:flex no-print shrink-0 shadow-sm
           ${isSidebarCollapsed ? 'w-20' : 'w-64'}
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}>
           <div className="space-y-1.5">
             {/* Sidebar Desktop Collapse Toggle Header */}
-            <div className="hidden md:flex items-center justify-between pb-2 mb-1 border-b border-slate-800/60">
+            <div className="hidden md:flex items-center justify-between pb-2 mb-1 border-b border-slate-200">
               {!isSidebarCollapsed && (
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">Navigation</span>
+                <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider px-2">Navigation</span>
               )}
               <button
                 type="button"
                 onClick={toggleSidebarCollapse}
-                className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-all mx-auto md:ml-auto"
+                className="p-1.5 text-slate-700 hover:text-black hover:bg-slate-100 rounded-lg transition-all mx-auto md:ml-auto"
                 title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
               >
-                {isSidebarCollapsed ? <ChevronRight className="h-5 w-5 text-primary-400" /> : <ChevronLeft className="h-5 w-5" />}
+                {isSidebarCollapsed ? <ChevronRight className="h-5 w-5 text-slate-900 stroke-[2.5]" /> : <ChevronLeft className="h-5 w-5 text-slate-900 stroke-[2.5]" />}
               </button>
             </div>
 
             {/* Mobile Sidebar Close Header */}
-            <div className="flex items-center justify-between md:hidden mb-4 pb-2 border-b border-slate-800">
-              <span className="font-bold text-slate-100 text-sm">Navigation</span>
+            <div className="flex items-center justify-between md:hidden mb-4 pb-2 border-b border-slate-200">
+              <span className="font-black text-slate-950 text-sm">Navigation</span>
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-100"
+                className="p-1 text-slate-700 hover:text-black"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1205,18 +1205,18 @@ const Layout = ({ children }) => {
                   <div key={item.name} className="space-y-1">
                     <div
                       onClick={() => setIsGroupsSubmenuOpen(!isGroupsSubmenuOpen)}
-                      className={`flex items-center justify-between space-x-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                      className={`flex items-center justify-between space-x-3 rounded-xl text-sm font-black transition-all cursor-pointer ${
                         isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
                       } ${
                         isSubmenuActive 
-                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-bold' 
+                          ? 'bg-amber-900 text-white shadow-md font-black' 
                           : isFocused
-                          ? 'bg-slate-800 text-white ring-2 ring-primary-500 font-bold'
-                          : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                          ? 'bg-slate-200 text-slate-950 font-black'
+                          : 'text-slate-950 hover:bg-slate-100 hover:text-black font-extrabold'
                       }`}
                     >
                       <div className="flex items-center space-x-3 truncate">
-                        <div className="shrink-0">{item.icon}</div>
+                        <div className="shrink-0 text-slate-950">{item.icon}</div>
                         {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
                       </div>
                       {!isSidebarCollapsed && (
@@ -1225,14 +1225,14 @@ const Layout = ({ children }) => {
                     </div>
 
                     {!isSidebarCollapsed && isGroupsSubmenuOpen && (
-                      <div className="pl-6 pr-1 space-y-1 text-xs font-mono max-h-56 overflow-y-auto">
+                      <div className="pl-6 pr-1 space-y-1 text-xs font-mono max-h-56 overflow-y-auto bg-transparent">
                         <button
                           type="button"
                           onClick={() => setShowCreateSidebarGroupModal(true)}
-                          className="w-full flex items-center justify-center space-x-2 py-1.5 px-2 rounded-lg text-black bg-slate-200 hover:bg-slate-300 font-black transition-all text-left border border-slate-400 shadow-sm"
+                          className="w-full flex items-center justify-center space-x-2 py-1.5 px-2 rounded-lg text-slate-950 bg-white hover:bg-slate-100 font-black transition-all text-left border border-slate-300 shadow-sm"
                         >
-                          <Plus className="h-3.5 w-3.5 text-black stroke-[3]" />
-                          <span className="text-black font-black">Create New Group</span>
+                          <Plus className="h-3.5 w-3.5 text-slate-950 stroke-[3]" />
+                          <span className="text-slate-950 font-black">Create New Group</span>
                         </button>
 
                         <Link
@@ -1240,8 +1240,8 @@ const Layout = ({ children }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={`block py-1.5 px-2.5 rounded-lg transition-all font-black ${
                             location.pathname === '/accounting-group' && !location.search
-                              ? 'bg-slate-900 text-white font-black'
-                              : 'text-black hover:bg-slate-200'
+                              ? 'bg-slate-200 text-slate-950 font-black border-l-4 border-slate-900'
+                              : 'text-slate-950 hover:bg-slate-100'
                           }`}
                         >
                           All Ledger Groups
@@ -1256,8 +1256,8 @@ const Layout = ({ children }) => {
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={`block py-1.5 px-2.5 rounded-lg transition-all truncate font-black ${
                                 isGroupSelected
-                                  ? 'bg-slate-900 text-white font-black rounded-lg shadow-sm'
-                                  : 'text-black hover:bg-slate-200'
+                                  ? 'bg-slate-200 text-slate-950 font-black border-l-4 border-slate-900 shadow-sm'
+                                  : 'text-slate-950 hover:bg-slate-100'
                               }`}
                             >
                               {g}
@@ -1276,28 +1276,28 @@ const Layout = ({ children }) => {
                   to={item.path}
                   title={isSidebarCollapsed ? item.name : undefined}
                   onClick={() => { setFocusedMenuIdx(idx); setIsMobileMenuOpen(false); }}
-                  className={`flex items-center space-x-3 rounded-xl text-sm font-bold transition-all ${
+                  className={`flex items-center space-x-3 rounded-xl text-sm font-black transition-all ${
                     isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
                   } ${
                     isActive 
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-black' 
+                      ? 'bg-amber-900 text-white shadow-lg font-black' 
                       : isFocused
-                      ? 'bg-slate-800 text-white ring-2 ring-primary-500 font-bold'
-                      : 'text-slate-800 hover:bg-slate-200/80 hover:text-black'
+                      ? 'bg-slate-200 text-slate-950 font-black'
+                      : 'text-slate-950 hover:bg-slate-100 hover:text-black font-extrabold'
                   }`}
                 >
-                  <div className="shrink-0">{item.icon}</div>
+                  <div className="shrink-0 text-slate-950">{item.icon}</div>
                   {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
                 </Link>
               );
             })}
           </div>
 
-          <div className="mt-auto space-y-1.5 pt-4 border-t border-slate-850">
+          <div className="mt-auto space-y-1.5 pt-4 border-t border-slate-200">
             <button
               onClick={handleLogout}
               title={isSidebarCollapsed ? 'Logout' : undefined}
-              className={`w-full flex items-center space-x-3 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-950/20 hover:text-rose-300 transition-all text-left ${
+              className={`w-full flex items-center space-x-3 rounded-xl text-sm font-black text-rose-700 hover:bg-rose-50 transition-all text-left ${
                 isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
               }`}
             >
@@ -1306,10 +1306,10 @@ const Layout = ({ children }) => {
             </button>
             {!isSidebarCollapsed && (
               <div className="text-center pt-2">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
+                <span className="text-[10px] text-slate-600 uppercase tracking-widest block font-black">
                   {currentUser?.role === 'admin' ? 'Girvi Management' : 'Store Manager Panel'}
                 </span>
-                <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
+                <span className="text-[9px] text-slate-500 font-mono font-bold mt-0.5 block">
                   v1.0.0 (Financial Apr26)
                 </span>
               </div>
