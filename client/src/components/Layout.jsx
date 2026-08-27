@@ -102,6 +102,7 @@ const Layout = ({ children }) => {
   };
   const [ctrlLFromDate, setCtrlLFromDate] = useState(getFYStart);
   const [ctrlLToDate, setCtrlLToDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [datePromptActiveBtn, setDatePromptActiveBtn] = useState(0); // 0: Ledger, 1: Monthly, 2: Daily, 3: Cancel
 
   // Statement Data States (Screen 3)
   const [ctrlLStatement, setCtrlLStatement] = useState([]);
@@ -329,6 +330,7 @@ const Layout = ({ children }) => {
   const handleSelectCombinedLedger = (item) => {
     if (!item) return;
     setSelectedLedgerItem(item);
+    setDatePromptActiveBtn(0);
     setCtrlLStep('datePrompt');
   };
 
@@ -1558,6 +1560,27 @@ const Layout = ({ children }) => {
           }
         };
 
+        const handleDatePromptKeyDown = (e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setDatePromptActiveBtn(prev => (prev + 1) % 4);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            setDatePromptActiveBtn(prev => (prev - 1 + 4) % 4);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (datePromptActiveBtn === 0 || datePromptActiveBtn === 1 || datePromptActiveBtn === 2) {
+              fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+              setCtrlLStep('statement');
+            } else if (datePromptActiveBtn === 3) {
+              setCtrlLStep('list');
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setCtrlLStep('list');
+          }
+        };
+
         const handleStatementKeyDown = (e) => {
           if (ctrlLStatement.length === 0) return;
           if (e.key === 'ArrowDown') {
@@ -1744,6 +1767,7 @@ const Layout = ({ children }) => {
                           autoFocus
                           value={ctrlLFromDate}
                           onChange={(e) => setCtrlLFromDate(e.target.value)}
+                          onKeyDown={handleDatePromptKeyDown}
                           className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
                         />
                         <span className="font-bold text-slate-300 uppercase">TO</span>
@@ -1751,53 +1775,48 @@ const Layout = ({ children }) => {
                           type="date"
                           value={ctrlLToDate}
                           onChange={(e) => setCtrlLToDate(e.target.value)}
+                          onKeyDown={handleDatePromptKeyDown}
                           className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
-                            setCtrlLStep('statement');
-                          }}
-                          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-extrabold rounded-lg text-xs shadow-lg uppercase transition-all"
-                        >
-                          Ledger
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
-                            setCtrlLStep('statement');
-                          }}
-                          className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-lg text-xs border border-slate-700 uppercase"
-                        >
-                          Monthly
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
-                            setCtrlLStep('statement');
-                          }}
-                          className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-lg text-xs border border-slate-700 uppercase"
-                        >
-                          Daily
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCtrlLStep('list')}
-                          className="px-3 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold rounded-lg text-xs border border-rose-800/50 uppercase"
-                        >
-                          Cancel
-                        </button>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
+                        {[
+                          { label: 'LEDGER', idx: 0 },
+                          { label: 'MONTHLY', idx: 1 },
+                          { label: 'DAILY', idx: 2 },
+                          { label: 'CANCEL', idx: 3 }
+                        ].map((btn) => {
+                          const isActive = datePromptActiveBtn === btn.idx;
+                          return (
+                            <button
+                              key={btn.label}
+                              type="button"
+                              onClick={() => {
+                                setDatePromptActiveBtn(btn.idx);
+                                if (btn.idx === 3) {
+                                  setCtrlLStep('list');
+                                } else {
+                                  fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+                                  setCtrlLStep('statement');
+                                }
+                              }}
+                              onMouseEnter={() => setDatePromptActiveBtn(btn.idx)}
+                              className={`px-3 py-2.5 rounded-xl text-xs font-black shadow-lg uppercase transition-all flex items-center justify-center ${
+                                isActive
+                                  ? 'bg-emerald-500 text-slate-955 ring-4 ring-emerald-400 scale-105 shadow-2xl font-black'
+                                  : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750'
+                              }`}
+                            >
+                              {btn.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
                     <div className="text-[10px] text-slate-400 font-mono text-center">
-                      Press <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Enter</kbd> to open Detailed Bills &amp; Statement
+                      Use <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">←</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">→</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">Enter</kbd> to Select Option
                     </div>
                   </div>
                 </div>
