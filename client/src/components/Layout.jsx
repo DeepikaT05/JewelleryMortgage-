@@ -898,6 +898,97 @@ const Layout = ({ children }) => {
     return () => window.removeEventListener('keydown', handleLedgerModalKeyDown);
   }, [showLedgerModal, ledgerSubTab, ledgerTransactions, ledgerTxActiveIndex, navigate]);
 
+  // Global Keydown Listener for showCtrlLLookup Marg ERP 4-screen navigation & Esc hierarchical back
+  useEffect(() => {
+    if (!showCtrlLLookup) return;
+
+    const handleCtrlLNavigation = (e) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      
+      // Screen 3: Statement
+      if (ctrlLStep === 'statement') {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setCtrlLStatementIndex(prev => (ctrlLStatement.length ? (prev + 1) % ctrlLStatement.length : 0));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setCtrlLStatementIndex(prev => (ctrlLStatement.length ? (prev - 1 + ctrlLStatement.length) % ctrlLStatement.length : 0));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const row = ctrlLStatement[ctrlLStatementIndex];
+          if (row) {
+            handleAlterTransaction(row);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setCtrlLStep('datePrompt');
+        }
+      }
+      // Screen 2: Date Prompt
+      else if (ctrlLStep === 'datePrompt') {
+        if (['input', 'textarea', 'select'].includes(activeTag) && (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter' && e.key !== 'Escape')) {
+          return;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          setDatePromptActiveBtn(prev => (prev + 1) % 4);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          setDatePromptActiveBtn(prev => (prev - 1 + 4) % 4);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (datePromptActiveBtn === 0 || datePromptActiveBtn === 1 || datePromptActiveBtn === 2) {
+            fetchLedgerStatement(selectedLedgerItem, ctrlLFromDate, ctrlLToDate);
+            setCtrlLStep('statement');
+          } else if (datePromptActiveBtn === 3) {
+            setCtrlLStep('list');
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setCtrlLStep('list');
+        }
+      }
+      // Screen 1: List
+      else if (ctrlLStep === 'list') {
+        if (['input', 'textarea', 'select'].includes(activeTag) && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter' && e.key !== 'Escape') {
+          return;
+        }
+        const filteredList = allCombinedLedgers.filter(item => {
+          const q = ctrlLSearchQuery.trim().toLowerCase();
+          if (!q) return true;
+          return (
+            (item.name && item.name.toLowerCase().includes(q)) ||
+            (item.code && item.code.toLowerCase().includes(q)) ||
+            (item.type && item.type.toLowerCase().includes(q)) ||
+            (item.group && item.group.toLowerCase().includes(q)) ||
+            (item.mobile && item.mobile.includes(q)) ||
+            (item.area && item.area.toLowerCase().includes(q))
+          );
+        });
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setCtrlLActiveIndex(prev => (filteredList.length ? (prev + 1) % filteredList.length : 0));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setCtrlLActiveIndex(prev => (filteredList.length ? (prev - 1 + filteredList.length) % filteredList.length : 0));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const activeLedger = filteredList[ctrlLActiveIndex] || filteredList[0];
+          if (activeLedger && activeLedger.id) {
+            handleSelectCombinedLedger(activeLedger);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowCtrlLLookup(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleCtrlLNavigation, true);
+    return () => window.removeEventListener('keydown', handleCtrlLNavigation, true);
+  }, [showCtrlLLookup, ctrlLStep, ctrlLStatement, ctrlLStatementIndex, datePromptActiveBtn, selectedLedgerItem, ctrlLFromDate, ctrlLToDate, allCombinedLedgers, ctrlLSearchQuery, ctrlLActiveIndex]);
+
   // Format date nicely
   const formatDate = (date) => {
     const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -1402,19 +1493,19 @@ const Layout = ({ children }) => {
                         <div className="flex flex-wrap gap-4 text-xs font-mono">
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-slate-455 block text-[10px] uppercase font-sans">Opening</span>
-                            <span className="text-slate-200">₹${acc.openingBalance.toFixed(2)}</span>
+                            <span className="text-slate-200">₹{acc.openingBalance.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-emerald-500/80 block text-[10px] uppercase font-sans">Total Add (DD)</span>
-                            <span className="text-emerald-400">+₹${acc.totalAdd.toFixed(2)}</span>
+                            <span className="text-emerald-400">+₹{acc.totalAdd.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-rose-500/80 block text-[10px] uppercase font-sans">Total Deduct</span>
-                            <span className="text-rose-455">-₹${acc.totalDeduct.toFixed(2)}</span>
+                            <span className="text-rose-455">-₹{acc.totalDeduct.toFixed(2)}</span>
                           </div>
                           <div className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
                             <span className="text-amber-500 block text-[10px] uppercase font-sans">Closing Balance</span>
-                            <span className="text-amber-400 font-bold">₹${acc.closingBalance.toFixed(2)}</span>
+                            <span className="text-amber-400 font-bold">₹{acc.closingBalance.toFixed(2)}</span>
                           </div>
                           <button
                             onClick={handlePrintLedger}
@@ -1548,7 +1639,7 @@ const Layout = ({ children }) => {
                                     </td>
                                     <td className="py-2 px-4 text-[10px] text-slate-400">{t.refType.toUpperCase()}</td>
                                     <td className="py-2 px-4 text-slate-350 font-sans max-w-[200px] truncate" title={t.remarks}>{t.remarks}</td>
-                                    <td className="py-2 px-4 text-right font-bold">₹${t.amount.toFixed(2)}</td>
+                                    <td className="py-2 px-4 text-right font-bold">₹{t.amount.toFixed(2)}</td>
                                     <td className="py-2 px-4 text-center">
                                       {t.refType === 'manual' ? (
                                         <button onClick={(e) => { e.stopPropagation(); handleDeleteTx(t._id); }} className="text-rose-500 hover:text-rose-400 p-0.5">
@@ -1885,10 +1976,12 @@ const Layout = ({ children }) => {
                 <div className="flex flex-col flex-1 overflow-hidden bg-slate-955">
                   {/* Header info */}
                   <div className="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center text-xs shrink-0">
-                    <div>
+                    <div className="flex items-center space-x-2">
                       <span className="text-slate-400 uppercase font-bold">LEDGER STATEMENT: </span>
-                      <span className="text-white font-extrabold text-sm uppercase">{selectedLedgerItem?.name}</span>
-                      <span className="text-slate-500 font-mono ml-2">({selectedLedgerItem?.type})</span>
+                      <span className="text-amber-300 font-extrabold text-sm uppercase bg-slate-950 px-2.5 py-1 rounded-lg border border-emerald-500/40 tracking-wide shadow-inner">
+                        {selectedLedgerItem?.name}
+                      </span>
+                      <span className="text-emerald-400 font-mono text-xs font-bold">({selectedLedgerItem?.type})</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-emerald-400 font-mono font-bold">Period: {ctrlLFromDate} to {ctrlLToDate}</span>
