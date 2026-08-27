@@ -26,7 +26,8 @@ import {
   ChevronLeft,
   ChevronRight,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Search
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
