@@ -483,48 +483,58 @@ const AccountingGroup = () => {
 
         {/* Group Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-          <div className="bg-white p-3 rounded-xl border border-slate-300 shadow-sm">
-            <span className="text-[10px] text-slate-700 font-sans block uppercase font-black">TOTAL CUSTOMERS</span>
-            <span className="text-slate-950 text-xl font-black">{displayGroupCustomers.length}</span>
+          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm">
+            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#1e293b' }}>
+              TOTAL CUSTOMERS
+            </span>
+            <span className="text-2xl font-black block mt-0.5" style={{ color: '#000000' }}>
+              {displayGroupCustomers.length}
+            </span>
           </div>
-          <div className="bg-emerald-50/80 p-3 rounded-xl border border-emerald-300 shadow-sm">
-            <span className="text-[10px] text-emerald-950 font-sans block uppercase font-black">TOTAL DEBIT (Dr)</span>
-            <span className="text-emerald-900 text-xl font-black">
+          <div className="bg-emerald-50 p-3.5 rounded-xl border-2 border-emerald-300 shadow-sm">
+            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#064e3b' }}>
+              TOTAL DEBIT (Dr)
+            </span>
+            <span className="text-2xl font-black block mt-0.5" style={{ color: '#065f46' }}>
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalDebit, 0))}
             </span>
           </div>
-          <div className="bg-rose-50/80 p-3 rounded-xl border border-rose-300 shadow-sm">
-            <span className="text-[10px] text-rose-950 font-sans block uppercase font-black">TOTAL CREDIT (Cr)</span>
-            <span className="text-rose-900 text-xl font-black">
+          <div className="bg-rose-50 p-3.5 rounded-xl border-2 border-rose-300 shadow-sm">
+            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#4c0519' }}>
+              TOTAL CREDIT (Cr)
+            </span>
+            <span className="text-2xl font-black block mt-0.5" style={{ color: '#9f1239' }}>
               ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
             </span>
           </div>
-          <div className="bg-slate-100 p-3 rounded-xl border border-slate-400 shadow-sm">
-            <span className="text-[10px] text-slate-800 font-sans block uppercase font-black">NET GROUP BALANCE</span>
-            <span className="text-slate-950 text-xl font-black">
+          <div className="bg-slate-100 p-3.5 rounded-xl border-2 border-slate-400 shadow-sm">
+            <span className="text-[11px] font-sans block uppercase font-black" style={{ color: '#0f172a' }}>
+              NET GROUP BALANCE
+            </span>
+            <span className="text-2xl font-black block mt-0.5" style={{ color: '#000000' }}>
               ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
             </span>
           </div>
         </div>
 
         {/* Customers Table View */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-white max-h-96 overflow-y-auto">
-          <table className="w-full text-left text-xs border-collapse font-mono text-slate-950">
+        <div className="overflow-x-auto rounded-xl border-2 border-slate-300 bg-white max-h-96 overflow-y-auto shadow-inner">
+          <table className="w-full text-left text-xs border-collapse font-mono" style={{ color: '#000000' }}>
             <thead>
-              <tr className="bg-slate-900 text-white border-b border-slate-800 text-[11px] font-black uppercase tracking-wider sticky top-0 z-10">
-                <th className="py-2.5 px-3">Customer Name</th>
-                <th className="py-2.5 px-3">Code / ID</th>
-                <th className="py-2.5 px-3">Mobile No.</th>
-                <th className="py-2.5 px-3">Station / Area</th>
-                <th className="py-2.5 px-3 text-right">Debit (Dr)</th>
-                <th className="py-2.5 px-3 text-right">Credit (Cr)</th>
-                <th className="py-2.5 px-3 text-right">Net Balance</th>
+              <tr className="bg-slate-100 border-b-2 border-slate-300 text-[11px] font-black uppercase tracking-wider sticky top-0 z-10 shadow-sm" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
+                <th className="py-3 px-3 font-black" style={{ color: '#000000' }}>Customer Name</th>
+                <th className="py-3 px-3 font-black" style={{ color: '#000000' }}>Code / ID</th>
+                <th className="py-3 px-3 font-black" style={{ color: '#000000' }}>Mobile No.</th>
+                <th className="py-3 px-3 font-black" style={{ color: '#000000' }}>Station / Area</th>
+                <th className="py-3 px-3 font-black text-right" style={{ color: '#000000' }}>Debit (Dr)</th>
+                <th className="py-3 px-3 font-black text-right" style={{ color: '#000000' }}>Credit (Cr)</th>
+                <th className="py-3 px-3 font-black text-right" style={{ color: '#000000' }}>Net Balance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {displayGroupCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-500 font-bold italic">
+                  <td colSpan="7" className="p-8 text-center font-black italic" style={{ color: '#475569' }}>
                     No customers found in this group.
                   </td>
                 </tr>
@@ -544,22 +554,29 @@ const AccountingGroup = () => {
                         setSelectedCustomerModal(c);
                       }}
                       onMouseEnter={() => setActiveCustIndex(idx)}
+                      style={{ backgroundColor: isActive ? '#d1fae5' : '#ffffff' }}
                       className={`cursor-pointer transition-all ${
                         isActive
-                          ? 'bg-emerald-100 text-slate-950 font-black border-l-4 border-emerald-600 shadow-sm'
-                          : 'hover:bg-slate-100 text-slate-950'
+                          ? 'border-l-4 border-emerald-600 font-black shadow-sm'
+                          : 'hover:bg-slate-50'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-black text-slate-950">
+                      <td className="py-2.5 px-3 font-black text-sm" style={{ color: '#000000' }}>
                         {c.name}
                       </td>
-                      <td className="py-2.5 px-3 text-slate-800 font-bold">{c.customerCode || c.idProofNumber || '-'}</td>
-                      <td className="py-2.5 px-3 text-slate-800 font-mono font-bold">{c.mobile || '-'}</td>
-                      <td className="py-2.5 px-3 text-emerald-800 font-bold">{c.area || c.city || c.group || '-'}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-emerald-700">₹{c.totalDebit.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-rose-700">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-black" style={{ color: '#0f172a' }}>{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 font-black font-mono" style={{ color: '#0f172a' }}>{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 font-black" style={{ color: '#047857' }}>{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-black" style={{ color: '#047857' }}>₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black" style={{ color: '#be123c' }}>₹{c.totalCredit.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-black">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-700 text-white' : 'bg-rose-700 text-white'}`}>
+                        <span
+                          className="px-2.5 py-1 rounded text-xs font-black"
+                          style={{
+                            backgroundColor: c.netBalance >= 0 ? '#047857' : '#be123c',
+                            color: '#ffffff'
+                          }}
+                        >
                           ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}
                         </span>
                       </td>
