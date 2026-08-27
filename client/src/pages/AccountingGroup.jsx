@@ -413,10 +413,10 @@ const AccountingGroup = () => {
         </div>
 
         {/* Customers Table View */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 max-h-96 overflow-y-auto">
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 max-h-96 overflow-y-auto">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider sticky top-0 z-10">
+              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-black text-emerald-400 uppercase tracking-wider sticky top-0 z-10">
                 <th className="py-2.5 px-3">Customer Name</th>
                 <th className="py-2.5 px-3">Code / ID</th>
                 <th className="py-2.5 px-3">Mobile No.</th>
@@ -426,10 +426,10 @@ const AccountingGroup = () => {
                 <th className="py-2.5 px-3 text-right">Net Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-850">
+            <tbody className="divide-y divide-slate-800 bg-slate-955">
               {displayGroupCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-500 italic">
+                  <td colSpan="7" className="p-8 text-center text-slate-400 font-bold italic">
                     No customers found in this group.
                   </td>
                 </tr>
@@ -443,20 +443,20 @@ const AccountingGroup = () => {
                         setSelectedCustomerId(c._id);
                         setCustSearchText(`${c.name} (${c.customerCode})`);
                       }}
-                      className={`cursor-pointer transition-all hover:bg-slate-800/80 ${
-                        isSelected ? 'bg-emerald-950/80 text-white border-l-4 border-emerald-400 font-bold shadow-md' : 'text-slate-200'
+                      className={`cursor-pointer transition-all hover:bg-slate-850 ${
+                        isSelected ? 'bg-emerald-950 text-white font-extrabold border-l-4 border-emerald-400 shadow-lg' : 'bg-slate-955 text-slate-100'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-bold text-white flex items-center space-x-2">
+                      <td className="py-2.5 px-3 font-extrabold text-amber-300 flex items-center space-x-2">
                         <span>{c.name}</span>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-400">{c.customerCode || c.idProofNumber || '-'}</td>
-                      <td className="py-2.5 px-3 text-slate-300 font-mono">{c.mobile || '-'}</td>
-                      <td className="py-2.5 px-3 text-emerald-400/90">{c.area || c.city || c.group || '-'}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-emerald-400">₹{c.totalDebit.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-rose-400">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-bold text-slate-300">{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 text-slate-200 font-mono font-bold">{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 font-bold text-emerald-400">{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-emerald-400">₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-rose-400">₹{c.totalCredit.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-black">
-                        <span className={`px-2 py-0.5 rounded text-[11px] ${c.netBalance >= 0 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'}`}>
+                        <span className={`px-2.5 py-0.5 rounded text-[11px] font-black ${c.netBalance >= 0 ? 'bg-emerald-900 text-emerald-300 border border-emerald-500/50' : 'bg-rose-900 text-rose-300 border border-rose-500/50'}`}>
                           ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}
                         </span>
                       </td>

@@ -791,7 +791,7 @@ const Layout = ({ children }) => {
   const isOperator = role === 'operator' || role === 'staff';
 
   const [sidebarGroups, setSidebarGroups] = useState([]);
-  const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(true);
+  const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(false);
   const [showCreateSidebarGroupModal, setShowCreateSidebarGroupModal] = useState(false);
   const [newSidebarGroupName, setNewSidebarGroupName] = useState('');
 
@@ -832,11 +832,11 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
     { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'] },
     { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true },
     { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true },
     { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
