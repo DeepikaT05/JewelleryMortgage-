@@ -72,6 +72,7 @@ const Layout = ({ children }) => {
   const [ledgers, setLedgers] = useState([]);
   const [selectedLedgerId, setSelectedLedgerId] = useState('');
   const [ledgerTransactions, setLedgerTransactions] = useState([]);
+  const [ledgerTxActiveIndex, setLedgerTxActiveIndex] = useState(0);
   const [ledgerSubTab, setLedgerSubTab] = useState('details'); // Default to details for full ledger statements
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showTxForm, setShowTxForm] = useState(false);
@@ -365,6 +366,7 @@ const Layout = ({ children }) => {
     try {
       const res = await axios.get(`/api/ledgers/${id}/transactions`);
       setLedgerTransactions(res.data);
+      setLedgerTxActiveIndex(0);
     } catch (err) {
       console.error('Error fetching ledger transactions:', err);
     }
@@ -863,6 +865,38 @@ const Layout = ({ children }) => {
     window.addEventListener('keydown', handleCtrlLShortcut, true);
     return () => window.removeEventListener('keydown', handleCtrlLShortcut, true);
   }, []);
+
+  // Global Keydown Listener for showLedgerModal arrow navigation & Enter edit
+  useEffect(() => {
+    const handleLedgerModalKeyDown = (e) => {
+      if (!showLedgerModal || ledgerSubTab !== 'details' || ledgerTransactions.length === 0) return;
+      
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (['input', 'textarea', 'select'].includes(activeTag)) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setLedgerTxActiveIndex(prev => (prev + 1) % ledgerTransactions.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setLedgerTxActiveIndex(prev => (prev - 1 + ledgerTransactions.length) % ledgerTransactions.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const tx = ledgerTransactions[ledgerTxActiveIndex];
+        if (tx) {
+          setShowLedgerModal(false);
+          if (tx.refType === 'deal') {
+            navigate('/deal-master', { state: { dealNo: tx.refId } });
+          } else if (tx.refType === 'transaction') {
+            navigate('/transaction', { state: { transactionNo: tx.refId } });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleLedgerModalKeyDown);
+    return () => window.removeEventListener('keydown', handleLedgerModalKeyDown);
+  }, [showLedgerModal, ledgerSubTab, ledgerTransactions, ledgerTxActiveIndex, navigate]);
 
   // Format date nicely
   const formatDate = (date) => {
@@ -1483,26 +1517,50 @@ const Layout = ({ children }) => {
                                 <td colSpan="6" className="py-4 text-center text-slate-500 italic font-sans">No transactions recorded.</td>
                               </tr>
                             ) : (
-                              ledgerTransactions.map(t => (
-                                <tr key={t._id} className="hover:bg-slate-955/20 text-slate-300">
-                                  <td className="py-2 px-4">{new Date(t.date).toLocaleDateString()}</td>
-                                  <td className={`py-2 px-4 font-bold ${t.type === 'add' ? 'text-emerald-400' : 'text-rose-455'}`}>
-                                    {t.type === 'add' ? 'ADD' : 'DEDUCT'}
-                                  </td>
-                                  <td className="py-2 px-4 text-[10px] text-slate-400">{t.refType.toUpperCase()}</td>
-                                  <td className="py-2 px-4 text-slate-350 font-sans max-w-[200px] truncate" title={t.remarks}>{t.remarks}</td>
-                                  <td className="py-2 px-4 text-right font-bold">₹${t.amount.toFixed(2)}</td>
-                                  <td className="py-2 px-4 text-center">
-                                    {t.refType === 'manual' ? (
-                                      <button onClick={() => handleDeleteTx(t._id)} className="text-rose-500 hover:text-rose-400 p-0.5">
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    ) : (
-                                      <span className="text-[9px] text-slate-600 font-sans italic">Auto</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))
+                              ledgerTransactions.map((t, idx) => {
+                                const isActive = ledgerTxActiveIndex === idx;
+                                return (
+                                  <tr
+                                    key={t._id}
+                                    ref={(el) => {
+                                      if (isActive && el) {
+                                        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                                      }
+                                    }}
+                                    onClick={() => {
+                                      setShowLedgerModal(false);
+                                      if (t.refType === 'deal') {
+                                        navigate('/deal-master', { state: { dealNo: t.refId } });
+                                      } else if (t.refType === 'transaction') {
+                                        navigate('/transaction', { state: { transactionNo: t.refId } });
+                                      }
+                                    }}
+                                    onMouseEnter={() => setLedgerTxActiveIndex(idx)}
+                                    className={`cursor-pointer transition-all ${
+                                      isActive
+                                        ? 'bg-emerald-600 text-slate-955 font-extrabold shadow-md'
+                                        : 'hover:bg-slate-955/20 text-slate-300'
+                                    }`}
+                                  >
+                                    <td className="py-2 px-4">{new Date(t.date).toLocaleDateString()}</td>
+                                    <td className={`py-2 px-4 font-bold ${t.type === 'add' ? 'text-emerald-400' : 'text-rose-455'}`}>
+                                      {t.type === 'add' ? 'ADD' : 'DEDUCT'}
+                                    </td>
+                                    <td className="py-2 px-4 text-[10px] text-slate-400">{t.refType.toUpperCase()}</td>
+                                    <td className="py-2 px-4 text-slate-350 font-sans max-w-[200px] truncate" title={t.remarks}>{t.remarks}</td>
+                                    <td className="py-2 px-4 text-right font-bold">₹${t.amount.toFixed(2)}</td>
+                                    <td className="py-2 px-4 text-center">
+                                      {t.refType === 'manual' ? (
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteTx(t._id); }} className="text-rose-500 hover:text-rose-400 p-0.5">
+                                          <Trash2 className="h-4 w-4" />
+                                        </button>
+                                      ) : (
+                                        <span className="text-[9px] text-slate-600 font-sans italic">Auto</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })
                             )}
                           </tbody>
                         </table>
