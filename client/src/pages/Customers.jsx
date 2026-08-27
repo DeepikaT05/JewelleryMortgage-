@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { formatIndianCurrency } from "../utils/format";
 import { Search, Printer, Users, Coins, ArrowLeftRight, User, CalendarClock, Trash2 } from "lucide-react";
@@ -76,10 +77,15 @@ const Customers = () => {
     }
   };
 
+  const location = useLocation();
+
   useEffect(() => {
     loadStoreFY();
     loadCustomers();
-  }, []);
+    if (location.state?.selectedCustomerId) {
+      loadStatement(location.state.selectedCustomerId);
+    }
+  }, [location.state]);
 
   const loadStatement = async (id) => {
     setSelectedId(id);

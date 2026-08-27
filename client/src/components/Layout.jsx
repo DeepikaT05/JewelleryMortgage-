@@ -82,6 +82,97 @@ const Layout = ({ children }) => {
   const [editingAccId, setEditingAccId] = useState(null);
   const [editAccForm, setEditAccForm] = useState({ name: '', group: 'cash', customGroup: '', openingBalance: 0 });
 
+  // --- CTRL + L GLOBAL MARG-STYLE LEDGER LOOKUP SYSTEM STATES ---
+  const [showCtrlLLookup, setShowCtrlLLookup] = useState(false);
+  const [ctrlLSearchQuery, setCtrlLSearchQuery] = useState('');
+  const [ctrlLActiveIndex, setCtrlLActiveIndex] = useState(0);
+  const [allCombinedLedgers, setAllCombinedLedgers] = useState([]);
+  const [ctrlLLoading, setCtrlLLoading] = useState(false);
+
+  const fetchCombinedLedgersList = async () => {
+    setCtrlLLoading(true);
+    try {
+      const [custRes, groupRes, bankRes, suppRes] = await Promise.all([
+        axios.get('/api/customers?limit=1000').catch(() => ({ data: { customers: [] } })),
+        axios.get('/api/customer-groups').catch(() => ({ data: [] })),
+        axios.get('/api/ledgers').catch(() => ({ data: [] })),
+        axios.get('/api/suppliers').catch(() => ({ data: [] }))
+      ]);
+
+      const custItems = (custRes.data.customers || []).map(c => ({
+        id: c._id,
+        rawId: c._id,
+        name: c.name,
+        code: c.customerCode ? `#${c.customerCode}` : '',
+        type: 'Customer',
+        group: c.customerGroup || 'General',
+        mobile: c.mobile || '',
+        area: c.area ? `${c.area}, ${c.city || ''}` : c.city || '',
+        target: 'customer'
+      }));
+
+      const groupItems = (groupRes.data || []).map(cg => ({
+        id: cg._id,
+        rawId: cg._id,
+        name: cg.groupName,
+        code: cg.groupCode ? `#${cg.groupCode}` : '',
+        type: 'Customer Group',
+        group: 'Ledger Group',
+        mobile: '',
+        area: cg.description || '',
+        target: 'customerGroup'
+      }));
+
+      const bankItems = (bankRes.data || []).map(l => ({
+        id: l._id,
+        rawId: l._id,
+        name: l.name,
+        code: l.group ? l.group.toUpperCase() : '',
+        type: 'Bank / Cash Ledger',
+        group: l.group || 'general',
+        mobile: '',
+        area: l.closingBalance !== undefined ? `Bal: ₹${l.closingBalance.toFixed(2)}` : '',
+        target: 'bankLedger'
+      }));
+
+      const suppItems = (suppRes.data || []).map(s => ({
+        id: s._id,
+        rawId: s._id,
+        name: s.name,
+        code: s.code || '#SUPP',
+        type: 'Supplier Account',
+        group: 'Supplier',
+        mobile: s.phone || s.mobile || '',
+        area: s.city || '',
+        target: 'supplier'
+      }));
+
+      const combined = [...custItems, ...groupItems, ...bankItems, ...suppItems];
+      combined.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setAllCombinedLedgers(combined);
+    } catch (err) {
+      console.error('Error fetching combined ledgers:', err);
+    } finally {
+      setCtrlLLoading(false);
+    }
+  };
+
+  const handleSelectCombinedLedger = (item) => {
+    setShowCtrlLLookup(false);
+    if (!item) return;
+
+    if (item.target === 'customer') {
+      navigate('/customers', { state: { selectedCustomerId: item.rawId } });
+    } else if (item.target === 'customerGroup') {
+      navigate('/general-masters');
+    } else if (item.target === 'bankLedger') {
+      setSelectedLedgerId(item.rawId);
+      setShowLedgerModal(true);
+    } else if (item.target === 'supplier') {
+      navigate('/accounting-group');
+    }
+  };
+
   const fetchLedgers = async () => {
     try {
       const res = await axios.get('/api/ledgers');
@@ -573,6 +664,28 @@ const Layout = ({ children }) => {
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [menuItems, focusedMenuIdx, navigate]);
+
+  // Global Ctrl + L / Cmd + L shortcut listener (works everywhere in app)
+  useEffect(() => {
+    const handleCtrlLShortcut = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowCtrlLLookup(prev => {
+          const next = !prev;
+          if (next) {
+            setCtrlLSearchQuery('');
+            setCtrlLActiveIndex(0);
+            fetchCombinedLedgersList();
+          }
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleCtrlLShortcut, true);
+    return () => window.removeEventListener('keydown', handleCtrlLShortcut, true);
+  }, []);
 
   // Format date nicely
   const formatDate = (date) => {
@@ -1231,6 +1344,164 @@ const Layout = ({ children }) => {
           </div>
         </div>
       )}
+
+      {/* CTRL + L GLOBAL MARG-STYLE CONSOLIDATED LEDGER LOOKUP MODAL */}
+      {showCtrlLLookup && (() => {
+        const q = ctrlLSearchQuery.trim().toLowerCase();
+        const filteredList = allCombinedLedgers.filter(item => {
+          if (!q) return true;
+          return (
+            (item.name && item.name.toLowerCase().includes(q)) ||
+            (item.code && item.code.toLowerCase().includes(q)) ||
+            (item.type && item.type.toLowerCase().includes(q)) ||
+            (item.group && item.group.toLowerCase().includes(q)) ||
+            (item.mobile && item.mobile.includes(q)) ||
+            (item.area && item.area.toLowerCase().includes(q))
+          );
+        });
+
+        const handleModalKeyDown = (e) => {
+          if (filteredList.length === 0) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setCtrlLActiveIndex(prev => (prev + 1) % filteredList.length);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setCtrlLActiveIndex(prev => (prev - 1 + filteredList.length) % filteredList.length);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const activeItem = filteredList[ctrlLActiveIndex] || filteredList[0];
+            handleSelectCombinedLedger(activeItem);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setShowCtrlLLookup(false);
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 no-print">
+            <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-4 font-sans animate-in fade-in zoom-in duration-150">
+              {/* Header */}
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2.5">
+                  <BookOpen className="h-5 w-5 text-amber-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <span>Global Ledgers List</span>
+                      <span className="bg-amber-950/80 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-[10px] font-mono">Ctrl + L</span>
+                    </h3>
+                    <p className="text-[10px] text-slate-400">Marg ERP / Tally Quick Ledger Search (Customers + Groups + Banks + Suppliers)</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCtrlLLookup(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Search input with live alphabet jump */}
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-amber-400" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={ctrlLSearchQuery}
+                  onChange={(e) => {
+                    setCtrlLSearchQuery(e.target.value);
+                    setCtrlLActiveIndex(0);
+                  }}
+                  onKeyDown={handleModalKeyDown}
+                  placeholder="Type any alphabet / name / code / mobile (e.g. M, Mohit, 368)..."
+                  className="w-full pl-9 pr-4 py-2 bg-slate-955 border border-amber-500/50 rounded-xl text-xs font-semibold text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Consolidated Alphabetical Ledgers Table/List */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    All Ledgers (A-Z) — {ctrlLLoading ? 'Loading...' : `${filteredList.length} Accounts Found`}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">Use ↑ ↓ to Navigate &amp; Enter to Open</span>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto space-y-1 p-1 bg-slate-955 rounded-xl border border-slate-850">
+                  {filteredList.map((item, idx) => {
+                    const isActive = ctrlLActiveIndex === idx;
+                    return (
+                      <div
+                        key={`${item.type}-${item.id}-${idx}`}
+                        ref={(el) => {
+                          if (isActive && el) {
+                            el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                          }
+                        }}
+                        onClick={() => handleSelectCombinedLedger(item)}
+                        onMouseEnter={() => setCtrlLActiveIndex(idx)}
+                        className={`p-2.5 rounded-xl text-xs cursor-pointer flex justify-between items-center transition-all ${
+                          isActive
+                            ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg scale-[1.005]'
+                            : 'bg-slate-900/60 text-slate-200 hover:bg-slate-850 border border-slate-800/40'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            item.target === 'customer' ? 'bg-emerald-400' :
+                            item.target === 'customerGroup' ? 'bg-amber-400' :
+                            item.target === 'bankLedger' ? 'bg-cyan-400' : 'bg-rose-400'
+                          }`} />
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-xs block truncate">{item.name}</span>
+                            <span className={`text-[10px] font-mono block truncate ${isActive ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>
+                              {[item.group, item.area, item.mobile].filter(Boolean).join(' • ')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 shrink-0">
+                          {item.code && (
+                            <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                              isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-amber-400 border border-slate-700'
+                            }`}>
+                              {item.code}
+                            </span>
+                          )}
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                            isActive ? 'bg-slate-955 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                          }`}>
+                            {item.type}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {!ctrlLLoading && filteredList.length === 0 && (
+                    <div className="p-8 text-center text-slate-500 text-xs italic">
+                      No ledgers matching "{ctrlLSearchQuery}"
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer navigation info */}
+              <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <span className="text-[10px] font-mono text-slate-500">Press Esc or Ctrl+L to close</span>
+                <button
+                  type="button"
+                  onClick={() => setShowCtrlLLookup(false)}
+                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
