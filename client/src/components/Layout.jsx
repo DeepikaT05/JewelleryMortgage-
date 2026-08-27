@@ -790,6 +790,44 @@ const Layout = ({ children }) => {
   const isManager = role === 'manager';
   const isOperator = role === 'operator' || role === 'staff';
 
+  const [sidebarGroups, setSidebarGroups] = useState([]);
+  const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(true);
+  const [showCreateSidebarGroupModal, setShowCreateSidebarGroupModal] = useState(false);
+  const [newSidebarGroupName, setNewSidebarGroupName] = useState('');
+
+  const fetchSidebarGroups = async () => {
+    try {
+      const [cgRes, custRes] = await Promise.all([
+        axios.get('/api/customer-groups'),
+        axios.get('/api/customers?limit=1000')
+      ]);
+      const dbG = (cgRes.data || []).map(g => g.groupName);
+      const custG = (custRes.data?.customers || []).map(c => c.area || c.group || c.city).filter(Boolean);
+      const unique = Array.from(new Set([...dbG, ...custG])).filter(Boolean).sort();
+      setSidebarGroups(unique);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSidebarGroups();
+  }, []);
+
+  const handleCreateSidebarGroup = async (e) => {
+    e.preventDefault();
+    if (!newSidebarGroupName.trim()) return;
+    try {
+      await axios.post('/api/customer-groups', { groupName: newSidebarGroupName.trim() });
+      setNewSidebarGroupName('');
+      setShowCreateSidebarGroupModal(false);
+      await fetchSidebarGroups();
+      navigate(`/accounting-group?groupName=${encodeURIComponent(newSidebarGroupName.trim())}`);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error creating group');
+    }
+  };
+
   const allMenuItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
     { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'] },
@@ -798,7 +836,7 @@ const Layout = ({ children }) => {
     { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Accounting Group', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true },
     { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
@@ -1160,6 +1198,78 @@ const Layout = ({ children }) => {
             {menuItems.map((item, idx) => {
               const isActive = location.pathname === item.path;
               const isFocused = focusedMenuIdx === idx;
+
+              if (item.hasSubmenu) {
+                const isSubmenuActive = location.pathname.startsWith('/accounting-group');
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <div
+                      onClick={() => setIsGroupsSubmenuOpen(!isGroupsSubmenuOpen)}
+                      className={`flex items-center justify-between space-x-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                        isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                      } ${
+                        isSubmenuActive 
+                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-bold' 
+                          : isFocused
+                          ? 'bg-slate-800 text-white ring-2 ring-primary-500 font-bold'
+                          : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 truncate">
+                        <div className="shrink-0">{item.icon}</div>
+                        {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
+                      </div>
+                      {!isSidebarCollapsed && (
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 shrink-0 ${isGroupsSubmenuOpen ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+
+                    {!isSidebarCollapsed && isGroupsSubmenuOpen && (
+                      <div className="pl-6 pr-1 space-y-1 text-xs font-mono max-h-56 overflow-y-auto">
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateSidebarGroupModal(true)}
+                          className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-emerald-400 hover:bg-emerald-950/60 font-bold transition-all text-left border border-emerald-500/30 bg-emerald-950/20 shadow-sm"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>+ Create New Group</span>
+                        </button>
+
+                        <Link
+                          to="/accounting-group"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`block py-1.5 px-2.5 rounded-lg transition-all font-bold ${
+                            location.pathname === '/accounting-group' && !location.search
+                              ? 'bg-emerald-800 text-white'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          All Ledger Groups
+                        </Link>
+
+                        {sidebarGroups.map((g) => {
+                          const isGroupSelected = location.search.includes(encodeURIComponent(g));
+                          return (
+                            <Link
+                              key={g}
+                              to={`/accounting-group?groupName=${encodeURIComponent(g)}`}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`block py-1.5 px-2.5 rounded-lg transition-all truncate ${
+                                isGroupSelected
+                                  ? 'bg-emerald-900/90 text-emerald-300 font-extrabold border-l-2 border-emerald-400'
+                                  : 'text-slate-400 hover:bg-slate-800 hover:text-amber-300'
+                              }`}
+                            >
+                              {g}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.name}
@@ -1206,6 +1316,62 @@ const Layout = ({ children }) => {
             )}
           </div>
         </aside>
+
+        {/* 3. CREATE NEW GROUP MODAL FROM SIDEBAR */}
+        {showCreateSidebarGroupModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 font-sans">
+            <div className="w-full max-w-md bg-slate-950 border-2 border-emerald-500/60 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-200">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 className="text-base font-extrabold text-white flex items-center space-x-2">
+                  <Plus className="h-5 w-5 text-emerald-400" />
+                  <span>Create New Customer Group</span>
+                </h3>
+                <button 
+                  onClick={() => setShowCreateSidebarGroupModal(false)}
+                  className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-900"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSidebarGroup} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1.5 uppercase tracking-wide">
+                    Group / Area / Station Name *
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={newSidebarGroupName}
+                    onChange={(e) => setNewSidebarGroupName(e.target.value)}
+                    placeholder="e.g. Potiyakala, Funda, Durg, Dania..."
+                    className="w-full px-3 py-2 bg-slate-900 border border-emerald-500/50 rounded-lg text-emerald-300 font-bold placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Customers assigned to this group/station will be organized under this section.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-2 border-t border-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateSidebarGroupModal(false)}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-slate-300 font-bold rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-lg shadow-md"
+                  >
+                    Save Group
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* 3. MAIN CONTENT VIEW */}
         <main className="flex-1 p-3 md:p-3.5 overflow-y-auto max-w-full print:p-0">

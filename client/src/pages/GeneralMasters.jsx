@@ -718,15 +718,6 @@ const GeneralMasters = () => {
         </button>
 
         <button
-          onClick={() => setActiveSubTab('ledger-groups')}
-          className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
-            activeSubTab === 'ledger-groups' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Ledger Group
-        </button>
-
-        <button
           onClick={() => setActiveSubTab('terms')}
           className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
             activeSubTab === 'terms' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'

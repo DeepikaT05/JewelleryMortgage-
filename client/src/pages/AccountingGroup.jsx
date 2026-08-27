@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, Printer, Calendar, Users, Briefcase, Plus, Download, X } from 'lucide-react';
 import { formatIndianCurrency } from '../utils/format';
@@ -7,6 +8,15 @@ import Toast from '../components/Toast';
 const PREDEFINED_GROUPS = ['cash', 'bank', 'creditor', 'debtor'];
 
 const AccountingGroup = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const activeGroupId = searchParams.get('groupId');
+  const activeGroupName = searchParams.get('groupName');
+
+  const [deals, setDeals] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -123,18 +133,61 @@ const AccountingGroup = () => {
   };
 
   useEffect(() => {
-    const loadCustomers = async () => {
+    const loadGroupData = async () => {
       try {
-        const res = await axios.get('/api/customers?limit=1000');
-        setCustomers(res.data.customers);
+        const [custRes, dealRes, txRes] = await Promise.all([
+          axios.get('/api/customers?limit=1000'),
+          axios.get('/api/deals?limit=1000'),
+          axios.get('/api/transactions?limit=1000')
+        ]);
+        setCustomers(custRes.data.customers || []);
+        setDeals(dealRes.data.deals || []);
+        setTransactions(txRes.data.transactions || []);
       } catch (err) {
-        console.error(err);
+        console.error('Error loading group data:', err);
       }
     };
-    loadCustomers();
+    loadGroupData();
     loadStoreFY();
     loadGroups();
   }, []);
+
+  const displayGroupCustomers = customers.filter(c => {
+    if (!activeGroupName && !activeGroupId) return true;
+    const gName = (activeGroupName || '').toLowerCase();
+    const gId = activeGroupId || '';
+    const matchesGroup = (
+      (gId && String(c.customerGroupId) === String(gId)) ||
+      (gName && c.area && c.area.toLowerCase().includes(gName)) ||
+      (gName && c.group && c.group.toLowerCase().includes(gName)) ||
+      (gName && c.city && c.city.toLowerCase().includes(gName))
+    );
+    if (!matchesGroup) return false;
+
+    if (!groupSearchQuery.trim()) return true;
+    const q = groupSearchQuery.trim().toLowerCase();
+    return (
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.mobile && c.mobile.includes(q)) ||
+      (c.customerCode && String(c.customerCode).includes(q)) ||
+      (c.area && c.area.toLowerCase().includes(q))
+    );
+  }).map(c => {
+    const custDeals = deals.filter(d => (d.customerId?._id || d.customerId) === c._id);
+    const custTxs = transactions.filter(t => (t.customerId?._id || t.customerId) === c._id);
+
+    const totalDebit = custDeals.reduce((sum, d) => sum + (d.dealAmount || 0), 0);
+    const totalCredit = custTxs.reduce((sum, t) => sum + (t.totalPaid || 0), 0);
+    const opening = Number(c.openingBalance || 0);
+    const netBalance = opening + totalDebit - totalCredit;
+
+    return {
+      ...c,
+      totalDebit,
+      totalCredit,
+      netBalance
+    };
+  });
 
   const handleFyPresetChange = (preset) => {
     setFyPreset(preset);
@@ -269,9 +322,11 @@ const AccountingGroup = () => {
       {/* Page Header */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 no-print">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Accounting Group Ledger Master</h1>
+          <h1 className="text-2xl font-extrabold text-white">
+            {activeGroupName ? `Ledger Group: ${activeGroupName}` : 'Accounting Group Ledger Master'}
+          </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Customizable customer statements, transaction ledgers, and consolidated lending audits by financial year.
+            Customizable customer statements, transaction ledgers, and consolidated lending audits by group & station.
           </p>
         </div>
         <div className="flex gap-2">
@@ -297,6 +352,120 @@ const AccountingGroup = () => {
             <Printer className="h-4 w-4" />
             <span>Print Statement</span>
           </button>
+        </div>
+      </div>
+
+      {/* GROUP CUSTOMER LEDGER MEMBERS SECTION */}
+      <div className="bg-slate-955 border-2 border-emerald-500/60 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4 no-print">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center space-x-3">
+              <span className="bg-emerald-950 text-emerald-400 border border-emerald-500/50 px-2.5 py-1 rounded-lg text-xs font-black uppercase font-mono">
+                Group Section
+              </span>
+              <h2 className="text-lg font-black text-white uppercase tracking-wide">
+                {activeGroupName ? `LEDGER GROUP: ${activeGroupName}` : 'ALL LEDGER GROUPS & CUSTOMERS'}
+              </h2>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Select any customer below using your mouse to inspect their debit, credit, and net balance statement.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-2.5 text-emerald-400" />
+              <input
+                type="text"
+                value={groupSearchQuery}
+                onChange={(e) => setGroupSearchQuery(e.target.value)}
+                placeholder="Filter customers by name / mobile / station..."
+                className="pl-9 pr-3 py-1.5 bg-slate-900 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Group Metrics Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+            <span className="text-[10px] text-slate-400 font-sans block uppercase font-bold">TOTAL CUSTOMERS</span>
+            <span className="text-white text-base font-black">{displayGroupCustomers.length}</span>
+          </div>
+          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+            <span className="text-[10px] text-emerald-400 font-sans block uppercase font-bold">TOTAL DEBIT (Dr)</span>
+            <span className="text-emerald-400 text-base font-black">
+              ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalDebit, 0))}
+            </span>
+          </div>
+          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+            <span className="text-[10px] text-rose-400 font-sans block uppercase font-bold">TOTAL CREDIT (Cr)</span>
+            <span className="text-rose-400 text-base font-black">
+              ₹{formatIndianCurrency(displayGroupCustomers.reduce((s, c) => s + c.totalCredit, 0))}
+            </span>
+          </div>
+          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+            <span className="text-[10px] text-amber-300 font-sans block uppercase font-bold">NET GROUP BALANCE</span>
+            <span className="text-amber-300 text-base font-black">
+              ₹{formatIndianCurrency(Math.abs(displayGroupCustomers.reduce((s, c) => s + c.netBalance, 0)))}
+            </span>
+          </div>
+        </div>
+
+        {/* Customers Table View */}
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 max-h-96 overflow-y-auto">
+          <table className="w-full text-left text-xs border-collapse font-mono">
+            <thead>
+              <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider sticky top-0 z-10">
+                <th className="py-2.5 px-3">Customer Name</th>
+                <th className="py-2.5 px-3">Code / ID</th>
+                <th className="py-2.5 px-3">Mobile No.</th>
+                <th className="py-2.5 px-3">Station / Area</th>
+                <th className="py-2.5 px-3 text-right">Debit (Dr)</th>
+                <th className="py-2.5 px-3 text-right">Credit (Cr)</th>
+                <th className="py-2.5 px-3 text-right">Net Balance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-850">
+              {displayGroupCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500 italic">
+                    No customers found in this group.
+                  </td>
+                </tr>
+              ) : (
+                displayGroupCustomers.map((c) => {
+                  const isSelected = selectedCustomerId === c._id;
+                  return (
+                    <tr
+                      key={c._id}
+                      onClick={() => {
+                        setSelectedCustomerId(c._id);
+                        setCustSearchText(`${c.name} (${c.customerCode})`);
+                      }}
+                      className={`cursor-pointer transition-all hover:bg-slate-800/80 ${
+                        isSelected ? 'bg-emerald-950/80 text-white border-l-4 border-emerald-400 font-bold shadow-md' : 'text-slate-200'
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 font-bold text-white flex items-center space-x-2">
+                        <span>{c.name}</span>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-400">{c.customerCode || c.idProofNumber || '-'}</td>
+                      <td className="py-2.5 px-3 text-slate-300 font-mono">{c.mobile || '-'}</td>
+                      <td className="py-2.5 px-3 text-emerald-400/90">{c.area || c.city || c.group || '-'}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-emerald-400">₹{c.totalDebit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-rose-400">₹{c.totalCredit.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black">
+                        <span className={`px-2 py-0.5 rounded text-[11px] ${c.netBalance >= 0 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'}`}>
+                          ₹{Math.abs(c.netBalance).toFixed(2)} {c.netBalance >= 0 ? 'Dr' : 'Cr'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
