@@ -1229,10 +1229,10 @@ const Layout = ({ children }) => {
                         <button
                           type="button"
                           onClick={() => setShowCreateSidebarGroupModal(true)}
-                          className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-slate-900 bg-slate-200 hover:bg-slate-300 font-black transition-all text-left border border-slate-400 shadow-sm"
+                          className="w-full flex items-center justify-center space-x-2 py-1.5 px-2 rounded-lg text-black bg-slate-200 hover:bg-slate-300 font-black transition-all text-left border border-slate-400 shadow-sm"
                         >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>+ Create New Group</span>
+                          <Plus className="h-3.5 w-3.5 text-black stroke-[3]" />
+                          <span className="text-black font-black">Create New Group</span>
                         </button>
 
                         <Link
@@ -1241,7 +1241,7 @@ const Layout = ({ children }) => {
                           className={`block py-1.5 px-2.5 rounded-lg transition-all font-black ${
                             location.pathname === '/accounting-group' && !location.search
                               ? 'bg-slate-900 text-white font-black'
-                              : 'text-slate-900 hover:bg-slate-200'
+                              : 'text-black hover:bg-slate-200'
                           }`}
                         >
                           All Ledger Groups
@@ -1257,7 +1257,7 @@ const Layout = ({ children }) => {
                               className={`block py-1.5 px-2.5 rounded-lg transition-all truncate font-black ${
                                 isGroupSelected
                                   ? 'bg-slate-900 text-white font-black rounded-lg shadow-sm'
-                                  : 'text-slate-900 hover:bg-slate-200'
+                                  : 'text-black hover:bg-slate-200'
                               }`}
                             >
                               {g}
