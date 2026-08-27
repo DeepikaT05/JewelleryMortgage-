@@ -1229,10 +1229,10 @@ const Layout = ({ children }) => {
                         <button
                           type="button"
                           onClick={() => setShowCreateSidebarGroupModal(true)}
-                          className="w-full flex items-center space-x-2 py-1.5 px-2 rounded-lg text-emerald-400 hover:bg-emerald-950/60 font-bold transition-all text-left border border-emerald-500/30 bg-emerald-950/20 shadow-sm"
+                          className="w-full flex items-center space-x-2 py-1.5 px-2.5 rounded-lg text-slate-950 font-black hover:bg-slate-200 transition-all text-left border border-slate-300 bg-slate-100 shadow-sm"
                         >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Create New Group</span>
+                          <Plus className="h-3.5 w-3.5 text-slate-950 stroke-[3]" />
+                          <span className="text-slate-950 font-black">Create New Group</span>
                         </button>
 
                         <Link
