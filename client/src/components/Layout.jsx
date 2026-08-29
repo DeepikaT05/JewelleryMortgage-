@@ -1829,10 +1829,11 @@ const Layout = ({ children }) => {
                           </div>
                           <button
                             onClick={handlePrintLedger}
-                            className="px-4 py-2 bg-slate-950 hover:bg-black text-white rounded-xl border border-slate-700 flex items-center space-x-2 font-sans font-bold text-xs shadow-md transition-all cursor-pointer"
+                            style={{ backgroundColor: '#000000', color: '#ffffff' }}
+                            className="px-4 py-2 !bg-black hover:!bg-slate-900 !text-white rounded-xl border border-black flex items-center space-x-2 font-sans font-bold text-xs shadow-md transition-all cursor-pointer"
                           >
-                            <Printer className="h-4 w-4 text-white" />
-                            <span className="text-white">Print Ledger</span>
+                            <Printer className="h-4 w-4 !text-white" style={{ color: '#ffffff' }} />
+                            <span className="!text-white font-bold" style={{ color: '#ffffff' }}>Print Ledger</span>
                           </button>
                         </div>
                       );
