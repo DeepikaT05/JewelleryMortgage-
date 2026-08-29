@@ -1309,14 +1309,13 @@ const Layout = ({ children }) => {
                               key={sub.key}
                               to={sub.path}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className={`flex items-center space-x-2 py-1.5 px-2.5 rounded-lg transition-all font-bold ${
+                              className={`block py-1.5 px-2.5 rounded-lg transition-all truncate ${
                                 isSubSelected
-                                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                                  ? 'bg-primary-600 text-white font-bold'
+                                  : 'text-slate-300 hover:bg-slate-800/60'
                               }`}
                             >
-                              <span className="shrink-0">{sub.icon}</span>
-                              <span className="truncate">{sub.label}</span>
+                              {sub.label}
                             </Link>
                           );
                         })}

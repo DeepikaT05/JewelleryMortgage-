@@ -392,7 +392,7 @@ const Operations = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* PAGE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+      <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
             <ArrowRightLeft className="h-6 w-6 text-amber-400" />
@@ -401,46 +401,6 @@ const Operations = () => {
           <p className="text-xs text-slate-400 mt-0.5">
             Manage Contra Transfers, Receipt Credits, Expense Payments & GST General Journals.
           </p>
-        </div>
-
-        {/* OPERATION TYPE SELECTOR TABS */}
-        <div className="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-850">
-          <button
-            onClick={() => handleTabChange('contra')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
-              activeTab === 'contra' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-            <span>Contra Transfer</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('receipt')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
-              activeTab === 'receipt' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ArrowDownLeft className="h-4 w-4" />
-            <span>Receipt (Credit)</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('payment')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
-              activeTab === 'payment' ? 'bg-rose-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ArrowUpRight className="h-4 w-4" />
-            <span>Payment (Expense)</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('general')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
-              activeTab === 'general' ? 'bg-sky-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span>General (Journal)</span>
-          </button>
         </div>
       </div>
 
