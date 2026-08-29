@@ -52,15 +52,33 @@ router.get('/', authMiddleware, async (req, res) => {
     const girviSetup = await GirviSetup.findOne({ companyId });
     
     let cashAcc = await LedgerAccount.findOne({ name: 'Cash', group: 'cash', companyId });
+    const expectedCashOpening = girviSetup?.openingCashBalance !== undefined ? girviSetup.openingCashBalance : (girviSetup?.openingBalance || 0);
     if (!cashAcc) {
-      cashAcc = new LedgerAccount({ name: 'Cash', group: 'cash', openingBalance: girviSetup?.openingCashBalance || girviSetup?.openingBalance || 0, companyId });
+      cashAcc = new LedgerAccount({ name: 'Cash', group: 'cash', openingBalance: expectedCashOpening, companyId });
       await cashAcc.save();
+    } else if (girviSetup && (girviSetup.openingBalanceMode === 'cash' || girviSetup.openingBalanceMode === 'both')) {
+      if (girviSetup.openingBalanceMode === 'cash' && girviSetup.openingBalance !== undefined && cashAcc.openingBalance !== girviSetup.openingBalance) {
+        cashAcc.openingBalance = Number(girviSetup.openingBalance);
+        await cashAcc.save();
+      } else if (girviSetup.openingBalanceMode === 'both' && girviSetup.openingCashBalance !== undefined && cashAcc.openingBalance !== girviSetup.openingCashBalance) {
+        cashAcc.openingBalance = Number(girviSetup.openingCashBalance);
+        await cashAcc.save();
+      }
     }
 
     let bankAcc = await LedgerAccount.findOne({ name: 'Main Bank Account', group: 'bank', companyId });
+    const expectedBankOpening = girviSetup?.openingBankBalance || 0;
     if (!bankAcc) {
-      bankAcc = new LedgerAccount({ name: 'Main Bank Account', group: 'bank', openingBalance: girviSetup?.openingBankBalance || 0, companyId });
+      bankAcc = new LedgerAccount({ name: 'Main Bank Account', group: 'bank', openingBalance: expectedBankOpening, companyId });
       await bankAcc.save();
+    } else if (girviSetup && (girviSetup.openingBalanceMode === 'bank' || girviSetup.openingBalanceMode === 'both')) {
+      if (girviSetup.openingBalanceMode === 'bank' && girviSetup.openingBalance !== undefined && bankAcc.openingBalance !== girviSetup.openingBalance) {
+        bankAcc.openingBalance = Number(girviSetup.openingBalance);
+        await bankAcc.save();
+      } else if (girviSetup.openingBalanceMode === 'both' && girviSetup.openingBankBalance !== undefined && bankAcc.openingBalance !== girviSetup.openingBankBalance) {
+        bankAcc.openingBalance = Number(girviSetup.openingBankBalance);
+        await bankAcc.save();
+      }
     }
 
     const accounts = await LedgerAccount.find({ companyId, group: { $in: ['cash', 'bank'] } });
