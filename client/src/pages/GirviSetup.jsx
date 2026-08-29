@@ -390,13 +390,13 @@ const GirviSetup = () => {
         {activeTab === 'general' && (
           <form onSubmit={handleSaveGirvi} className="space-y-6">
             {/* Store & Address Banner */}
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <div className="flex items-center space-x-2">
-                  <Building2 className="h-4 w-4 text-amber-400" />
-                  <span className="font-bold text-slate-100 text-sm">{storeProfileForm.name || 'Store Name Not Set'}</span>
+                  <Building2 className="h-4 w-4 text-amber-500" />
+                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{storeProfileForm.name || 'Store Name Not Set'}</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-0.5">
                   {storeProfileForm.address ? `${storeProfileForm.address}${storeProfileForm.city ? `, ${storeProfileForm.city}` : ''}` : 'Store address is not set yet.'}
                   {storeProfileForm.phone && ` • Ph: ${storeProfileForm.phone}`}
                   {storeProfileForm.gstin && ` • GSTIN: ${storeProfileForm.gstin}`}
@@ -405,10 +405,11 @@ const GirviSetup = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('store')}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-slate-700 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
+                style={{ backgroundColor: '#000000', color: '#ffffff' }}
+                className="px-3.5 py-2 !bg-black hover:!bg-slate-800 !text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 cursor-pointer shadow-md border border-black"
               >
-                <Pencil className="h-3.5 w-3.5" />
-                <span>Update Store Address</span>
+                <Pencil className="h-3.5 w-3.5 text-white" style={{ color: '#ffffff' }} />
+                <span className="text-white font-bold" style={{ color: '#ffffff' }}>Update Store Address</span>
               </button>
             </div>
 
