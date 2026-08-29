@@ -127,7 +127,10 @@ const Dashboard = () => {
               <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center space-x-1.5">
                   <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Opening Balance</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-black border border-slate-300 font-bold uppercase">
+                  <span
+                    style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
+                    className="text-[9px] px-2 py-0.5 rounded-md !text-white border border-slate-700 font-bold uppercase tracking-wider"
+                  >
                     {metrics?.openingBalanceMode || 'Cash'}
                   </span>
                 </div>
