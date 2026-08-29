@@ -2043,7 +2043,7 @@ const Layout = ({ children }) => {
                         setCtrlLActiveIndex(0);
                       }}
                       placeholder="Type any alphabet / name / station / code (Use ↓ ↑ & Enter)..."
-                      className="w-full bg-slate-955 border-2 border-emerald-500/50 rounded-xl px-4 py-2 text-sm text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                      className="w-full bg-white border-2 border-emerald-500 rounded-xl px-4 py-2 text-sm text-black placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
                     />
                     <span className="text-xs text-slate-400 shrink-0 font-bold px-2">
                       {ctrlLLoading ? 'Loading...' : `${filteredList.length} Ledgers`}
