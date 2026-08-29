@@ -983,34 +983,41 @@ const Layout = ({ children }) => {
 
   // Global Keydown Listener for showLedgerModal arrow navigation & Enter edit
   useEffect(() => {
+    if (!showLedgerModal || ledgerSubTab !== 'details') return;
+
     const handleLedgerModalKeyDown = (e) => {
-      if (!showLedgerModal || ledgerSubTab !== 'details' || ledgerTransactions.length === 0) return;
-      
       const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-      if (['input', 'textarea', 'select'].includes(activeTag)) return;
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+
+      const txList = ledgerTransactions || [];
+      if (txList.length === 0) return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setLedgerTxActiveIndex(prev => (prev + 1) % ledgerTransactions.length);
+        e.stopPropagation();
+        setLedgerTxActiveIndex(prev => (prev + 1) % txList.length);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setLedgerTxActiveIndex(prev => (prev - 1 + ledgerTransactions.length) % ledgerTransactions.length);
+        e.stopPropagation();
+        setLedgerTxActiveIndex(prev => (prev - 1 + txList.length) % txList.length);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        const tx = ledgerTransactions[ledgerTxActiveIndex];
+        e.stopPropagation();
+        const tx = txList[ledgerTxActiveIndex];
         if (tx) {
           setShowLedgerModal(false);
-          if (tx.refType === 'deal') {
-            navigate('/deal-master', { state: { dealNo: tx.refId } });
-          } else if (tx.refType === 'transaction') {
-            navigate('/transaction', { state: { transactionNo: tx.refId } });
+          const refType = (tx.refType || '').toLowerCase();
+          if (refType === 'deal' || refType === 'sale') {
+            navigate('/deal-master', { state: { dealNo: tx.refId || tx.no } });
+          } else if (refType === 'transaction' || refType === 'receipt' || refType === 'rcpt') {
+            navigate('/transaction', { state: { transactionNo: tx.refId || tx.no } });
           }
         }
       }
     };
 
-    window.addEventListener('keydown', handleLedgerModalKeyDown);
-    return () => window.removeEventListener('keydown', handleLedgerModalKeyDown);
+    window.addEventListener('keydown', handleLedgerModalKeyDown, true);
+    return () => window.removeEventListener('keydown', handleLedgerModalKeyDown, true);
   }, [showLedgerModal, ledgerSubTab, ledgerTransactions, ledgerTxActiveIndex, navigate]);
 
   // Global Keydown Listener for showCtrlLLookup Marg ERP 4-screen navigation & Esc hierarchical back
@@ -1822,10 +1829,10 @@ const Layout = ({ children }) => {
                           </div>
                           <button
                             onClick={handlePrintLedger}
-                            className="px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center space-x-1 font-sans font-semibold text-xs transition-colors"
+                            className="px-4 py-2 bg-slate-950 hover:bg-black text-white rounded-xl border border-slate-700 flex items-center space-x-2 font-sans font-bold text-xs shadow-md transition-all cursor-pointer"
                           >
-                            <Printer className="h-4 w-4 text-primary-400" />
-                            <span>Print Ledger</span>
+                            <Printer className="h-4 w-4 text-white" />
+                            <span className="text-white">Print Ledger</span>
                           </button>
                         </div>
                       );
@@ -1893,20 +1900,23 @@ const Layout = ({ children }) => {
                               className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none"
                             />
                           </div>
-                          <button type="submit" className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-semibold flex items-center justify-center space-x-1">
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center space-x-1"
+                          >
                             <Plus className="h-4 w-4" />
-                            <span>Post Transaction</span>
+                            <span>Save Transaction</span>
                           </button>
                         </form>
                       </div>
                     )}
 
                     {/* Transaction History log */}
-                    <div className={showTxForm ? "lg:col-span-2 space-y-4" : "w-full space-y-4"}>
-                      <div className="overflow-x-auto border border-slate-800 rounded-xl">
+                    <div className={showTxForm ? "lg:col-span-2 overflow-x-auto" : "overflow-x-auto"}>
+                      <div className="border border-slate-850 rounded-xl overflow-hidden bg-slate-950/20">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-950/40 border-b border-slate-800 text-[10px] text-slate-455 G uppercase font-bold tracking-wider">
+                            <tr className="bg-slate-900/60 text-slate-455 text-[10px] uppercase font-sans border-b border-slate-800 tracking-wider">
                               <th className="py-2.5 px-4">Date</th>
                               <th className="py-2.5 px-4">Type</th>
                               <th className="py-2.5 px-4">Source</th>
@@ -1933,33 +1943,34 @@ const Layout = ({ children }) => {
                                     }}
                                     onClick={() => {
                                       setShowLedgerModal(false);
-                                      if (t.refType === 'deal') {
-                                        navigate('/deal-master', { state: { dealNo: t.refId } });
-                                      } else if (t.refType === 'transaction') {
-                                        navigate('/transaction', { state: { transactionNo: t.refId } });
+                                      const refType = (t.refType || '').toLowerCase();
+                                      if (refType === 'deal' || refType === 'sale') {
+                                        navigate('/deal-master', { state: { dealNo: t.refId || t.no } });
+                                      } else if (refType === 'transaction' || refType === 'receipt' || refType === 'rcpt') {
+                                        navigate('/transaction', { state: { transactionNo: t.refId || t.no } });
                                       }
                                     }}
                                     onMouseEnter={() => setLedgerTxActiveIndex(idx)}
                                     className={`cursor-pointer transition-all ${
                                       isActive
-                                        ? 'bg-emerald-600 text-slate-955 font-extrabold shadow-md'
+                                        ? 'bg-emerald-600 text-white font-extrabold shadow-md'
                                         : 'hover:bg-slate-955/20 text-slate-300'
                                     }`}
                                   >
-                                    <td className="py-2 px-4">{new Date(t.date).toLocaleDateString()}</td>
-                                    <td className={`py-2 px-4 font-bold ${t.type === 'add' ? 'text-emerald-400' : 'text-rose-455'}`}>
+                                    <td className={`py-2 px-4 ${isActive ? 'text-white font-bold' : ''}`}>{new Date(t.date).toLocaleDateString()}</td>
+                                    <td className={`py-2 px-4 font-bold ${isActive ? 'text-white' : t.type === 'add' ? 'text-emerald-400' : 'text-rose-455'}`}>
                                       {t.type === 'add' ? 'ADD' : 'DEDUCT'}
                                     </td>
-                                    <td className="py-2 px-4 text-[10px] text-slate-400">{t.refType.toUpperCase()}</td>
-                                    <td className="py-2 px-4 text-slate-350 font-sans max-w-[200px] truncate" title={t.remarks}>{t.remarks}</td>
-                                    <td className="py-2 px-4 text-right font-bold">₹{t.amount.toFixed(2)}</td>
+                                    <td className={`py-2 px-4 text-[10px] ${isActive ? 'text-white/90' : 'text-slate-400'}`}>{t.refType.toUpperCase()}</td>
+                                    <td className={`py-2 px-4 font-sans max-w-[200px] truncate ${isActive ? 'text-white font-bold' : 'text-slate-350'}`} title={t.remarks}>{t.remarks}</td>
+                                    <td className={`py-2 px-4 text-right font-bold ${isActive ? 'text-white' : ''}`}>₹{t.amount.toFixed(2)}</td>
                                     <td className="py-2 px-4 text-center">
                                       {t.refType === 'manual' ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteTx(t._id); }} className="text-rose-500 hover:text-rose-400 p-0.5">
+                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteTx(t._id); }} className={`${isActive ? 'text-white' : 'text-rose-500'} hover:text-rose-300 p-0.5`}>
                                           <Trash2 className="h-4 w-4" />
                                         </button>
                                       ) : (
-                                        <span className="text-[9px] text-slate-600 font-sans italic">Auto</span>
+                                        <span className={`text-[9px] font-sans italic ${isActive ? 'text-white/80' : 'text-slate-600'}`}>Auto</span>
                                       )}
                                     </td>
                                   </tr>
