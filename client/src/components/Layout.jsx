@@ -349,15 +349,55 @@ const Layout = ({ children }) => {
     setShowCtrlLLookup(false);
     if (!txRow) return;
 
+    const statementContext = {
+      selectedLedgerItem,
+      ctrlLFromDate,
+      ctrlLToDate,
+      ctrlLStatementIndex
+    };
+
     if (txRow.target === 'deal') {
-      navigate('/deal-master', { state: { dealNo: txRow.refNo } });
+      navigate('/deal-master', { 
+        state: { 
+          dealNo: txRow.refNo,
+          fromCtrlLStatement: true,
+          statementContext
+        } 
+      });
     } else if (txRow.target === 'transaction') {
-      navigate('/transaction', { state: { transactionNo: txRow.refNo } });
+      navigate('/transaction', { 
+        state: { 
+          transactionNo: txRow.refNo,
+          fromCtrlLStatement: true,
+          statementContext
+        } 
+      });
     } else if (txRow.target === 'ledgerTx') {
       setSelectedLedgerId(selectedLedgerItem?.rawId);
       setShowLedgerModal(true);
     }
   };
+
+  // Reopen Ctrl+L Statement modal when coming back from deal-master or transaction
+  useEffect(() => {
+    const handleReopenStatement = (e) => {
+      const ctx = e.detail;
+      if (ctx && ctx.selectedLedgerItem) {
+        setSelectedLedgerItem(ctx.selectedLedgerItem);
+        if (ctx.ctrlLFromDate) setCtrlLFromDate(ctx.ctrlLFromDate);
+        if (ctx.ctrlLToDate) setCtrlLToDate(ctx.ctrlLToDate);
+        fetchLedgerStatement(ctx.selectedLedgerItem, ctx.ctrlLFromDate || ctrlLFromDate, ctx.ctrlLToDate || ctrlLToDate);
+        setCtrlLStep('statement');
+        if (ctx.ctrlLStatementIndex !== undefined) {
+          setCtrlLStatementIndex(ctx.ctrlLStatementIndex);
+        }
+        setShowCtrlLLookup(true);
+      }
+    };
+
+    window.addEventListener('reopen-ctrl-l-statement', handleReopenStatement);
+    return () => window.removeEventListener('reopen-ctrl-l-statement', handleReopenStatement);
+  }, [ctrlLFromDate, ctrlLToDate]);
 
   const fetchLedgers = async () => {
     try {

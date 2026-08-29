@@ -26,14 +26,6 @@ const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Opening Cash Modal state
-  const [showOpeningModal, setShowOpeningModal] = useState(false);
-  const [newOpeningBalance, setNewOpeningBalance] = useState('');
-  const [openingCashAmount, setOpeningCashAmount] = useState('');
-  const [openingBankAmount, setOpeningBankAmount] = useState('');
-  const [openingMode, setOpeningMode] = useState('cash');
-  const [openingCustomSource, setOpeningCustomSource] = useState('');
-
   // Scoped date state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [dateMode, setDateMode] = useState('today'); // 'today' or 'tomorrow'
@@ -143,54 +135,9 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Main Financial Balance Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
-            {/* CARD 1: Opening Balance */}
-            <div 
-              onClick={() => {
-                setNewOpeningBalance(metrics?.openingBalance || 0);
-                setOpeningCashAmount(metrics?.openingCashBalance || 0);
-                setOpeningBankAmount(metrics?.openingBankBalance || 0);
-                setOpeningMode(metrics?.openingBalanceMode || 'cash');
-                setOpeningCustomSource(metrics?.openingBalanceCustomSource || '');
-                setShowOpeningModal(true);
-              }}
-              className="glass-panel p-4 rounded-xl border-l-4 border-l-sky-500 shadow-md animate-slide-in cursor-pointer hover:border-sky-400 transition group overflow-hidden flex flex-col justify-between"
-            >
-              <div className="flex justify-between items-center mb-1">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Opening Balance</span>
-                  {metrics?.openingBalanceMode === 'bank' ? (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">Bank</span>
-                  ) : metrics?.openingBalanceMode === 'both' ? (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Cash + Bank</span>
-                  ) : metrics?.openingBalanceMode === 'other' ? (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                      {metrics?.openingBalanceCustomSource || 'Other'}
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Cash</span>
-                  )}
-                </div>
-                <div className="p-1.5 bg-sky-500/10 rounded-lg text-sky-400 border border-sky-500/20 group-hover:scale-105 transition shrink-0">
-                  <DollarSign className="h-4 w-4" />
-                </div>
-              </div>
-              
-              <div className="text-lg sm:text-xl font-bold font-mono text-slate-100 group-hover:text-sky-400 transition break-all tracking-tight my-1">
-                ₹{formatIndianCurrency(Math.abs(metrics?.openingBalance || 0))}
-              </div>
-
-              {metrics?.openingBalanceMode === 'both' ? (
-                <span className="text-[10px] text-amber-400/90 font-mono break-all block">
-                  Cash: ₹{formatIndianCurrency(metrics?.openingCashBalance || 0)} | Bank: ₹{formatIndianCurrency(metrics?.openingBankBalance || 0)}
-                </span>
-              ) : (
-                <span className="text-[9px] text-slate-500 block">Click to edit amount &amp; mode</span>
-              )}
-            </div>
-
-            {/* CARD 2: Cash in Hand */}
+            {/* CARD 1: Cash in Hand */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-primary-500 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash In Hand</span>
@@ -203,7 +150,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* CARD 3: Bank Balance */}
+            {/* CARD 2: Bank Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-emerald-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bank Balance</span>
@@ -216,7 +163,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* CARD 4: Closing Balance */}
+            {/* CARD 3: Closing Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-amber-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Closing Balance</span>
@@ -430,165 +377,7 @@ const Dashboard = () => {
           </div>
         </>
       )}
-      {/* EDIT OPENING BALANCE MODAL */}
-      {showOpeningModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in font-sans">
-          <div className="w-full max-w-md bg-white border-2 border-slate-300 rounded-2xl p-6 shadow-2xl space-y-4" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            <div className="border-b border-slate-200 pb-3">
-              <h3 className="text-base font-black" style={{ color: '#000000' }}>Set Opening Balance &amp; Source</h3>
-              <p className="text-xs mt-0.5" style={{ color: '#475569' }}>Define initial opening capital amount and where it opened from (Cash/Bank/Other).</p>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-black block mb-1.5" style={{ color: '#0f172a' }}>Opening Source (बैलेंस माध्यम):</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
-                  <button
-                    type="button"
-                    onClick={() => setOpeningMode('cash')}
-                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
-                      openingMode === 'cash'
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-500 shadow-sm font-black'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
-                    }`}
-                  >
-                    Cash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpeningMode('bank')}
-                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
-                      openingMode === 'bank'
-                        ? 'bg-blue-100 text-blue-900 border-blue-500 shadow-sm font-black'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
-                    }`}
-                  >
-                    Bank
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpeningMode('both')}
-                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
-                      openingMode === 'both'
-                        ? 'bg-amber-100 text-amber-900 border-amber-500 shadow-sm font-black'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
-                    }`}
-                  >
-                    Cash + Bank
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpeningMode('other')}
-                    className={`px-3 py-2 rounded-xl text-xs font-black border transition flex items-center justify-center gap-1 ${
-                      openingMode === 'other'
-                        ? 'bg-purple-100 text-purple-900 border-purple-500 shadow-sm font-black'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
-                    }`}
-                  >
-                    Other
-                  </button>
-                </div>
-              </div>
-
-              {openingMode === 'both' ? (
-                <div className="space-y-3 pt-1 border-t border-slate-200">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-black block mb-1" style={{ color: '#065f46' }}>Cash Opening (₹):</label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 1000"
-                        value={openingCashAmount}
-                        onChange={(e) => {
-                          const cash = Number(e.target.value || 0);
-                          setOpeningCashAmount(cash);
-                          setNewOpeningBalance(cash + Number(openingBankAmount || 0));
-                        }}
-                        style={{ color: '#000000', backgroundColor: '#ffffff' }}
-                        className="w-full px-3 py-2 bg-white border-2 border-emerald-500 rounded-xl text-sm font-mono font-black focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-black block mb-1" style={{ color: '#1e40af' }}>Bank Opening (₹):</label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 2000"
-                        value={openingBankAmount}
-                        onChange={(e) => {
-                          const bank = Number(e.target.value || 0);
-                          setOpeningBankAmount(bank);
-                          setNewOpeningBalance(Number(openingCashAmount || 0) + bank);
-                        }}
-                        style={{ color: '#000000', backgroundColor: '#ffffff' }}
-                        className="w-full px-3 py-2 bg-white border-2 border-blue-500 rounded-xl text-sm font-mono font-black focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-amber-50 border-2 border-amber-300 rounded-xl flex justify-between items-center text-xs font-mono text-amber-950">
-                    <span className="font-bold">Total Opening Balance (Cash + Bank):</span>
-                    <span className="font-black text-sm" style={{ color: '#000000' }}>
-                      ₹{formatIndianCurrency((Number(openingCashAmount || 0)) + (Number(openingBankAmount || 0)))}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-black block mb-1" style={{ color: '#0f172a' }}>Opening Balance Amount (₹):</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 1500000"
-                    value={newOpeningBalance}
-                    onChange={(e) => setNewOpeningBalance(e.target.value)}
-                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
-                    className="w-full px-4 py-2.5 bg-white border-2 border-sky-500 rounded-xl text-base font-mono font-black focus:outline-none shadow-sm"
-                  />
-                </div>
-              )}
-
-              {openingMode === 'other' && (
-                <div className="animate-fade-in">
-                  <label className="text-xs font-black block mb-1" style={{ color: '#581c87' }}>Custom Source Name (अन्य नाम):</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Owner Capital, Personal Account..."
-                    value={openingCustomSource}
-                    onChange={(e) => setOpeningCustomSource(e.target.value)}
-                    style={{ color: '#000000', backgroundColor: '#ffffff' }}
-                    className="w-full px-4 py-2 bg-white border-2 border-purple-500 rounded-xl text-sm font-bold focus:outline-none"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await axios.post('/api/dashboard/opening-balance', { 
-                      amount: Number(newOpeningBalance || 0),
-                      cashAmount: Number(openingCashAmount || 0),
-                      bankAmount: Number(openingBankAmount || 0),
-                      mode: openingMode,
-                      customSource: openingCustomSource
-                    });
-                    setShowOpeningModal(false);
-                    fetchData();
-                  } catch (err) { console.error(err); }
-                }}
-                className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-xl text-xs transition shadow-md cursor-pointer"
-              >
-                Save Opening Balance
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowOpeningModal(false)}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-900 font-bold rounded-xl text-xs transition cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* EDIT OPENING BALANCE MODAL REMOVED */}
     </div>
   );
 };

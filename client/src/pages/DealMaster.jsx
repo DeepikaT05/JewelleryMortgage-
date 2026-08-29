@@ -302,6 +302,27 @@ const DealMaster = () => {
     init();
   }, [location.key, location.state]);
 
+  // Return to Statement modal on Escape if opened from Ctrl+L Statement
+  useEffect(() => {
+    const handleEscapeBack = (e) => {
+      if (e.key === 'Escape') {
+        if (custFocusField) {
+          setCustFocusField(null);
+          setCustDropdownIdx(-1);
+          return;
+        }
+        if (location.state?.fromCtrlLStatement || location.state?.statementContext) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reopen-ctrl-l-statement', {
+            detail: location.state.statementContext
+          }));
+        }
+      }
+    };
+    window.addEventListener('keydown', handleEscapeBack, true);
+    return () => window.removeEventListener('keydown', handleEscapeBack, true);
+  }, [location.state, custFocusField]);
+
   const fetchDealDetails = async (id) => {
     try {
       const res = await axios.get(`/api/deals/${id}`);

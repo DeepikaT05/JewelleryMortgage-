@@ -156,6 +156,27 @@ const Transaction = () => {
     initializeTransaction();
   }, [location.key, location.state]);
 
+  // Return to Statement modal on Escape if opened from Ctrl+L Statement
+  useEffect(() => {
+    const handleEscapeBack = (e) => {
+      if (e.key === 'Escape') {
+        if (custFocusField) {
+          setCustFocusField(null);
+          setCustDropdownIdx(-1);
+          return;
+        }
+        if (location.state?.fromCtrlLStatement || location.state?.statementContext) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reopen-ctrl-l-statement', {
+            detail: location.state.statementContext
+          }));
+        }
+      }
+    };
+    window.addEventListener('keydown', handleEscapeBack, true);
+    return () => window.removeEventListener('keydown', handleEscapeBack, true);
+  }, [location.state, custFocusField]);
+
   const triggerAutoCalc = async (dealId, dateStr) => {
     if (!dealId || !dateStr) return;
     const myReqId = ++calcReqId.current; // bump and capture current id
