@@ -414,12 +414,14 @@ const Layout = ({ children }) => {
   const fetchLedgers = async () => {
     try {
       const res = await axios.get('/api/ledgers');
-      setLedgers(res.data);
-      if (res.data.length > 0 && !selectedLedgerId) {
-        setSelectedLedgerId(res.data[0]._id);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setLedgers(data);
+      if (data.length > 0 && !selectedLedgerId) {
+        setSelectedLedgerId(data[0]._id);
       }
     } catch (err) {
       console.error('Error fetching ledgers:', err);
+      setLedgers([]);
     }
   };
 
@@ -427,10 +429,12 @@ const Layout = ({ children }) => {
     if (!id) return;
     try {
       const res = await axios.get(`/api/ledgers/${id}/transactions`);
-      setLedgerTransactions(res.data);
+      const txs = Array.isArray(res.data) ? res.data : (res.data?.transactions || []);
+      setLedgerTransactions(txs);
       setLedgerTxActiveIndex(0);
     } catch (err) {
       console.error('Error fetching ledger transactions:', err);
+      setLedgerTransactions([]);
     }
   };
 
@@ -699,7 +703,7 @@ const Layout = ({ children }) => {
               </tr>
             </thead>
             <tbody>
-              ${ledgerTransactions.map(t => `
+              ${(ledgerTransactions || []).map(t => `
                 <tr>
                   <td>${new Date(t.date).toLocaleDateString()}</td>
                   <td style="color: ${t.type === 'add' ? 'green' : 'red'}; text-transform: uppercase; font-weight: bold;">
@@ -710,7 +714,7 @@ const Layout = ({ children }) => {
                   <td class="amount">₹${t.amount.toFixed(2)}</td>
                 </tr>
               `).join('')}
-              ${ledgerTransactions.length === 0 ? '<tr><td colspan="5" style="text-align: center;">No transactions found.</td></tr>' : ''}
+              ${(!ledgerTransactions || ledgerTransactions.length === 0) ? '<tr><td colspan="5" style="text-align: center;">No transactions found.</td></tr>' : ''}
             </tbody>
           </table>
           <script>window.print();</script>
@@ -1912,12 +1916,12 @@ const Layout = ({ children }) => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-850 text-xs font-mono">
-                            {ledgerTransactions.length === 0 ? (
+                            {(!ledgerTransactions || ledgerTransactions.length === 0) ? (
                               <tr>
                                 <td colSpan="6" className="py-4 text-center text-slate-500 italic font-sans">No transactions recorded.</td>
                               </tr>
                             ) : (
-                              ledgerTransactions.map((t, idx) => {
+                              (ledgerTransactions || []).map((t, idx) => {
                                 const isActive = ledgerTxActiveIndex === idx;
                                 return (
                                   <tr
