@@ -1909,29 +1909,28 @@ const Layout = ({ children }) => {
         });
 
         const activeLedger = filteredList[ctrlLActiveIndex] || filteredList[0] || {};
-        const companyName = companyDetails?.name || 'TAMRAKAR AGROTECH-DURG';
         const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 md:p-4 no-print font-mono">
-            <div className="bg-slate-950 border-2 border-emerald-600/70 rounded-xl max-w-6xl w-full shadow-2xl overflow-hidden text-slate-200 flex flex-col max-h-[92vh] text-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1 md:p-3 no-print font-mono">
+            <div className="bg-slate-950 border-2 border-emerald-600/70 rounded-2xl w-[98vw] max-w-[1750px] h-[95vh] shadow-2xl overflow-hidden text-slate-200 flex flex-col text-xs md:text-sm">
               
               {/* TOP MARG ERP GREEN BANNER */}
-              <div className="bg-emerald-950/90 border-b border-emerald-600/60 px-4 py-2 flex justify-between items-center text-emerald-300 font-bold shrink-0">
+              <div className="bg-emerald-950/90 border-b border-emerald-600/60 px-5 py-3 flex justify-between items-center text-emerald-300 font-bold shrink-0">
                 <div className="flex items-center space-x-3">
-                  <span className="bg-emerald-800 text-slate-950 px-2 py-0.5 rounded font-extrabold uppercase text-[11px]">
+                  <span className="bg-emerald-800 text-slate-950 px-2.5 py-1 rounded font-extrabold uppercase text-xs md:text-sm">
                     {ctrlLStep === 'list' ? 'LEDGER ACCOUNTS' : ctrlLStep === 'datePrompt' ? 'LEDGER DISPLAY' : 'STATEMENT OF ACCOUNT'}
                   </span>
-                  <span className="text-emerald-100 text-sm tracking-wide">{companyName}</span>
+                  <span className="text-emerald-100 text-base md:text-lg font-black tracking-wide">{companyName}</span>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className="text-[11px] text-emerald-400 font-semibold">Upto : {todayStr}</span>
+                  <span className="text-xs md:text-sm text-emerald-400 font-bold">Upto : {todayStr}</span>
                   <button
                     type="button"
                     onClick={() => setShowCtrlLLookup(false)}
-                    className="text-slate-400 hover:text-white p-1 rounded-lg"
+                    className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
                   >
-                    <X className="h-4 w-4 text-emerald-400" />
+                    <X className="h-5 w-5 text-emerald-400" />
                   </button>
                 </div>
               </div>
@@ -1940,8 +1939,8 @@ const Layout = ({ children }) => {
               {ctrlLStep === 'list' && (
                 <div className="flex flex-col flex-1 overflow-hidden">
                   {/* Filter Search Input */}
-                  <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center space-x-3 shrink-0">
-                    <Search className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <div className="p-3.5 bg-slate-900 border-b border-slate-800 flex items-center space-x-3 shrink-0">
+                    <Search className="h-5 w-5 text-emerald-400 shrink-0" />
                     <input
                       ref={ctrlLSearchInputRef}
                       type="text"
@@ -1952,9 +1951,9 @@ const Layout = ({ children }) => {
                         setCtrlLActiveIndex(0);
                       }}
                       placeholder="Type any alphabet / name / station / code (Use ↓ ↑ & Enter)..."
-                      className="w-full bg-slate-955 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-slate-955 border-2 border-emerald-500/50 rounded-xl px-4 py-2 text-sm text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
                     />
-                    <span className="text-[10px] text-slate-400 shrink-0 font-bold">
+                    <span className="text-xs text-slate-400 shrink-0 font-bold px-2">
                       {ctrlLLoading ? 'Loading...' : `${filteredList.length} Ledgers`}
                     </span>
                   </div>
@@ -1963,14 +1962,14 @@ const Layout = ({ children }) => {
                   <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
                     {/* Left: Ledgers Table (8 Cols) */}
                     <div className="lg:col-span-8 border-r border-slate-800 flex flex-col overflow-hidden bg-slate-955">
-                      <div className="grid grid-cols-12 bg-slate-900 border-b border-slate-800 p-2 text-[11px] font-bold text-emerald-400 tracking-wider shrink-0">
+                      <div className="grid grid-cols-12 bg-slate-900 border-b border-slate-800 p-3 text-xs md:text-sm font-bold text-emerald-400 tracking-wider shrink-0">
                         <span className="col-span-5">LEDGER NAME</span>
                         <span className="col-span-3 text-center">STATION / AREA</span>
                         <span className="col-span-2 text-right">DEBIT (Dr)</span>
                         <span className="col-span-2 text-right">CREDIT (Cr)</span>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+                      <div className="flex-1 overflow-y-auto p-1.5 space-y-1">
                         {filteredList.map((item, idx) => {
                           const isActive = ctrlLActiveIndex === idx;
                           return (
@@ -1983,14 +1982,14 @@ const Layout = ({ children }) => {
                               }}
                               onClick={() => handleSelectCombinedLedger(item)}
                               onMouseEnter={() => setCtrlLActiveIndex(idx)}
-                              className={`grid grid-cols-12 p-2 rounded text-xs cursor-pointer items-center transition-all ${
+                              className={`grid grid-cols-12 p-2.5 rounded-lg text-xs md:text-sm cursor-pointer items-center transition-all ${
                                 isActive
                                   ? 'bg-emerald-600 text-slate-950 font-extrabold shadow-md scale-[1.002]'
                                   : 'hover:bg-slate-900 text-slate-200 border-b border-slate-900/60'
                               }`}
                             >
                               <div className="col-span-5 truncate flex items-center space-x-2">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-slate-950' : 'bg-emerald-400'}`} />
+                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-slate-950' : 'bg-emerald-400'}`} />
                                 <span className="truncate uppercase font-bold">{item.name}</span>
                               </div>
                               <span className={`col-span-3 text-center truncate ${isActive ? 'text-slate-900' : 'text-rose-300 font-semibold'}`}>
@@ -2007,54 +2006,54 @@ const Layout = ({ children }) => {
                         })}
 
                         {!ctrlLLoading && filteredList.length === 0 && (
-                          <div className="p-8 text-center text-slate-500 italic">No matching ledgers found.</div>
+                          <div className="p-12 text-center text-slate-500 italic text-sm">No matching ledgers found.</div>
                         )}
                       </div>
                     </div>
 
                     {/* Right: Marg ERP Status Panel (4 Cols) */}
-                    <div className="lg:col-span-4 bg-slate-900 p-4 flex flex-col justify-between overflow-y-auto space-y-4 text-xs border-l border-slate-800">
+                    <div className="lg:col-span-4 bg-slate-900 p-5 flex flex-col justify-between overflow-y-auto space-y-4 text-xs md:text-sm border-l border-slate-800">
                       <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2">
-                          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Current Status</span>
-                          <span className="text-sm font-bold text-white uppercase block mt-1">{activeLedger.name || 'CASH'}</span>
-                          <span className="text-[10px] text-slate-400 font-mono block">{activeLedger.type} • {activeLedger.code}</span>
+                        <div className="border-b border-slate-800 pb-3">
+                          <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider block">Current Status</span>
+                          <span className="text-base font-bold text-white uppercase block mt-1">{activeLedger.name || 'CASH'}</span>
+                          <span className="text-xs text-slate-400 font-mono block">{activeLedger.type} • {activeLedger.code}</span>
                         </div>
 
-                        <div className="space-y-2 font-mono text-xs">
-                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                        <div className="space-y-2.5 font-mono text-xs md:text-sm">
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1.5">
                             <span className="text-slate-400">Opening :</span>
                             <span className="text-slate-200 font-bold">{(activeLedger.opening || 0).toFixed(2)} Dr</span>
                           </div>
-                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1.5">
                             <span className="text-slate-400">Debit :</span>
                             <span className="text-emerald-400 font-bold">{(activeLedger.debit || 0).toFixed(2)} Dr</span>
                           </div>
-                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1.5">
                             <span className="text-slate-400">Credit :</span>
                             <span className="text-rose-400 font-bold">{(activeLedger.credit || 0).toFixed(2)} Cr</span>
                           </div>
-                          <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                          <div className="flex justify-between border-b border-slate-800/60 pb-1.5">
                             <span className="text-slate-400">Balance :</span>
                             <span className="text-amber-400 font-extrabold font-mono">{(activeLedger.balance || 0).toFixed(2)} {activeLedger.balanceType || 'Dr'}</span>
                           </div>
                           <div className="flex justify-between pt-1 font-bold">
                             <span className="text-emerald-300">Net :</span>
-                            <span className="text-emerald-300 font-mono font-extrabold">{(activeLedger.balance || 0).toFixed(2)} {activeLedger.balanceType || 'Dr'}</span>
+                            <span className="text-emerald-300 font-mono font-extrabold text-base">{(activeLedger.balance || 0).toFixed(2)} {activeLedger.balanceType || 'Dr'}</span>
                           </div>
                         </div>
 
-                        <div className="border-t border-slate-800 pt-3 space-y-1.5 text-[11px]">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase block">Master Details</span>
-                          <div><span className="text-slate-500">Address:</span> <span className="text-slate-300">{activeLedger.address || activeLedger.area || '-'}</span></div>
-                          <div><span className="text-slate-500">Phone:</span> <span className="text-slate-300">{activeLedger.mobile || '-'}</span></div>
-                          <div><span className="text-slate-500">GSTN:</span> <span className="text-slate-300">{activeLedger.gstin || '-'}</span></div>
-                          <div><span className="text-slate-500">State:</span> <span className="text-slate-300">{activeLedger.state || '22-CHHATTISGARH'}</span></div>
+                        <div className="border-t border-slate-800 pt-3.5 space-y-2 text-xs">
+                          <span className="text-[11px] text-slate-500 font-bold uppercase block">Master Details</span>
+                          <div><span className="text-slate-500">Address:</span> <span className="text-slate-300 font-bold">{activeLedger.address || activeLedger.area || '-'}</span></div>
+                          <div><span className="text-slate-500">Phone:</span> <span className="text-slate-300 font-bold">{activeLedger.mobile || '-'}</span></div>
+                          <div><span className="text-slate-500">GSTN:</span> <span className="text-slate-300 font-bold">{activeLedger.gstin || '-'}</span></div>
+                          <div><span className="text-slate-500">State:</span> <span className="text-slate-300 font-bold">{activeLedger.state || '22-CHHATTISGARH'}</span></div>
                         </div>
                       </div>
 
-                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[10px] text-slate-400 font-mono text-center">
-                        Press <kbd className="bg-emerald-950 text-emerald-400 px-1 py-0.5 rounded font-bold">Enter</kbd> to view statement
+                      <div className="bg-slate-955 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono text-center">
+                        Press <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Enter</kbd> to view statement
                       </div>
                     </div>
                   </div>
@@ -2063,33 +2062,33 @@ const Layout = ({ children }) => {
 
               {/* SCREEN 2: LEDGER DISPLAY DATE RANGE PROMPT MODAL */}
               {ctrlLStep === 'datePrompt' && (
-                <div className="flex-1 flex items-center justify-center p-6 bg-slate-950/90 relative">
-                  <div className="bg-slate-900 border-2 border-emerald-500 rounded-xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
-                    <div className="border-b border-emerald-600/50 pb-2 flex justify-between items-center">
-                      <h3 className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">LEDGER DISPLAY</h3>
-                      <span className="text-xs font-bold text-white uppercase">{selectedLedgerItem?.name}</span>
+                <div className="flex-1 flex items-center justify-center p-6 bg-slate-955 relative">
+                  <div className="bg-slate-900 border-2 border-emerald-500 rounded-2xl p-8 max-w-xl w-full shadow-2xl space-y-6 animate-in fade-in zoom-in duration-150">
+                    <div className="border-b border-emerald-600/50 pb-3 flex justify-between items-center">
+                      <h3 className="text-base font-black text-emerald-400 uppercase tracking-wider">LEDGER DISPLAY</h3>
+                      <span className="text-sm font-bold text-white uppercase">{selectedLedgerItem?.name}</span>
                     </div>
 
-                    <div className="bg-slate-955 p-4 rounded-xl border border-slate-800 space-y-4">
-                      <div className="flex items-center justify-center space-x-3 text-xs">
-                        <span className="font-bold text-slate-300 uppercase">FROM</span>
+                    <div className="bg-slate-955 p-5 rounded-2xl border border-slate-800 space-y-5">
+                      <div className="flex items-center justify-center space-x-4 text-sm">
+                        <span className="font-black text-slate-300 uppercase">FROM</span>
                         <input
                           type="date"
                           autoFocus
                           value={ctrlLFromDate}
                           onChange={(e) => setCtrlLFromDate(e.target.value)}
-                          className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
+                          className="bg-slate-900 border-2 border-emerald-500 rounded-xl px-4 py-2 text-emerald-300 font-black focus:outline-none"
                         />
-                        <span className="font-bold text-slate-300 uppercase">TO</span>
+                        <span className="font-black text-slate-300 uppercase">TO</span>
                         <input
                           type="date"
                           value={ctrlLToDate}
                           onChange={(e) => setCtrlLToDate(e.target.value)}
-                          className="bg-slate-900 border border-emerald-500 rounded-lg px-3 py-1.5 text-emerald-300 font-bold focus:outline-none"
+                          className="bg-slate-900 border-2 border-emerald-500 rounded-xl px-4 py-2 text-emerald-300 font-black focus:outline-none"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3">
                         {[
                           { label: 'LEDGER', idx: 0 },
                           { label: 'MONTHLY', idx: 1 },
@@ -2111,7 +2110,7 @@ const Layout = ({ children }) => {
                                 }
                               }}
                               onMouseEnter={() => setDatePromptActiveBtn(btn.idx)}
-                              className={`px-3 py-2.5 rounded-xl text-xs font-black shadow-lg uppercase transition-all flex items-center justify-center ${
+                              className={`px-4 py-3 rounded-xl text-xs font-black shadow-lg uppercase transition-all flex items-center justify-center cursor-pointer ${
                                 isActive
                                   ? 'bg-emerald-500 text-slate-955 ring-4 ring-emerald-400 scale-105 shadow-2xl font-black'
                                   : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750'
@@ -2124,8 +2123,8 @@ const Layout = ({ children }) => {
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 font-mono text-center">
-                      Use <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">←</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">→</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">Enter</kbd> to Select Option
+                    <div className="text-xs text-slate-400 font-mono text-center">
+                      Use <kbd className="bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded">←</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded">→</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded">Enter</kbd> to Select Option
                     </div>
                   </div>
                 </div>
@@ -2135,19 +2134,20 @@ const Layout = ({ children }) => {
               {ctrlLStep === 'statement' && (
                 <div className="flex flex-col flex-1 overflow-hidden bg-slate-955">
                   {/* Header info */}
-                  <div className="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center text-xs shrink-0">
-                    <div className="flex items-center space-x-2">
+                  <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center text-xs md:text-sm shrink-0">
+                    <div className="flex items-center space-x-3">
                       <span className="text-slate-300 uppercase font-bold">LEDGER STATEMENT: </span>
-                      <span className="text-emerald-300 font-black text-sm uppercase bg-slate-950 px-3 py-1 rounded-lg border border-emerald-500/60 tracking-wider shadow-md">
+                      <span className="text-emerald-300 font-black text-sm md:text-base uppercase bg-slate-950 px-4 py-1.5 rounded-xl border border-emerald-500/60 tracking-wider shadow-md">
                         {selectedLedgerItem?.name}
                       </span>
-                      <span className="text-emerald-400 font-mono text-xs font-bold">({selectedLedgerItem?.type})</span>
+                      <span className="text-emerald-400 font-mono text-xs md:text-sm font-bold">({selectedLedgerItem?.type})</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-emerald-400 font-mono font-bold">Period: {ctrlLFromDate} to {ctrlLToDate}</span>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-emerald-400 font-mono font-bold text-xs md:text-sm">Period: {ctrlLFromDate} to {ctrlLToDate}</span>
                       <button
+                        type="button"
                         onClick={() => setCtrlLStep('datePrompt')}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold"
+                        className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
                       >
                         Change Period
                       </button>
@@ -2155,21 +2155,21 @@ const Layout = ({ children }) => {
                   </div>
 
                   {/* Transactions Table */}
-                  <div className="flex-1 overflow-y-auto p-2">
-                    <table className="w-full text-left text-xs border-collapse">
+                  <div className="flex-1 overflow-y-auto p-3">
+                    <table className="w-full text-left text-xs md:text-sm border-collapse">
                       <thead>
-                        <tr className="bg-slate-900 border-b border-slate-800 text-[11px] font-bold text-emerald-400 uppercase">
-                          <th className="py-2.5 px-3">Date</th>
-                          <th className="py-2.5 px-3">Type</th>
-                          <th className="py-2.5 px-3">Narration / Particulars</th>
-                          <th className="py-2.5 px-3 text-right">Receipt (Dr)</th>
-                          <th className="py-2.5 px-3 text-right">Payment (Cr)</th>
-                          <th className="py-2.5 px-3 text-right">Balance</th>
+                        <tr className="bg-slate-900 border-b-2 border-slate-800 text-xs md:text-sm font-black text-emerald-400 uppercase sticky top-0 z-10">
+                          <th className="py-3 px-4">Date</th>
+                          <th className="py-3 px-4">Type</th>
+                          <th className="py-3 px-4">Narration / Particulars</th>
+                          <th className="py-3 px-4 text-right">Receipt (Dr)</th>
+                          <th className="py-3 px-4 text-right">Payment (Cr)</th>
+                          <th className="py-3 px-4 text-right">Balance</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-900/60 font-mono">
                         {ctrlLStatementLoading ? (
-                          <tr><td colSpan="6" className="p-8 text-center text-emerald-400 font-bold">Loading statement...</td></tr>
+                          <tr><td colSpan="6" className="p-12 text-center text-emerald-400 font-bold text-base">Loading statement...</td></tr>
                         ) : ctrlLStatement.map((row, idx) => {
                           const isActive = ctrlLStatementIndex === idx;
                           return (
@@ -2188,12 +2188,12 @@ const Layout = ({ children }) => {
                                   : 'hover:bg-slate-900 text-slate-200'
                               }`}
                             >
-                              <td className="py-2 px-3 font-bold whitespace-nowrap">{row.date}</td>
-                              <td className="py-2 px-3 font-bold">{row.type}</td>
-                              <td className="py-2 px-3 text-xs max-w-xs truncate" title={row.narration}>{row.narration}</td>
-                              <td className="py-2 px-3 text-right font-bold">{row.receipt > 0 ? row.receipt.toFixed(2) : '-'}</td>
-                              <td className="py-2 px-3 text-right font-bold">{row.payment > 0 ? row.payment.toFixed(2) : '-'}</td>
-                              <td className="py-2 px-3 text-right font-bold whitespace-nowrap">
+                              <td className="py-2.5 px-4 font-bold whitespace-nowrap">{row.date}</td>
+                              <td className="py-2.5 px-4 font-bold">{row.type}</td>
+                              <td className="py-2.5 px-4 max-w-sm truncate" title={row.narration}>{row.narration}</td>
+                              <td className="py-2.5 px-4 text-right font-bold">{row.receipt > 0 ? row.receipt.toFixed(2) : '-'}</td>
+                              <td className="py-2.5 px-4 text-right font-bold">{row.payment > 0 ? row.payment.toFixed(2) : '-'}</td>
+                              <td className="py-2.5 px-4 text-right font-bold whitespace-nowrap">
                                 {Math.abs(row.balance).toFixed(2)} {row.balanceType}
                               </td>
                             </tr>
@@ -2201,38 +2201,38 @@ const Layout = ({ children }) => {
                         })}
 
                         {!ctrlLStatementLoading && ctrlLStatement.length === 0 && (
-                          <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No bills or transactions in this period.</td></tr>
+                          <tr><td colSpan="6" className="p-12 text-center text-slate-500 italic text-sm">No bills or transactions in this period.</td></tr>
                         )}
                       </tbody>
                     </table>
                   </div>
 
                   {/* Summary Footer */}
-                  <div className="p-3 bg-slate-900 border-t border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono shrink-0">
-                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[10px] text-slate-500 font-sans block uppercase">Opening</span>
-                      <span className="text-slate-200 font-bold">{ctrlLSummary.opening.toFixed(2)} Dr</span>
+                  <div className="p-4 bg-slate-900 border-t-2 border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs md:text-sm font-mono shrink-0">
+                    <div className="bg-slate-955 p-3 rounded-xl border border-slate-800 shadow-sm">
+                      <span className="text-xs text-slate-500 font-sans block uppercase font-bold">Opening</span>
+                      <span className="text-slate-200 font-bold text-sm md:text-base mt-0.5 block">{ctrlLSummary.opening.toFixed(2)} Dr</span>
                     </div>
-                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[10px] text-emerald-400 font-sans block uppercase">Total Receipt</span>
-                      <span className="text-emerald-400 font-bold">{ctrlLSummary.totalReceipt.toFixed(2)}</span>
+                    <div className="bg-slate-955 p-3 rounded-xl border border-slate-800 shadow-sm">
+                      <span className="text-xs text-emerald-400 font-sans block uppercase font-bold">Total Receipt</span>
+                      <span className="text-emerald-400 font-bold text-sm md:text-base mt-0.5 block">{ctrlLSummary.totalReceipt.toFixed(2)}</span>
                     </div>
-                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[10px] text-rose-400 font-sans block uppercase">Total Payment</span>
-                      <span className="text-rose-400 font-bold">{ctrlLSummary.totalPayment.toFixed(2)}</span>
+                    <div className="bg-slate-955 p-3 rounded-xl border border-slate-800 shadow-sm">
+                      <span className="text-xs text-rose-400 font-sans block uppercase font-bold">Total Payment</span>
+                      <span className="text-rose-400 font-bold text-sm md:text-base mt-0.5 block">{ctrlLSummary.totalPayment.toFixed(2)}</span>
                     </div>
-                    <div className="bg-slate-955 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[10px] text-emerald-400 font-sans block uppercase">Closing Balance</span>
-                      <span className="text-emerald-300 font-black">{Math.abs(ctrlLSummary.closing).toFixed(2)} {ctrlLSummary.closing >= 0 ? 'Dr' : 'Cr'}</span>
+                    <div className="bg-slate-955 p-3 rounded-xl border-2 border-emerald-500/60 shadow-sm">
+                      <span className="text-xs text-emerald-400 font-sans block uppercase font-bold">Closing Balance</span>
+                      <span className="text-emerald-300 font-black text-sm md:text-lg mt-0.5 block">{Math.abs(ctrlLSummary.closing).toFixed(2)} {ctrlLSummary.closing >= 0 ? 'Dr' : 'Cr'}</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* FOOTER SHORTCUT HINT */}
-              <div className="bg-slate-955 px-4 py-2 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-400 font-mono shrink-0">
-                <span>Use <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↑</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1 py-0.5 rounded">↓</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">Enter</kbd> to Select / Edit Bill</span>
-                <span>Press <kbd className="bg-slate-800 text-slate-300 px-1 py-0.5 rounded">Esc</kbd> to Go Back / Close</span>
+              <div className="bg-slate-955 px-6 py-2.5 border-t border-slate-900 flex justify-between items-center text-xs text-slate-400 font-mono shrink-0">
+                <span>Use <kbd className="bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded">↑</kbd> <kbd className="bg-slate-800 text-emerald-400 px-1.5 py-0.5 rounded">↓</kbd> Arrow keys &amp; <kbd className="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded">Enter</kbd> to Select / Edit Bill</span>
+                <span>Press <kbd className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">Esc</kbd> to Go Back / Close</span>
               </div>
 
             </div>

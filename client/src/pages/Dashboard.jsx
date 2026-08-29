@@ -109,22 +109,6 @@ const Dashboard = () => {
               Tomorrow
             </button>
           </div>
-
-          <button
-            onClick={() => { setNewOpeningBalance(metrics?.openingBalance || ''); setShowOpeningModal(true); }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-sky-400 rounded-xl text-xs font-semibold transition-all whitespace-nowrap"
-          >
-            <DollarSign className="h-3.5 w-3.5" />
-            <span>Set Opening Cash</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/deal-master')}
-            className="flex items-center space-x-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md shadow-primary-950/20 whitespace-nowrap"
-          >
-            <Coins className="h-4 w-4" />
-            <span>New Pledge Loan (Deal)</span>
-          </button>
         </div>
       </div>
 
