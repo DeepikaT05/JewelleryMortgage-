@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { formatIndianCurrency } from '../utils/format';
 import Toast from '../components/Toast';
@@ -11,7 +12,28 @@ import {
 } from 'lucide-react';
 
 const Operations = () => {
-  const [activeTab, setActiveTab] = useState('contra'); // 'contra', 'receipt', 'payment', 'general'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (tabParam && ['contra', 'receipt', 'payment', 'general', 'journal'].includes(tabParam.toLowerCase())) {
+      return tabParam.toLowerCase() === 'journal' ? 'general' : tabParam.toLowerCase();
+    }
+    return 'contra';
+  });
+
+  useEffect(() => {
+    if (tabParam && ['contra', 'receipt', 'payment', 'general', 'journal'].includes(tabParam.toLowerCase())) {
+      const target = tabParam.toLowerCase() === 'journal' ? 'general' : tabParam.toLowerCase();
+      setActiveTab(target);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -384,7 +406,7 @@ const Operations = () => {
         {/* OPERATION TYPE SELECTOR TABS */}
         <div className="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-850">
           <button
-            onClick={() => setActiveTab('contra')}
+            onClick={() => handleTabChange('contra')}
             className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
               activeTab === 'contra' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -393,7 +415,7 @@ const Operations = () => {
             <span>Contra Transfer</span>
           </button>
           <button
-            onClick={() => setActiveTab('receipt')}
+            onClick={() => handleTabChange('receipt')}
             className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
               activeTab === 'receipt' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -402,7 +424,7 @@ const Operations = () => {
             <span>Receipt (Credit)</span>
           </button>
           <button
-            onClick={() => setActiveTab('payment')}
+            onClick={() => handleTabChange('payment')}
             className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
               activeTab === 'payment' ? 'bg-rose-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -411,7 +433,7 @@ const Operations = () => {
             <span>Payment (Expense)</span>
           </button>
           <button
-            onClick={() => setActiveTab('general')}
+            onClick={() => handleTabChange('general')}
             className={`px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
               activeTab === 'general' ? 'bg-sky-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}

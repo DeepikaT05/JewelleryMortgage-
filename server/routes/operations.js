@@ -319,6 +319,90 @@ router.post('/payment', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   POST /api/operations/general
+// @desc    Create General Journal / GST entry
+router.post('/general', authMiddleware, async (req, res) => {
+  const companyId = req.user.companyId;
+  const { date, category, debitAccountId, creditAccountId, amount, refNo, partyName, remarks } = req.body;
+
+  if (!debitAccountId || !creditAccountId || !amount) {
+    return res.status(400).json({ message: 'Debit Account, Credit Account and Amount are required' });
+  }
+
+  if (debitAccountId.toString() === creditAccountId.toString()) {
+    return res.status(400).json({ message: 'Debit Account and Credit Account cannot be the same' });
+  }
+
+  try {
+    const debitAcc = await LedgerAccount.findById(debitAccountId);
+    const creditAcc = await LedgerAccount.findById(creditAccountId);
+    if (!debitAcc || !creditAcc) {
+      return res.status(404).json({ message: 'Debit or Credit account not found' });
+    }
+
+    let counter = await Counter.findOneAndUpdate(
+      { id: 'generalVoucherNo' },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    const voucherNo = `JRN-${counter.seq}`;
+
+    const voucherDate = date ? new Date(date) : new Date();
+
+    const op = new Operation({
+      voucherNo,
+      voucherType: 'general',
+      category: category || 'General Journal',
+      date: voucherDate,
+      debitAccountId: debitAcc._id,
+      debitAccountName: debitAcc.name,
+      creditAccountId: creditAcc._id,
+      creditAccountName: creditAcc.name,
+      fromAccountId: creditAcc._id,
+      fromAccountName: creditAcc.name,
+      toAccountId: debitAcc._id,
+      toAccountName: debitAcc.name,
+      amount: Number(amount),
+      refNo,
+      partyName,
+      remarks,
+      companyId
+    });
+    await op.save();
+
+    // 1. Debit Account transaction (+ Add)
+    const txDebit = new LedgerTransaction({
+      accountId: debitAcc._id,
+      date: voucherDate,
+      type: 'add',
+      amount: Number(amount),
+      refType: 'manual',
+      refId: op._id,
+      remarks: `Journal Dr (${category || 'General'}): To ${creditAcc.name}${partyName ? ' - ' + partyName : ''} (${voucherNo})`,
+      companyId
+    });
+    await txDebit.save();
+
+    // 2. Credit Account transaction (- Deduct)
+    const txCredit = new LedgerTransaction({
+      accountId: creditAcc._id,
+      date: voucherDate,
+      type: 'deduct',
+      amount: Number(amount),
+      refType: 'manual',
+      refId: op._id,
+      remarks: `Journal Cr (${category || 'General'}): By ${debitAcc.name}${partyName ? ' - ' + partyName : ''} (${voucherNo})`,
+      companyId
+    });
+    await txCredit.save();
+
+    res.json({ message: 'General Journal entry saved successfully', operation: op });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error saving general journal entry' });
+  }
+});
+
 // @route   DELETE /api/operations/voucher/:id
 // @desc    Delete a voucher and remove its ledger entries
 router.get('/:id', authMiddleware, async (req, res) => {

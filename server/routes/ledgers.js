@@ -118,16 +118,48 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/ledgers/:id/transactions
-router.get('/:id/transactions', authMiddleware, async (req, res) => {
+// GET /api/ledgers/:id/transactions or /api/ledgers/transactions/:id
+const handleGetTransactions = async (req, res) => {
   try {
-    const txs = await LedgerTransaction.find({ accountId: req.params.id, companyId: req.user.companyId })
-      .sort({ date: 1 });
-    res.json(txs);
+    const acc = await LedgerAccount.findOne({ _id: req.params.id, companyId: req.user.companyId });
+    if (!acc) return res.status(404).json({ message: 'Ledger account not found' });
+
+    let opening = acc.openingBalance || 0;
+    if (req.query.startDate) {
+      const preTxs = await LedgerTransaction.find({
+        accountId: acc._id,
+        companyId: req.user.companyId,
+        date: { $lt: new Date(req.query.startDate) }
+      });
+      const preAdd = preTxs.filter(t => t.type === 'add').reduce((sum, t) => sum + t.amount, 0);
+      const preDeduct = preTxs.filter(t => t.type === 'deduct').reduce((sum, t) => sum + t.amount, 0);
+      opening += (preAdd - preDeduct);
+    }
+
+    const query = { accountId: acc._id, companyId: req.user.companyId };
+    if (req.query.startDate || req.query.endDate) {
+      query.date = {};
+      if (req.query.startDate) query.date.$gte = new Date(req.query.startDate);
+      if (req.query.endDate) {
+        const end = new Date(req.query.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        query.date.$lte = end;
+      }
+    }
+
+    const txs = await LedgerTransaction.find(query).sort({ date: 1, createdAt: 1 });
+    res.json({
+      account: acc,
+      openingBalance: opening,
+      transactions: txs
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching ledger transactions', error: err.message });
   }
-});
+};
+
+router.get('/:id/transactions', authMiddleware, handleGetTransactions);
+router.get('/transactions/:id', authMiddleware, handleGetTransactions);
 
 // POST /api/ledgers/:id/transactions
 router.post('/:id/transactions', authMiddleware, async (req, res) => {

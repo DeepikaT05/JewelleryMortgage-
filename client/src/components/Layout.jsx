@@ -8,6 +8,8 @@ import {
   FileText, 
   Coins, 
   ArrowLeftRight, 
+  ArrowDownLeft,
+  ArrowUpRight,
   TrendingUp, 
   Database, 
   Briefcase,
@@ -188,13 +190,14 @@ const Layout = ({ children }) => {
       const bankItems = (bankRes.data || []).map(l => {
         const debit = l.totalAdd || 0;
         const credit = l.totalDeduct || 0;
-        const bal = l.closingBalance || (l.openingBalance + debit - credit);
+        const bal = l.closingBalance !== undefined ? l.closingBalance : (l.openingBalance + debit - credit);
+        const typeLabel = l.group === 'cash' ? 'Cash Ledger' : l.group === 'bank' ? 'Bank Ledger' : 'General Ledger';
         return {
           id: l._id,
           rawId: l._id,
           name: l.name,
           code: l.group ? l.group.toUpperCase() : '',
-          type: 'Bank / Cash Ledger',
+          type: typeLabel,
           group: l.group || 'general',
           mobile: '',
           address: '',
@@ -288,11 +291,13 @@ const Layout = ({ children }) => {
           closing: runningBal
         });
       } else if (item.target === 'bankLedger') {
-        const res = await axios.get(`/api/ledgers/transactions/${item.rawId}`);
-        const txs = res.data.transactions || [];
-        const acc = res.data.account || {};
+        const res = await axios.get(`/api/ledgers/${item.rawId}/transactions?startDate=${fromD}&endDate=${toD}`);
+        const data = res.data;
+        const txs = Array.isArray(data) ? data : (data.transactions || []);
+        const acc = data.account || {};
+        const opening = (data.openingBalance !== undefined) ? data.openingBalance : (item.opening || acc.openingBalance || 0);
 
-        let runningBal = acc.openingBalance || 0;
+        let runningBal = opening;
         let totalAdd = 0;
         let totalDeduct = 0;
 
@@ -305,11 +310,18 @@ const Layout = ({ children }) => {
           totalDeduct += credit;
           runningBal += (debit - credit);
 
+          let typeLabel = tx.type === 'add' ? 'Rcpt' : 'Pymt';
+          if (tx.remarks && tx.remarks.toLowerCase().includes('contra')) {
+            typeLabel = 'Contra';
+          } else if (tx.remarks && tx.remarks.toLowerCase().includes('journal')) {
+            typeLabel = 'Jrn';
+          }
+
           return {
             raw: tx,
             date: dateStr,
             fullDate: tx.date,
-            type: tx.type === 'add' ? 'Rcpt' : 'Pymt',
+            type: typeLabel,
             narration: tx.remarks || `Ledger Tx #${tx._id.slice(-6)}`,
             receipt: debit,
             payment: credit,
@@ -322,7 +334,7 @@ const Layout = ({ children }) => {
 
         setCtrlLStatement(formatted);
         setCtrlLSummary({
-          opening: acc.openingBalance || 0,
+          opening,
           totalReceipt: totalAdd,
           totalPayment: totalDeduct,
           closing: runningBal
@@ -868,15 +880,25 @@ const Layout = ({ children }) => {
     }
   };
 
+  const [isOperationsSubmenuOpen, setIsOperationsSubmenuOpen] = useState(() => {
+    return location.pathname.startsWith('/operations');
+  });
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/operations')) {
+      setIsOperationsSubmenuOpen(true);
+    }
+  }, [location.pathname]);
+
   const allMenuItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isOperations: true },
     { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin'] },
     { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true },
+    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isLedgerGroups: true },
     { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
     { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
@@ -1239,7 +1261,72 @@ const Layout = ({ children }) => {
               const isActive = location.pathname === item.path;
               const isFocused = focusedMenuIdx === idx;
 
-              if (item.hasSubmenu) {
+              if (item.isOperations) {
+                const isSubmenuActive = location.pathname.startsWith('/operations');
+                const searchParams = new URLSearchParams(location.search);
+                const currentTab = searchParams.get('tab') || 'contra';
+                const operationsSubItems = [
+                  { key: 'contra', label: 'Contra Transfer', path: '/operations?tab=contra', icon: <ArrowLeftRight className="h-3.5 w-3.5 text-amber-400" /> },
+                  { key: 'receipt', label: 'Receipt (Credit)', path: '/operations?tab=receipt', icon: <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-400" /> },
+                  { key: 'payment', label: 'Payment (Expense)', path: '/operations?tab=payment', icon: <ArrowUpRight className="h-3.5 w-3.5 text-rose-400" /> },
+                  { key: 'general', label: 'General (Journal)', path: '/operations?tab=general', icon: <FileText className="h-3.5 w-3.5 text-sky-400" /> }
+                ];
+
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <div
+                      onClick={() => {
+                        setIsOperationsSubmenuOpen(!isOperationsSubmenuOpen);
+                        if (!isSubmenuActive) {
+                          navigate('/operations?tab=contra');
+                        }
+                      }}
+                      className={`flex items-center justify-between space-x-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                        isSidebarCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                      } ${
+                        isSubmenuActive 
+                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/30 font-bold' 
+                          : isFocused
+                          ? 'bg-slate-800 text-white ring-2 ring-primary-500 font-bold'
+                          : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 truncate">
+                        <div className="shrink-0">{item.icon}</div>
+                        {!isSidebarCollapsed && <span className="truncate">{item.name}</span>}
+                      </div>
+                      {!isSidebarCollapsed && (
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 shrink-0 ${isOperationsSubmenuOpen ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+
+                    {!isSidebarCollapsed && isOperationsSubmenuOpen && (
+                      <div className="pl-6 pr-1 space-y-1 text-xs font-mono">
+                        {operationsSubItems.map((sub) => {
+                          const isSubSelected = isSubmenuActive && (currentTab === sub.key || (sub.key === 'general' && currentTab === 'journal'));
+                          return (
+                            <Link
+                              key={sub.key}
+                              to={sub.path}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`flex items-center space-x-2 py-1.5 px-2.5 rounded-lg transition-all font-bold ${
+                                isSubSelected
+                                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                              }`}
+                            >
+                              <span className="shrink-0">{sub.icon}</span>
+                              <span className="truncate">{sub.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (item.isLedgerGroups || item.hasSubmenu) {
                 const isSubmenuActive = location.pathname.startsWith('/accounting-group');
                 return (
                   <div key={item.name} className="space-y-1">
