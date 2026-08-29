@@ -78,6 +78,7 @@ const Layout = ({ children }) => {
   const [ledgerSubTab, setLedgerSubTab] = useState('details'); // Default to details for full ledger statements
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showTxForm, setShowTxForm] = useState(false);
+  const [isPrintLedgerHovered, setIsPrintLedgerHovered] = useState(false);
 
   // Forms
   const [newAccForm, setNewAccForm] = useState({ name: '', group: 'cash', customGroup: '', openingBalance: 0 });
@@ -1828,12 +1829,19 @@ const Layout = ({ children }) => {
                             <span className="text-amber-400 font-bold">₹{acc.closingBalance.toFixed(2)}</span>
                           </div>
                           <button
+                            type="button"
                             onClick={handlePrintLedger}
-                            style={{ backgroundColor: '#000000', color: '#ffffff' }}
-                            className="px-4 py-2 !bg-black hover:!bg-slate-900 !text-white rounded-xl border border-black flex items-center space-x-2 font-sans font-bold text-xs shadow-md transition-all cursor-pointer"
+                            onMouseEnter={() => setIsPrintLedgerHovered(true)}
+                            onMouseLeave={() => setIsPrintLedgerHovered(false)}
+                            style={{
+                              backgroundColor: isPrintLedgerHovered ? '#1e293b' : '#000000',
+                              color: '#ffffff',
+                              borderColor: isPrintLedgerHovered ? '#475569' : '#000000'
+                            }}
+                            className="px-4 py-2 rounded-xl border flex items-center space-x-2 font-sans font-bold text-xs shadow-md transition-all cursor-pointer select-none"
                           >
-                            <Printer className="h-4 w-4 !text-white" style={{ color: '#ffffff' }} />
-                            <span className="!text-white font-bold" style={{ color: '#ffffff' }}>Print Ledger</span>
+                            <Printer className="h-4 w-4" style={{ color: '#ffffff' }} />
+                            <span style={{ color: '#ffffff', fontWeight: 700 }}>Print Ledger</span>
                           </button>
                         </div>
                       );
