@@ -150,10 +150,11 @@ const Operations = () => {
   const loadAccounts = async () => {
     try {
       const res = await axios.get('/api/operations/accounts');
-      setAccounts(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setAccounts(data);
 
-      const cash = res.data.find(a => a.group === 'cash') || res.data[0];
-      const bank = res.data.find(a => a.group === 'bank') || res.data[1] || res.data[0];
+      const cash = data.find(a => a.group === 'cash') || data[0];
+      const bank = data.find(a => a.group === 'bank') || data[1] || data[0];
 
       if (cash && bank) {
         setContraForm(prev => ({
@@ -177,6 +178,7 @@ const Operations = () => {
       }
     } catch (err) {
       console.error(err);
+      setAccounts([]);
     }
   };
 

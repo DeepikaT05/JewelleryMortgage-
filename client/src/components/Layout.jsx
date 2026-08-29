@@ -850,15 +850,16 @@ const Layout = ({ children }) => {
   const fetchSidebarGroups = async () => {
     try {
       const [cgRes, custRes] = await Promise.all([
-        axios.get('/api/customer-groups'),
-        axios.get('/api/customers?limit=1000')
+        axios.get('/api/customer-groups').catch(() => ({ data: [] })),
+        axios.get('/api/customers?limit=1000').catch(() => ({ data: { customers: [] } }))
       ]);
-      const dbG = (cgRes.data || []).map(g => g.groupName);
-      const custG = (custRes.data?.customers || []).map(c => c.area || c.group || c.city).filter(Boolean);
+      const dbG = (Array.isArray(cgRes.data) ? cgRes.data : []).map(g => g.groupName);
+      const custG = (Array.isArray(custRes.data?.customers) ? custRes.data.customers : []).map(c => c.area || c.group || c.city).filter(Boolean);
       const unique = Array.from(new Set([...dbG, ...custG])).filter(Boolean).sort();
       setSidebarGroups(unique);
     } catch (err) {
       console.error(err);
+      setSidebarGroups([]);
     }
   };
 
