@@ -1909,6 +1909,7 @@ const Layout = ({ children }) => {
         });
 
         const activeLedger = filteredList[ctrlLActiveIndex] || filteredList[0] || {};
+        const companyName = companyDetails?.name || 'Jewellery & Pawnbrokers';
         const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
         return (
