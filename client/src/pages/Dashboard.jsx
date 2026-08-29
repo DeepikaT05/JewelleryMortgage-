@@ -123,32 +123,32 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* CARD 1: Opening Balance */}
-            <div className="glass-panel p-4 rounded-xl border-l-4 border-l-purple-500 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
+            <div className="glass-panel p-4 rounded-xl border-l-4 border-l-purple-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Opening Balance</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 font-medium uppercase">
+                  <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Opening Balance</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-black border border-slate-300 font-bold uppercase">
                     {metrics?.openingBalanceMode || 'Cash'}
                   </span>
                 </div>
-                <div className="p-1.5 bg-purple-600/10 rounded-lg text-purple-400 border border-purple-500/20 shrink-0">
+                <div className="p-1.5 bg-purple-600/10 rounded-lg text-purple-700 border border-purple-500/20 shrink-0">
                   <Wallet className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold font-mono text-purple-300 break-all tracking-tight my-1">
+              <div className="text-lg sm:text-xl font-black font-mono text-black break-all tracking-tight my-1" style={{ color: '#000000' }}>
                 ₹{formatIndianCurrency(Math.abs(metrics?.openingBalance ?? 0))}
               </div>
             </div>
 
             {/* CARD 2: Cash in Hand */}
-            <div className="glass-panel p-4 rounded-xl border-l-4 border-l-primary-500 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
+            <div className="glass-panel p-4 rounded-xl border-l-4 border-l-primary-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash In Hand</span>
-                <div className="p-1.5 bg-primary-600/10 rounded-lg text-primary-400 border border-primary-500/20 shrink-0">
+                <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Cash In Hand</span>
+                <div className="p-1.5 bg-primary-600/10 rounded-lg text-primary-700 border border-primary-500/20 shrink-0">
                   <Coins className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold font-mono text-slate-100 break-all tracking-tight my-1">
+              <div className="text-lg sm:text-xl font-black font-mono text-black break-all tracking-tight my-1" style={{ color: '#000000' }}>
                 ₹{formatIndianCurrency(Math.abs(metrics?.cashInHand || 0))}
               </div>
             </div>
@@ -156,12 +156,12 @@ const Dashboard = () => {
             {/* CARD 3: Bank Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-emerald-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bank Balance</span>
-                <div className="p-1.5 bg-emerald-600/10 rounded-lg text-emerald-400 border border-emerald-600/20 shrink-0">
+                <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Bank Balance</span>
+                <div className="p-1.5 bg-emerald-600/10 rounded-lg text-emerald-700 border border-emerald-600/20 shrink-0">
                   <TrendingUp className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold font-mono text-slate-100 break-all tracking-tight my-1">
+              <div className="text-lg sm:text-xl font-black font-mono text-black break-all tracking-tight my-1" style={{ color: '#000000' }}>
                 ₹{formatIndianCurrency(Math.abs(metrics?.bankBalance || 0))}
               </div>
             </div>
@@ -169,12 +169,12 @@ const Dashboard = () => {
             {/* CARD 4: Closing Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-amber-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Closing Balance</span>
-                <div className="p-1.5 bg-amber-600/10 rounded-lg text-amber-500 border border-amber-600/20 shrink-0">
+                <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Closing Balance</span>
+                <div className="p-1.5 bg-amber-600/10 rounded-lg text-amber-700 border border-amber-600/20 shrink-0">
                   <TrendingDown className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-lg sm:text-xl font-bold font-mono text-amber-400 break-all tracking-tight my-1">
+              <div className="text-lg sm:text-xl font-black font-mono text-black break-all tracking-tight my-1" style={{ color: '#000000' }}>
                 ₹{formatIndianCurrency(Math.abs(metrics?.closingBalance || 0))}
               </div>
             </div>
