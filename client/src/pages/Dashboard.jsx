@@ -120,30 +120,9 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Main Financial Balance Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
-            {/* CARD 1: Opening Balance */}
-            <div className="glass-panel p-4 rounded-xl border-l-4 border-l-purple-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Opening Balance</span>
-                  <span
-                    style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
-                    className="text-[9px] px-2 py-0.5 rounded-md !text-white border border-slate-700 font-bold uppercase tracking-wider"
-                  >
-                    {metrics?.openingBalanceMode || 'Cash'}
-                  </span>
-                </div>
-                <div className="p-1.5 bg-purple-600/10 rounded-lg text-purple-700 border border-purple-500/20 shrink-0">
-                  <Wallet className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-lg sm:text-xl font-black font-mono text-black break-all tracking-tight my-1" style={{ color: '#000000' }}>
-                ₹{formatIndianCurrency(Math.abs(metrics?.openingBalance ?? 0))}
-              </div>
-            </div>
-
-            {/* CARD 2: Cash in Hand */}
+            {/* CARD 1: Cash in Hand */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-primary-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Cash In Hand</span>
@@ -156,7 +135,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* CARD 3: Bank Balance */}
+            {/* CARD 2: Bank Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-emerald-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Bank Balance</span>
@@ -169,7 +148,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* CARD 4: Closing Balance */}
+            {/* CARD 3: Closing Balance */}
             <div className="glass-panel p-4 rounded-xl border-l-4 border-l-amber-600 shadow-md animate-slide-in overflow-hidden flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">Closing Balance</span>
