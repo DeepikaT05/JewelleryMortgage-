@@ -30,15 +30,29 @@ const GirviSetup = () => {
   const [companyForm, setCompanyForm] = useState({
     name: '', address: '', city: '', area: '', pin: '', gstin: '', phone: '', email: '', financialYearStart: '', financialYearEnd: '', loginId: '', password: ''
   });
+  const [storeProfileForm, setStoreProfileForm] = useState({
+    _id: '',
+    name: '',
+    address: '',
+    city: '',
+    area: '',
+    pin: '',
+    gstin: '',
+    phone: '',
+    email: '',
+    financialYearStart: '',
+    financialYearEnd: ''
+  });
   const [showStorePassword, setShowStorePassword] = useState(false);
+
   const handleCreateCompany = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/companies', companyForm);
+      const res = await axios.post('/api/companies', companyForm);
       
       // Auto-create manager user for this store if credentials are provided
       if (companyForm.loginId && companyForm.password) {
-        await axios.post('http://localhost:5000/api/auth/register', {
+        await axios.post('/api/auth/register', {
           name: `${companyForm.name} Manager`,
           username: companyForm.loginId,
           password: companyForm.password,
@@ -59,7 +73,7 @@ const GirviSetup = () => {
   const handleUpdateCompany = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/companies/${editingCompanyId}`, companyForm);
+      await axios.put(`/api/companies/${editingCompanyId}`, companyForm);
       triggerToast('Store updated successfully');
       setShowCompanyModal(false);
       setEditingCompanyId(null);
@@ -73,7 +87,7 @@ const GirviSetup = () => {
   const handleDeleteCompany = async (id) => {
     if (!window.confirm('Are you sure you want to delete this store? All associated records will be affected.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/companies/${id}`);
+      await axios.delete(`/api/companies/${id}`);
       triggerToast('Store deleted successfully');
       loadUserAndCompanies();
     } catch (err) {
@@ -84,11 +98,36 @@ const GirviSetup = () => {
   const handleToggleCompanyActive = async (company) => {
     try {
       const updatedStatus = company.isActive === undefined ? false : !company.isActive;
-      await axios.put(`http://localhost:5000/api/companies/${company._id}`, { isActive: updatedStatus });
+      await axios.put(`/api/companies/${company._id}`, { isActive: updatedStatus });
       triggerToast(`Store ${updatedStatus ? 'activated' : 'deactivated'} successfully`);
       loadUserAndCompanies();
     } catch (err) {
       triggerToast('Error toggling store status', 'error');
+    }
+  };
+
+  const handleSaveActiveStore = async (e) => {
+    e.preventDefault();
+    if (!storeProfileForm.name?.trim()) {
+      triggerToast('Store name is required', 'error');
+      return;
+    }
+    try {
+      let updated;
+      if (storeProfileForm._id) {
+        const res = await axios.put(`/api/companies/${storeProfileForm._id}`, storeProfileForm);
+        updated = res.data;
+      } else {
+        const res = await axios.post('/api/companies', storeProfileForm);
+        updated = res.data;
+      }
+
+      triggerToast('Store address & details updated successfully!');
+      localStorage.setItem('companyDetails', JSON.stringify(updated));
+      window.dispatchEvent(new Event('companyDetailsUpdated'));
+      loadUserAndCompanies();
+    } catch (err) {
+      triggerToast(err.response?.data?.message || 'Error updating store address', 'error');
     }
   };
 
@@ -133,7 +172,35 @@ const GirviSetup = () => {
       setCurrentUser(meRes.data);
       
       const compRes = await axios.get('/api/companies?all=true');
-      setCompanies(compRes.data);
+      const comps = compRes.data || [];
+      setCompanies(comps);
+
+      const savedComp = localStorage.getItem('companyDetails');
+      let activeComp = null;
+      if (savedComp) {
+        try {
+          const parsed = JSON.parse(savedComp);
+          activeComp = comps.find(c => c._id === parsed._id) || comps[0];
+        } catch (e) {}
+      } else if (comps.length > 0) {
+        activeComp = comps[0];
+      }
+
+      if (activeComp) {
+        setStoreProfileForm({
+          _id: activeComp._id || '',
+          name: activeComp.name || '',
+          address: activeComp.address || '',
+          city: activeComp.city || '',
+          area: activeComp.area || '',
+          pin: activeComp.pin || '',
+          gstin: activeComp.gstin || '',
+          phone: activeComp.phone || activeComp.mobile || '',
+          email: activeComp.email || '',
+          financialYearStart: activeComp.financialYearStart ? activeComp.financialYearStart.split('T')[0] : '',
+          financialYearEnd: activeComp.financialYearEnd ? activeComp.financialYearEnd.split('T')[0] : ''
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -289,20 +356,28 @@ const GirviSetup = () => {
         <p className="text-slate-400 text-sm mt-1">Configure company profiles, receipt templates, lock values, and notification APIs.</p>
       </div>
 
-      <div className="flex space-x-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-sm">
+      <div className="flex flex-wrap gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl max-w-md">
         <button
           onClick={() => setActiveTab('general')}
-          className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-            activeTab === 'general' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+          className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
+            activeTab === 'general' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           General Setup
         </button>
+        <button
+          onClick={() => setActiveTab('store')}
+          className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
+            activeTab === 'store' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Store & Address Profile
+        </button>
         {currentUser?.role === 'admin' && (
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === 'users' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === 'users' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             User Management
@@ -314,9 +389,32 @@ const GirviSetup = () => {
         {/* TAB 1: GENERAL SETUP */}
         {activeTab === 'general' && (
           <form onSubmit={handleSaveGirvi} className="space-y-6">
+            {/* Store & Address Banner */}
+            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Building2 className="h-4 w-4 text-amber-400" />
+                  <span className="font-bold text-slate-100 text-sm">{storeProfileForm.name || 'Store Name Not Set'}</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {storeProfileForm.address ? `${storeProfileForm.address}${storeProfileForm.city ? `, ${storeProfileForm.city}` : ''}` : 'Store address is not set yet.'}
+                  {storeProfileForm.phone && ` • Ph: ${storeProfileForm.phone}`}
+                  {storeProfileForm.gstin && ` • GSTIN: ${storeProfileForm.gstin}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('store')}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-slate-700 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Update Store Address</span>
+              </button>
+            </div>
+
             <h3 className="text-base font-bold text-slate-200 border-b border-slate-850 pb-2 flex items-center space-x-2">
               <ShieldCheck className="h-5 w-5 text-primary-400" />
-              <span>General Setup</span>
+              <span>General Configuration</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
@@ -666,6 +764,150 @@ const GirviSetup = () => {
           </form>
         )}
 
+        {/* TAB 2: STORE & ADDRESS PROFILE */}
+        {activeTab === 'store' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-850 pb-3">
+              <h3 className="text-base font-bold text-slate-200 flex items-center space-x-2">
+                <Building2 className="h-5 w-5 text-primary-400" />
+                <span>Store & Address Profile (दुकान / कंपनी का पता और विवरण)</span>
+              </h3>
+            </div>
+
+            <form onSubmit={handleSaveActiveStore} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {/* Store Name */}
+                <div className="md:col-span-2">
+                  <label className="block text-slate-300 font-bold mb-1">Store / Business Name (दुकान / फर्म का नाम) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={storeProfileForm.name}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, name: e.target.value })}
+                    placeholder="e.g. Jewellery & Pawnbrokers"
+                    className="w-full px-3 py-2.5 bg-slate-900 border border-slate-750 rounded-xl text-sm font-bold text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Full Address */}
+                <div className="md:col-span-2">
+                  <label className="block text-slate-300 font-bold mb-1">Store Address (दुकान का पूरा पता / सड़क / बाजार) *</label>
+                  <textarea
+                    rows="2"
+                    required
+                    value={storeProfileForm.address}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, address: e.target.value })}
+                    placeholder="e.g. 123, Gold Bazaar Street, Jewel City"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Area / Station */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Area / Locality / Station (क्षेत्र / मोहल्ला)</label>
+                  <input
+                    type="text"
+                    value={storeProfileForm.area}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, area: e.target.value })}
+                    placeholder="e.g. Gold Market"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* City */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">City / Town (शहर)</label>
+                  <input
+                    type="text"
+                    value={storeProfileForm.city}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, city: e.target.value })}
+                    placeholder="e.g. Mumbai"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* PIN Code */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Pincode (पिन कोड)</label>
+                  <input
+                    type="text"
+                    value={storeProfileForm.pin}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, pin: e.target.value })}
+                    placeholder="e.g. 400001"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* GSTIN */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">GSTIN Number (जीएसटी नंबर)</label>
+                  <input
+                    type="text"
+                    value={storeProfileForm.gstin}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, gstin: e.target.value })}
+                    placeholder="e.g. 22AAAAA0000A1Z5"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-500 uppercase"
+                  />
+                </div>
+
+                {/* Phone / Mobile */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Contact Phone / Mobile (फोन / मोबाइल नंबर)</label>
+                  <input
+                    type="text"
+                    value={storeProfileForm.phone}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, phone: e.target.value })}
+                    placeholder="e.g. 9876543210"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Email Address (ईमेल)</label>
+                  <input
+                    type="email"
+                    value={storeProfileForm.email}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, email: e.target.value })}
+                    placeholder="e.g. contact@jewellery.com"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Financial Year Start & End */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Financial Year Start (वित्तीय वर्ष प्रारंभ)</label>
+                  <input
+                    type="date"
+                    value={storeProfileForm.financialYearStart}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, financialYearStart: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Financial Year End (वित्तीय वर्ष समाप्ति)</label>
+                  <input
+                    type="date"
+                    value={storeProfileForm.financialYearEnd}
+                    onChange={(e) => setStoreProfileForm({ ...storeProfileForm, financialYearEnd: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-850 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-lg flex items-center space-x-2 transition-all cursor-pointer"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Update Address & Store Profile</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* TAB 3: USER MANAGEMENT */}
         {activeTab === 'users' && (

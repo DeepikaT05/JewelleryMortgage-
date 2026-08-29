@@ -56,6 +56,22 @@ const Layout = ({ children }) => {
       return null;
     }
   });
+
+  useEffect(() => {
+    const handleCompanyUpdated = () => {
+      try {
+        const saved = localStorage.getItem('companyDetails');
+        if (saved) {
+          setCompanyDetails(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('companyDetailsUpdated', handleCompanyUpdated);
+    return () => window.removeEventListener('companyDetailsUpdated', handleCompanyUpdated);
+  }, []);
+
   const [companies, setCompanies] = useState(() => {
     try {
       const saved = localStorage.getItem('companies');
@@ -767,6 +783,21 @@ const Layout = ({ children }) => {
               setCompanyDetails(activeComp);
               localStorage.setItem('companyDetails', JSON.stringify(activeComp));
             }
+          } else if (compListRes.data.length > 0) {
+            const savedComp = localStorage.getItem('companyDetails');
+            let activeComp = null;
+            if (savedComp) {
+              try {
+                const parsed = JSON.parse(savedComp);
+                activeComp = compListRes.data.find(c => c._id === parsed._id) || compListRes.data[0];
+              } catch (e) {}
+            } else {
+              activeComp = compListRes.data[0];
+            }
+            if (activeComp) {
+              setCompanyDetails(activeComp);
+              localStorage.setItem('companyDetails', JSON.stringify(activeComp));
+            }
           }
         } catch (refreshErr) {
           console.error('Company refresh failed:', refreshErr);
@@ -795,6 +826,21 @@ const Layout = ({ children }) => {
         const activeComp = compListRes.data.find(c => c._id === userRes.data.companyId);
         setCompanyDetails(activeComp);
         if (activeComp) {
+          localStorage.setItem('companyDetails', JSON.stringify(activeComp));
+        }
+      } else if (compListRes.data.length > 0) {
+        const savedComp = localStorage.getItem('companyDetails');
+        let activeComp = null;
+        if (savedComp) {
+          try {
+            const parsed = JSON.parse(savedComp);
+            activeComp = compListRes.data.find(c => c._id === parsed._id) || compListRes.data[0];
+          } catch (e) {}
+        } else {
+          activeComp = compListRes.data[0];
+        }
+        if (activeComp) {
+          setCompanyDetails(activeComp);
           localStorage.setItem('companyDetails', JSON.stringify(activeComp));
         }
       }

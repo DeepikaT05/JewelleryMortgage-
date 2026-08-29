@@ -764,65 +764,101 @@ const DealMaster = () => {
     const { deal: pd, company: pc, terms: pt } = printProfile;
     return (
       <div className="print-area p-8 text-black bg-white min-h-screen text-xs">
-        <div className="flex justify-between items-center border-b border-black pb-4">
+        {/* Header: Company Details & Deal No */}
+        <div className="flex justify-between items-start border-b-2 border-black pb-4">
           <div>
-            <h1 className="text-2xl font-bold uppercase tracking-wider">{pc.name}</h1>
-            <p>{pc.address}, {pc.city} - {pc.pin}</p>
-            <p>Ph: {pc.phone} | GSTIN: {pc.gstin}</p>
+            <h1 className="text-2xl font-black uppercase tracking-wider text-black">{pc?.name || 'Jewellery & Pawnbrokers'}</h1>
+            <p className="text-xs text-black">{pc?.address}{pc?.city ? `, ${pc?.city}` : ''}{pc?.pin ? ` - ${pc?.pin}` : ''}</p>
+            <p className="text-xs text-black">
+              {pc?.phone && `Ph: ${pc.phone}`}
+              {pc?.phone && pc?.gstin && ' | '}
+              {pc?.gstin && `GSTIN: ${pc.gstin}`}
+            </p>
           </div>
-          <div className="text-right">
-            <h2 className="text-lg font-bold border border-black px-3 py-1 uppercase">{pd.dealNo}</h2>
-            <p className="mt-1">Date: {new Date(pd.dealDate).toLocaleDateString()}</p>
+          <div className="text-right flex flex-col items-end">
+            <div className="border-2 border-black px-3 py-1 text-center min-w-[110px]">
+              <span className="text-[10px] block font-bold uppercase text-black">DEAL NO</span>
+              <h2 className="text-lg font-black uppercase text-black">{pd.dealNo}</h2>
+            </div>
+            <p className="mt-1 font-semibold text-black">Date: {new Date(pd.dealDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+            {pd.refNo && <p className="text-xs font-mono font-bold text-black">Ref No: {pd.refNo}</p>}
           </div>
         </div>
-        <div className="my-6 grid grid-cols-2 gap-4 border border-black p-4 rounded text-sm">
-          <div>
-            <h3 className="font-bold text-xs uppercase text-slate-500 mb-1">Borrower Details</h3>
-            <p className="font-bold">{pd.customerId?.name}</p>
-            <p>{pd.customerId?.address}, {pd.customerId?.area}</p>
-            <p>{pd.customerId?.city}, {pd.customerId?.state} - {pd.customerId?.pin}</p>
-            <p className="font-mono">Mobile: {pd.customerId?.mobile}</p>
+
+        {/* Borrower & Pledge Details */}
+        <div className="my-4 grid grid-cols-2 gap-4 border border-black p-4 rounded text-xs">
+          <div className="space-y-1">
+            <h3 className="font-bold text-[11px] uppercase tracking-wider text-black border-b border-gray-300 pb-1 mb-2">BORROWER DETAILS</h3>
+            <p className="font-black text-sm text-black">{pd.customerId?.name}</p>
+            <p className="font-mono text-xs text-black font-bold">
+              Customer ID: <span className="bg-gray-100 px-1 py-0.5 border border-gray-400 rounded">#{pd.customerId?.customerCode || pd.customerId?._id?.slice(-6)}</span>
+            </p>
+            <p className="text-black">{pd.customerId?.address}{pd.customerId?.area ? `, ${pd.customerId?.area}` : ''}</p>
+            <p className="text-black">{pd.customerId?.city}{pd.customerId?.state ? `, ${pd.customerId?.state}` : ''}{pd.customerId?.pin ? ` - ${pd.customerId?.pin}` : ''}</p>
+            <p className="font-mono font-bold text-black">Mobile: {pd.customerId?.mobile || '-'}</p>
           </div>
-          <div>
-            <h3 className="font-bold text-xs uppercase text-slate-500 mb-1">Pledge Specifications</h3>
-            <p>Loan Amount: <span className="font-bold">₹{formatIndianCurrency(pd.dealAmount)}</span></p>
-            <p>Pledge Date: {new Date(pd.dealDate).toLocaleDateString()}</p>
-            <p>Return Period: {pd.returnPeriodMonths} Months</p>
-            <p>Interest: {pd.interestRatePerMonth}% per month (₹{formatIndianCurrency(pd.interestAmountPerMonth)}/mo)</p>
+          <div className="space-y-1 border-l border-gray-300 pl-4">
+            <h3 className="font-bold text-[11px] uppercase tracking-wider text-black border-b border-gray-300 pb-1 mb-2">PLEDGE SPECIFICATIONS</h3>
+            <p className="text-black font-semibold">Loan Amount: <span className="font-black text-sm">₹{formatIndianCurrency(pd.dealAmount)}</span></p>
+            <p className="text-black">Pledge Date: <span className="font-semibold">{new Date(pd.dealDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span></p>
+            <p className="text-black">Return Period: <span className="font-semibold">{pd.returnPeriodMonths} Months</span></p>
+            <p className="text-black">Interest: <span className="font-semibold">{pd.interestRatePerMonth}% per month (₹{formatIndianCurrency(pd.interestAmountPerMonth)}/mo)</span></p>
+            {pd.refNo && <p className="text-black font-mono font-bold">Deal Ref: <span className="font-semibold">{pd.refNo}</span></p>}
+            {pd.remarks && <p className="text-black font-medium">Remarks: <span className="font-semibold italic">{pd.remarks}</span></p>}
           </div>
         </div>
+
+        {/* Collateral Table */}
         <table className="w-full text-left border-collapse border border-black text-[11px] font-mono">
           <thead>
-            <tr className="bg-slate-100 border-b border-black font-semibold text-xs">
-              <th className="p-2 border-r border-black font-sans">S.No</th>
-              <th className="p-2 border-r border-black font-sans">Metal</th>
-              <th className="p-2 border-r border-black font-sans">Item</th>
-              <th className="p-2 border-r border-black text-right font-sans">Pcs</th>
-              <th className="p-2 border-r border-black text-right">Gross Wt</th>
-              <th className="p-2 border-r border-black text-right">Less Wt</th>
-              <th className="p-2 border-r border-black text-right">Net Wt</th>
-              <th className="p-2 border-r border-black text-right">Purity %</th>
-              <th className="p-2 border-r border-black text-right">Pure Wt</th>
-              <th className="p-2 text-right font-sans">Estimate Value</th>
+            <tr className="bg-white border-b-2 border-black font-bold text-xs text-black">
+              <th className="p-2 border-r border-black font-sans text-black">S.No</th>
+              <th className="p-2 border-r border-black font-sans text-black">Metal</th>
+              <th className="p-2 border-r border-black font-sans text-black">Item</th>
+              <th className="p-2 border-r border-black text-right font-sans text-black">Pcs</th>
+              <th className="p-2 border-r border-black text-right text-black">Gross Wt</th>
+              <th className="p-2 border-r border-black text-right text-black">Less Wt</th>
+              <th className="p-2 border-r border-black text-right text-black">Net Wt</th>
+              <th className="p-2 border-r border-black text-right text-black">Purity %</th>
+              <th className="p-2 border-r border-black text-right text-black">Pure Wt</th>
+              <th className="p-2 text-right font-sans text-black">Estimate Value</th>
             </tr>
           </thead>
           <tbody>
             {pd.items.map((it, i) => (
-              <tr key={i} className="border-b border-black">
-                <td className="p-2 border-r border-black">{i + 1}</td>
-                <td className="p-2 border-r border-black font-sans">{it.groupId?.groupName}</td>
-                <td className="p-2 border-r border-black font-sans">{it.itemName}</td>
-                <td className="p-2 border-r border-black text-right">{it.pcs}</td>
-                <td className="p-2 border-r border-black text-right">{it.grossWeight?.toFixed(3)}g</td>
-                <td className="p-2 border-r border-black text-right">{it.lessWeight?.toFixed(3)}g</td>
-                <td className="p-2 border-r border-black text-right">{it.netWeight?.toFixed(3)}g</td>
-                <td className="p-2 border-r border-black text-right">{it.purityPercent}%</td>
-                <td className="p-2 border-r border-black text-right">{it.pureWeight?.toFixed(3)}g</td>
-                <td className="p-2 text-right">₹{formatIndianCurrency(it.estimatedValue)}</td>
+              <tr key={i} className="border-b border-black text-black">
+                <td className="p-2 border-r border-black text-black">{i + 1}</td>
+                <td className="p-2 border-r border-black font-sans text-black">{it.groupId?.groupName || '-'}</td>
+                <td className="p-2 border-r border-black font-sans font-bold text-black">{it.itemName}</td>
+                <td className="p-2 border-r border-black text-right text-black">{it.pcs}</td>
+                <td className="p-2 border-r border-black text-right text-black">{it.grossWeight?.toFixed(3)}g</td>
+                <td className="p-2 border-r border-black text-right text-black">{it.lessWeight?.toFixed(3)}g</td>
+                <td className="p-2 border-r border-black text-right font-bold text-black">{it.netWeight?.toFixed(3)}g</td>
+                <td className="p-2 border-r border-black text-right text-black">{it.purityPercent}%</td>
+                <td className="p-2 border-r border-black text-right text-black">{it.pureWeight?.toFixed(3)}g</td>
+                <td className="p-2 text-right font-bold text-black">₹{formatIndianCurrency(it.estimatedValue)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Remarks Box if present */}
+        {pd.remarks && (
+          <div className="mt-3 p-2.5 border border-black rounded text-xs text-black bg-gray-50">
+            <span className="font-bold uppercase text-[10px] block text-gray-700">Remarks / Special Notes:</span>
+            <p className="mt-0.5 italic text-black">{pd.remarks}</p>
+          </div>
+        )}
+
+        {/* Signatures */}
+        <div className="mt-12 flex justify-between items-end text-xs text-black">
+          <div className="text-center border-t border-black pt-1 w-44">
+            <p className="font-bold text-black">Customer Signature</p>
+          </div>
+          <div className="text-center border-t border-black pt-1 w-44">
+            <p className="font-bold text-black">Authorised Signatory</p>
+          </div>
+        </div>
       </div>
     );
   }
