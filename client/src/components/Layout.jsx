@@ -770,6 +770,12 @@ const Layout = ({ children }) => {
     try {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
+      const checkIsStoreUser = (u) => {
+        if (!u) return false;
+        const r = (u.role || '').toLowerCase().replace(/[\s_-]+/g, '');
+        return !r.includes('admin') && !r.includes('super');
+      };
+
       if (currentUser) {
         // Refresh company details in the background so the financial year
         // badge stays current even when the user session is cached.
@@ -803,7 +809,7 @@ const Layout = ({ children }) => {
           console.error('Company refresh failed:', refreshErr);
         }
         // Redirect store users to deal-master if they try to access restricted paths (like /)
-        const isStoreUser = currentUser.role !== 'admin' && currentUser.role !== 'superadmin' && currentUser.role !== 'super admin';
+        const isStoreUser = checkIsStoreUser(currentUser);
         const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
         if (isStoreUser && !allowedPaths.includes(location.pathname)) {
           navigate('/deal-master');
@@ -846,7 +852,7 @@ const Layout = ({ children }) => {
       }
       
       // Redirect store users to deal-master if they try to access restricted paths (like /)
-      const isStoreUser = userRes.data.role !== 'admin' && userRes.data.role !== 'superadmin' && userRes.data.role !== 'super admin';
+      const isStoreUser = checkIsStoreUser(userRes.data);
       const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
       if (isStoreUser && !allowedPaths.includes(location.pathname)) {
         navigate('/deal-master');
@@ -888,11 +894,12 @@ const Layout = ({ children }) => {
     }
   };
 
-  const role = currentUser?.role;
-  const isSuperAdmin = role === 'superadmin' || role === 'super admin';
-  const isAdmin = role === 'admin' || isSuperAdmin;
-  const isManager = role === 'manager';
-  const isOperator = role === 'operator' || role === 'staff';
+  const rawRole = (currentUser?.role || '').toLowerCase().trim();
+  const normalizedRole = rawRole.replace(/[\s_-]+/g, '');
+  const isSuperAdmin = normalizedRole.includes('superadmin') || normalizedRole.includes('superadministrator') || rawRole.includes('super');
+  const isAdmin = normalizedRole.includes('admin') || isSuperAdmin;
+  const isManager = normalizedRole.includes('manager');
+  const isOperator = normalizedRole.includes('operator') || normalizedRole.includes('staff');
 
   const [sidebarGroups, setSidebarGroups] = useState([]);
   const [isGroupsSubmenuOpen, setIsGroupsSubmenuOpen] = useState(false);
@@ -969,7 +976,12 @@ const Layout = ({ children }) => {
     });
   };
 
-  const menuItems = role ? allMenuItems.filter(item => item.roles.includes(role)) : [];
+  const menuItems = allMenuItems.filter(item => {
+    if (!currentUser) return false;
+    if (isSuperAdmin) return true; // Superadmin ALWAYS sees every single menu item
+    if (isAdmin) return item.roles.some(r => r.includes('admin'));
+    return item.roles.some(r => r.toLowerCase().replace(/[\s_-]+/g, '') === normalizedRole);
+  });
 
   const [focusedMenuIdx, setFocusedMenuIdx] = useState(-1);
 
