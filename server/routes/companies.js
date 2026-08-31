@@ -52,7 +52,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // @route   DELETE /api/companies/:id
 // @desc    Delete a company
 router.delete('/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin') {
+  const isPrivileged = req.user.role === 'admin' || req.user.role === 'super admin' || req.user.role === 'superadmin';
+  if (!isPrivileged) {
     return res.status(403).json({ message: 'Permission denied' });
   }
 

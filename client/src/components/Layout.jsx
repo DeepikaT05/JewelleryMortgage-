@@ -803,7 +803,7 @@ const Layout = ({ children }) => {
           console.error('Company refresh failed:', refreshErr);
         }
         // Redirect store users to deal-master if they try to access restricted paths (like /)
-        const isStoreUser = currentUser.role !== 'admin';
+        const isStoreUser = currentUser.role !== 'admin' && currentUser.role !== 'superadmin' && currentUser.role !== 'super admin';
         const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
         if (isStoreUser && !allowedPaths.includes(location.pathname)) {
           navigate('/deal-master');
@@ -846,7 +846,7 @@ const Layout = ({ children }) => {
       }
       
       // Redirect store users to deal-master if they try to access restricted paths (like /)
-      const isStoreUser = userRes.data.role !== 'admin';
+      const isStoreUser = userRes.data.role !== 'admin' && userRes.data.role !== 'superadmin' && userRes.data.role !== 'super admin';
       const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
       if (isStoreUser && !allowedPaths.includes(location.pathname)) {
         navigate('/deal-master');
@@ -889,7 +889,8 @@ const Layout = ({ children }) => {
   };
 
   const role = currentUser?.role;
-  const isAdmin = role === 'admin';
+  const isSuperAdmin = role === 'superadmin' || role === 'super admin';
+  const isAdmin = role === 'admin' || isSuperAdmin;
   const isManager = role === 'manager';
   const isOperator = role === 'operator' || role === 'staff';
 
@@ -943,16 +944,17 @@ const Layout = ({ children }) => {
   }, [location.pathname]);
 
   const allMenuItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isOperations: true },
-    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
-    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
-    { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
-    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
-    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isLedgerGroups: true },
-    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
-    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
+    { name: 'Superadmin Portal', path: '/superadmin-portal', icon: <ShieldCheck className="h-5 w-5" />, roles: ['superadmin', 'super admin'] },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
+    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'], hasSubmenu: true, isOperations: true },
+    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
+    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
+    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
+    { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
+    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
+    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'], hasSubmenu: true, isLedgerGroups: true },
+    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
+    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] }
   ];
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -1492,7 +1494,7 @@ const Layout = ({ children }) => {
             {!isSidebarCollapsed && (
               <div className="text-center pt-2">
                 <span className="text-[10px] text-slate-500 uppercase tracking-widest block font-bold">
-                  {currentUser?.role === 'admin' ? 'Girvi Management' : 'Store Manager Panel'}
+                  {isSuperAdmin ? 'Superadmin Portal' : (isAdmin ? 'Girvi Management' : 'Store Manager Panel')}
                 </span>
                 <span className="text-[9px] text-slate-600 font-mono mt-0.5 block">
                   v1.0.0 (Financial Apr26)

@@ -373,7 +373,7 @@ const GirviSetup = () => {
         >
           Store & Address Profile
         </button>
-        {currentUser?.role === 'admin' && (
+        {(currentUser?.role === 'admin' || currentUser?.role === 'superadmin' || currentUser?.role === 'super admin') && (
           <button
             onClick={() => setActiveTab('users')}
             className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${

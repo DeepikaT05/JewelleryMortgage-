@@ -17,6 +17,7 @@ import AccountingGroup from './pages/AccountingGroup';
 import DayReport from './pages/DayReport';
 import Customers from './pages/Customers';
 import Operations from './pages/Operations';
+import SuperadminPortal from './pages/SuperadminPortal';
 
 // Authentication Protection Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -126,6 +127,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <GirviSetup />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/superadmin-portal"
+          element={
+            <ProtectedRoute>
+              <SuperadminPortal />
             </ProtectedRoute>
           }
         />

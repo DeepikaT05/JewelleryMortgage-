@@ -128,7 +128,8 @@ router.post('/logout', (req, res) => {
 // @route   GET /api/auth/users
 // @desc    List all users (Admin/Super Admin only)
 router.get('/users', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin') {
+  const isPrivileged = req.user.role === 'admin' || req.user.role === 'super admin' || req.user.role === 'superadmin';
+  if (!isPrivileged) {
     return res.status(403).json({ message: 'Admin role required' });
   }
   try {
@@ -142,7 +143,8 @@ router.get('/users', authMiddleware, async (req, res) => {
 // @route   PUT /api/auth/users/:id
 // @desc    Update user details (Admin/Super Admin only)
 router.put('/users/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin') {
+  const isPrivileged = req.user.role === 'admin' || req.user.role === 'super admin' || req.user.role === 'superadmin';
+  if (!isPrivileged) {
     return res.status(403).json({ message: 'Admin role required' });
   }
   const { name, role, companyId, isActive, password } = req.body;
@@ -176,7 +178,8 @@ router.put('/users/:id', authMiddleware, async (req, res) => {
 // @route   DELETE /api/auth/users/:id
 // @desc    Delete a user (Admin/Super Admin only)
 router.delete('/users/:id', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin') {
+  const isPrivileged = req.user.role === 'admin' || req.user.role === 'super admin' || req.user.role === 'superadmin';
+  if (!isPrivileged) {
     return res.status(403).json({ message: 'Admin role required' });
   }
   try {
