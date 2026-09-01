@@ -17,7 +17,10 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
+    const trimmedUsername = (username || '').trim();
+    const user = await User.findOne({
+      username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') }
+    });
     if (!user) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
@@ -26,7 +29,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'User account is deactivated' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare((password || '').trim(), user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }

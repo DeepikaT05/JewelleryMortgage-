@@ -15,11 +15,14 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Please enter username and password' });
   }
   try {
-    const user = await User.findOne({ username, role: 'super admin' });
+    const trimmedUsername = (username || '').trim();
+    const user = await User.findOne({
+      username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') }
+    });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
     if (!user.isActive) return res.status(400).json({ message: 'Account is deactivated' });
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare((password || '').trim(), user.passwordHash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     const payload = {
@@ -27,7 +30,7 @@ router.post('/login', async (req, res) => {
       userId: user.userId,
       username: user.username,
       role: user.role,
-      companyId: null
+      companyId: user.companyId || null
     };
     const secret = process.env.JWT_SECRET || 'girvi_secret_key_2026_998811';
     jwt.sign(payload, secret, { expiresIn: '7d' }, (err, token) => {
