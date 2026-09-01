@@ -809,6 +809,15 @@ const Layout = ({ children }) => {
         } catch (refreshErr) {
           console.error('Company refresh failed:', refreshErr);
         }
+        const rawR = (currentUser?.role || '').toLowerCase().replace(/[\s_-]+/g, '');
+        const isSuper = rawR.includes('superadmin') || rawR.includes('super');
+        if (isSuper) {
+          if (location.pathname !== '/superadmin-portal') {
+            navigate('/superadmin-portal');
+          }
+          return;
+        }
+
         // Redirect store users to deal-master if they try to access restricted paths (like /)
         const isStoreUser = checkIsStoreUser(currentUser);
         const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
@@ -852,11 +861,19 @@ const Layout = ({ children }) => {
         }
       }
       
-      // Redirect store users to deal-master if they try to access restricted paths (like /)
-      const isStoreUser = checkIsStoreUser(userRes.data);
-      const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
-      if (isStoreUser && !allowedPaths.includes(location.pathname)) {
-        navigate('/deal-master');
+      const rawR = (userRes.data?.role || '').toLowerCase().replace(/[\s_-]+/g, '');
+      const isSuper = rawR.includes('superadmin') || rawR.includes('super');
+      if (isSuper) {
+        if (location.pathname !== '/superadmin-portal') {
+          navigate('/superadmin-portal');
+        }
+      } else {
+        // Redirect store users to deal-master if they try to access restricted paths (like /)
+        const isStoreUser = checkIsStoreUser(userRes.data);
+        const allowedPaths = ['/deal-master', '/transaction', '/day-report', '/customers'];
+        if (isStoreUser && !allowedPaths.includes(location.pathname)) {
+          navigate('/deal-master');
+        }
       }
       setLoading(false);
     } catch (err) {
@@ -898,7 +915,7 @@ const Layout = ({ children }) => {
   const rawRole = (currentUser?.role || '').toLowerCase().trim();
   const normalizedRole = rawRole.replace(/[\s_-]+/g, '');
   const isSuperAdmin = normalizedRole.includes('superadmin') || normalizedRole.includes('superadministrator') || rawRole.includes('super');
-  const isAdmin = normalizedRole.includes('admin') || isSuperAdmin;
+  const isAdmin = (normalizedRole.includes('admin') || isSuperAdmin) && !isSuperAdmin;
   const isManager = normalizedRole.includes('manager');
   const isOperator = normalizedRole.includes('operator') || normalizedRole.includes('staff');
 
@@ -953,16 +970,16 @@ const Layout = ({ children }) => {
 
   const allMenuItems = [
     { name: 'Superadmin Portal', path: '/superadmin-portal', icon: <ShieldCheck className="h-5 w-5" />, roles: ['superadmin', 'super admin'] },
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
-    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'], hasSubmenu: true, isOperations: true },
-    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
-    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] },
-    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'], hasSubmenu: true, isLedgerGroups: true },
-    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin', 'manager', 'operator', 'staff'] },
-    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin', 'superadmin', 'super admin'] }
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Operations', path: '/operations', icon: <Layers className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isOperations: true },
+    { name: 'General Masters', path: '/general-masters', icon: <Briefcase className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Deal Master', path: '/deal-master', icon: <Coins className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Transaction', path: '/transaction', icon: <ArrowLeftRight className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Customers', path: '/customers', icon: <Users className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" />, roles: ['admin'] },
+    { name: 'Ledger Groups', path: '/accounting-group', icon: <BookOpen className="h-5 w-5" />, roles: ['admin'], hasSubmenu: true, isLedgerGroups: true },
+    { name: 'Day Report', path: '/day-report', icon: <CalendarDays className="h-5 w-5" />, roles: ['admin', 'manager', 'operator', 'staff'] },
+    { name: 'Girvi Setup', path: '/girvi-setup', icon: <Settings className="h-5 w-5" />, roles: ['admin'] }
   ];
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -979,8 +996,12 @@ const Layout = ({ children }) => {
 
   const menuItems = allMenuItems.filter(item => {
     if (!currentUser) return false;
-    if (isSuperAdmin) return true; // Superadmin ALWAYS sees every single menu item
-    if (isAdmin) return item.roles.some(r => r.includes('admin'));
+    if (isSuperAdmin) {
+      return item.path === '/superadmin-portal'; // ONLY Superadmin Portal for Super Admin!
+    }
+    if (isAdmin) {
+      return item.roles.includes('admin') && item.path !== '/superadmin-portal';
+    }
     return item.roles.some(r => r.toLowerCase().replace(/[\s_-]+/g, '') === normalizedRole);
   });
 

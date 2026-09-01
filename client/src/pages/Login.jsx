@@ -72,7 +72,10 @@ const Login = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       
       // Redirect to correct panel
-      if (res.data.user && res.data.user.role === 'admin') {
+      const userRole = (res.data.user?.role || '').toLowerCase().replace(/[\s_-]+/g, '');
+      if (userRole.includes('superadmin') || userRole.includes('super')) {
+        navigate('/superadmin-portal');
+      } else if (userRole.includes('admin')) {
         navigate('/');
       } else {
         navigate('/deal-master');
